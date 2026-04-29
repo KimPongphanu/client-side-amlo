@@ -52,47 +52,39 @@ const FALLBACK_MS = 15000;
 
 
 // ════════════════════════════════════════════════════════════
-//  SECTION 4 — COMPONENT: YouTubeSlide
-//
-//  หน้าที่:
-//    1. สร้าง YT Player ใหม่ทุกครั้งที่ isActive = true
-//       (แก้ปัญหา loop: DOM ถูก YT replace → ref ชี้ผิด)
-//    2. Destroy player ทุกครั้งที่ isActive = false
-//       พร้อม reset DOM ให้สะอาดรอรอบถัดไป
-//    3. Block การโต้ตอบจากผู้ใช้ด้วย Overlay div
-//    4. แจ้ง parent ผ่าน onVideoEnded เมื่อคลิปจบ
-//    5. Fallback: ข้ามอัตโนมัติถ้าคลิปไม่เริ่มเล่น
+//  SECTION 4 — COMPONENT: YouTubeSlide (อัปเกรดมีปุ่มควบคุมเอง)
 // ════════════════════════════════════════════════════════════
+import { useState } from 'react'; // อย่าลืม import useState เพิ่มด้านบนสุดของไฟล์ด้วยนะครับถ้ายังไม่มี
+
 const YouTubeSlide = ({ url, isActive, onVideoEnded }) => {
-  const containerRef = useRef(null); // div ที่ YT จะ inject iframe เข้ามา
-  const playerRef    = useRef(null); // YT.Player instance
-  const onEndedRef   = useRef(onVideoEnded); // ref เก็บ callback ล่าสุด (ป้องกัน stale closure)
-  const fallbackRef  = useRef(null); // setTimeout handle สำหรับ fallback
-  const playingRef   = useRef(false); // ติดตามว่ากำลังเล่นอยู่จริงไหม
+  const containerRef = useRef(null); 
+  const playerRef    = useRef(null); 
+  const onEndedRef   = useRef(onVideoEnded); 
+  const fallbackRef  = useRef(null); 
+  const playingRef   = useRef(false); 
+
+  // 🌟 เพิ่ม State สำหรับคุมปุ่ม UI ของเราเอง
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
 
   const videoId = getYouTubeId(url);
 
-  // ── sync callback ref ทุก render ──────────────────────────
   useEffect(() => { onEndedRef.current = onVideoEnded; }, [onVideoEnded]);
 
-  // ── helper: จัดการ fallback timer ─────────────────────────
   const clearFallback = () => clearTimeout(fallbackRef.current);
   const startFallback = () => {
     clearFallback();
     fallbackRef.current = setTimeout(() => {
-      // ไม่มี PLAYING state ใน FALLBACK_MS วิ → ถือว่าจบ
       onEndedRef.current?.();
     }, FALLBACK_MS);
   };
 
-  // ── lifecycle หลัก: สร้าง/destroy player ตาม isActive ────
   useEffect(() => {
     if (!videoId || !containerRef.current) return;
 
     clearFallback();
     playingRef.current = false;
 
-    // ─── ออกจาก slide: cleanup สมบูรณ์ ───────────────────
     if (!isActive) {
       try { playerRef.current?.destroy(); } catch (_) {}
       playerRef.current = null;
@@ -100,17 +92,14 @@ const YouTubeSlide = ({ url, isActive, onVideoEnded }) => {
       return;
     }
 
-    // ─── เข้า slide: สร้าง player ใหม่ทุกครั้ง ────────────
     let cancelled = false;
 
     loadYTScript().then(() => {
       if (cancelled || !containerRef.current) return;
 
-      // destroy ของเก่าก่อน (กันซ้ำ)
       try { playerRef.current?.destroy(); } catch (_) {}
       playerRef.current = null;
 
-      // สร้าง div target ใหม่ — YT API จะ replace div นี้ด้วย iframe
       const target = document.createElement('div');
       containerRef.current.innerHTML = '';
       containerRef.current.appendChild(target);
@@ -121,41 +110,50 @@ const YouTubeSlide = ({ url, isActive, onVideoEnded }) => {
         height: '100%',
         playerVars: {
           autoplay: 1,
-          controls: 0,         // ซ่อน control bar ของ YouTube
-          modestbranding: 1,   // ลด YouTube logo
-          rel: 0,              // ไม่แสดงวิดีโอแนะนำตอนจบ
-          fs: 0,               // ปิดปุ่ม Fullscreen (overlay ทับอยู่)
+          controls: 0,         
+          modestbranding: 1,   
+          rel: 0,              
+          fs: 0,               
           playsinline: 1,
-          disablekb: 1,        // ปิด keyboard shortcut (spacebar, arrow keys)
-          iv_load_policy: 3,   // ซ่อน annotations
-          cc_load_policy: 0,   // ซ่อน closed captions
+          disablekb: 1,        
+          iv_load_policy: 3,   
+          cc_load_policy: 0,   
         },
         events: {
           onReady: (e) => {
             if (cancelled) return;
+            
+            // 🌟 ตั้งระดับเสียงเริ่มต้นที่ 40% (ใส่ได้ตั้งแต่ 0 - 100)
+            e.target.setVolume(40); 
+            
             e.target.playVideo();
-            startFallback(); // เริ่ม fallback เผื่อ autoplay โดน block
+            // เช็คสถานะเสียงเริ่มต้น
+            setIsMuted(e.target.isMuted());
+            startFallback(); 
           },
           onStateChange: (e) => {
             if (cancelled) return;
             const S = window.YT.PlayerState;
 
             if (e.data === S.PLAYING) {
-              clearFallback();        // เล่นได้จริง → ยกเลิก fallback
+              clearFallback();        
               playingRef.current = true;
+              setIsPlaying(true); // 🌟 อัปเดตปุ่มเป็น Pause
 
             } else if (e.data === S.ENDED) {
               clearFallback();
               playingRef.current = false;
-              onEndedRef.current?.(); // แจ้ง parent ว่าจบแล้ว
+              setIsPlaying(false);
+              onEndedRef.current?.(); 
 
-            } else if (e.data === S.PAUSED || e.data === S.BUFFERING) {
-              // ถ้ายังไม่เคย PLAYING มาก่อน → เริ่ม fallback รอ
+            } else if (e.data === S.PAUSED) {
+              setIsPlaying(false); // 🌟 อัปเดตปุ่มเป็น Play
               if (!playingRef.current) startFallback();
+            } else if (e.data === S.BUFFERING) {
+               if (!playingRef.current) startFallback();
             }
           },
           onError: () => {
-            // คลิปเสีย / ถูก block → ข้าม slide ทันที
             if (cancelled) return;
             clearFallback();
             onEndedRef.current?.();
@@ -168,64 +166,93 @@ const YouTubeSlide = ({ url, isActive, onVideoEnded }) => {
       cancelled = true;
       clearFallback();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive, videoId]);
 
-  // ── cleanup เมื่อ component unmount ───────────────────────
   useEffect(() => () => {
     clearFallback();
     try { playerRef.current?.destroy(); } catch (_) {}
     playerRef.current = null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 🌟 ฟังก์ชันสำหรับปุ่ม Play/Pause
+  const togglePlay = () => {
+    if (!playerRef.current) return;
+    if (isPlaying) {
+      playerRef.current.pauseVideo();
+    } else {
+      playerRef.current.playVideo();
+    }
+  };
+
+  // 🌟 ฟังก์ชันสำหรับปุ่มปิดเปิดเสียง
+  const toggleMute = () => {
+    if (!playerRef.current) return;
+    if (isMuted) {
+      playerRef.current.unMute();
+      setIsMuted(false);
+    } else {
+      playerRef.current.mute();
+      setIsMuted(true);
+    }
+  };
 
   if (!videoId) return null;
 
   return (
-    // ════════════════════════════════════════════════════════
-    //  SECTION 4.1 — OVERLAY LAYER (หัวใจของฟีเจอร์นี้)
-    //
-    //  โครงสร้าง: position relative wrapper
-    //    ├── div#container  → YT inject iframe เข้ามาที่นี่
-    //    └── div#overlay    → ทับ iframe ทั้งหมด 100%
-    //
-    //  Overlay ทำหน้าที่:
-    //    - pointer-events: all  → รับ mouse/touch event ทั้งหมดแทน iframe
-    //    - user-select: none    → ป้องกันการ select text
-    //    - background: transparent → มองไม่เห็น แต่ block interaction ได้
-    //    - z-index สูงกว่า iframe → อยู่บนสุดเสมอ
-    //
-    //  ผลลัพธ์:
-    //    ✅ วิดีโอเล่นปกติ (YT Player API ควบคุมผ่าน JS)
-    //    ✅ ไม่มี control bar / progress bar
-    //    ✅ Hover ไม่ขึ้น UI ของ YouTube
-    //    ✅ ไม่สามารถคลิก pause / seek / ปรับ volume ได้
-    //    ✅ ไม่สามารถ drag เพื่อ seek ได้
-    //    ⚠️ Fullscreen ใช้ไม่ได้ (trade-off ที่ยอมรับได้)
-    // ════════════════════════════════════════════════════════
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      
+      {/* 1. iframe container */}
+      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 
-      {/* iframe container — YT API จะ inject เข้ามาที่นี่ */}
-      <div
-        ref={containerRef}
-        style={{ width: '100%', height: '100%' }}
-      />
-
-      {/* Overlay: block การโต้ตอบจากผู้ใช้ทั้งหมด */}
+      {/* 2. Overlay บังการสัมผัส iframe ไว้เหมือนเดิม (ซ่อน Title และ UI ขยะ) */}
       <div
         style={{
           position: 'absolute',
-          inset: 0,                    // top/right/bottom/left = 0 (เต็มพื้นที่)
-          zIndex: 10,                  // อยู่เหนือ iframe เสมอ
-          background: 'transparent',   // มองไม่เห็น
-          pointerEvents: 'all',        // รับ event ทั้งหมดแทน iframe
-          userSelect: 'none',          // ป้องกัน text selection
-          WebkitUserSelect: 'none',    // Safari
-          cursor: 'default',           // cursor ปกติ ไม่ให้รู้สึกว่า clickable
+          inset: 0,                    
+          zIndex: 10,                  
+          background: 'transparent',   
+          pointerEvents: 'all',        
+          userSelect: 'none',          
+          WebkitUserSelect: 'none',    
+          cursor: 'default',           
         }}
-        // กัน context menu (คลิกขวา) บน overlay
         onContextMenu={(e) => e.preventDefault()}
       />
+
+      {/* 🌟 3. กล่องคุมปุ่มกดของเราเอง (ลอยอยู่เหนือ Overlay อีกที) */}
+      <div 
+        className="absolute bottom-4 left-4 z-20 flex gap-3"
+        // หยุดการแพร่กระจาย event ไม่ให้ไปกวน Slider
+        onPointerDown={(e) => e.stopPropagation()} 
+      >
+        {/* ปุ่ม เล่น/หยุด */}
+        <button 
+          onClick={togglePlay}
+          className="bg-black/60 hover:bg-black/80 text-white w-12 h-12 flex items-center justify-center rounded-full backdrop-blur-sm transition-all shadow-lg"
+        >
+          {isPlaying ? (
+            // Icon Pause (ขีดสองขีด)
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          ) : (
+            // Icon Play (สามเหลี่ยม)
+            <svg className="w-5 h-5 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          )}
+        </button>
+
+        {/* ปุ่ม เสียง */}
+        <button 
+          onClick={toggleMute}
+          className="bg-black/60 hover:bg-black/80 text-white w-12 h-12 flex items-center justify-center rounded-full backdrop-blur-sm transition-all shadow-lg"
+        >
+          {isMuted ? (
+            // Icon Mute (กากบาท)
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path strokeLinecap="round" strokeLinejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>
+          ) : (
+            // Icon Volume 
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+          )}
+        </button>
+      </div>
 
     </div>
   );
@@ -377,7 +404,7 @@ const DepartmentDetailPage = () => {
         </h2>
         <div className="text-lg text-gray-700 leading-relaxed whitespace-pre-line">
           ยินดีต้อนรับเข้าสู่ <strong>{department.title}</strong>
-          <br /><br />
+          <br /><br /> 
           ในอนาคตคุณสามารถนำเนื้อหา เช่น หน้าที่รับผิดชอบ, เบอร์ติดต่อส่วนงาน,
           หรือโครงสร้างบุคลากร จาก Database มาแสดงผลในกล่องนี้ได้เลยครับ!
         </div>

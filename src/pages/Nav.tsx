@@ -36,26 +36,24 @@ export default function Nav() {
           {/* Group เมนู */}
           <div className="flex items-center gap-6 h-full font-bold text-black-600 text-md ">
             
-            {/* เมนู: โซลูชัน */}
-            <div 
-              className="h-full flex items-center cursor-pointer hover:text-slate-600"
-              onMouseEnter={() => {
-                handleMouseEnterNav();
-                setActiveMenu('solutions');
-              }}
-            >
-              โซลูชัน <span className="ml-1 text-xs">▼</span>
+            {/* เมนู: Main */}
+            <div className="h-full flex items-center cursor-pointer hover:text-slate-600">
+              <Link to = "/">หน้าหลัก</Link>
             </div>
 
-            {/* เมนู: 2 */}
+            {/* เมนู: About */}
             <div 
               className="h-full flex items-center cursor-pointer hover:text-slate-500"
               onMouseEnter={() => {
                 handleMouseEnterNav();
-                setActiveMenu('test');
+                setActiveMenu('about');
               }}
             >
-              test <span className="ml-1 text-xs">▼</span>
+              เกี่ยวกับ <span className="ml-1 text-xs">▼</span>
+            </div>
+            {/* เมนู: Organizational Structure */}
+            <div className="h-full flex items-center cursor-pointer hover:text-slate-500">
+              <Link to = "#">ติดต่อ</Link>
             </div>
             
           </div>
@@ -71,10 +69,10 @@ export default function Nav() {
       {/* ส่วนของ Mega Menu Dropdown (กางเต็มจอ) */}
       {/* ----------------------------------------- */}
 
-      {/* เมนู Solutions */}
+      {/* เมนู about */}
       <div 
         className={`absolute top-full left-0 w-full backdrop-blur-md bg-white/90 shadow-xl border-t border-gray-100 transition-all duration-500 ease-out-in ${
-          activeMenu === 'solutions' ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'
+          activeMenu === 'about' ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'
         }`}
       >
           {/* จัดโครงสร้างคอลัมน์ให้อยู่ตรงกลางเหมือน Nav */}
@@ -82,20 +80,21 @@ export default function Nav() {
 
             {/* คอลัมน์ 1 */}
             <div>
-              <h3 className="text-slate-500 font-semibold mb-4 text-sm uppercase">ตามชั้น</h3>
+              <h3 className="text-slate-500 font-semibold mb-4 text-sm uppercase">ประวิติของหน่วยงานข่าวกรองทางการเงิน</h3>
               <ul className="space-y-3 text-sm text-[#635BFF] font-medium">
-                <li><Link to="#" className="hover:text-[#4B45CC]">องค์กร</Link></li>
-                <li><Link to="#" className="hover:text-[#4B45CC]">สตาร์ทอัพ</Link></li>
+                <li><Link to="#" className="hover:text-[#4B45CC]">ประวัติ</Link></li>
+                <li><Link to="#" className="hover:text-[#4B45CC]">หน้าที่และอำนาจ</Link></li>
               </ul>
             </div>
 
             {/* คอลัมน์ 2 */}
             <div className="border-l pl-8">
-              <h3 className="text-slate-500 font-semibold mb-4 text-sm uppercase">ตามกรณีการใช้งาน</h3>
+              <h3 className="text-slate-500 font-semibold mb-4 text-sm uppercase">โครงสร้างหน่วยงาน</h3>
               <ul className="space-y-3 text-sm text-[#635BFF] font-medium">
-                <li><Link to="#" className="hover:text-[#4B45CC]">อีคอมเมิร์ซ</Link></li>
-                <li><Link to="#" className="hover:text-[#4B45CC]">การชำระเงินในแอป</Link></li>
-                <li><Link to="#" className="hover:text-[#4B45CC]">SaaS</Link></li>
+                <li><Link to="#" className="hover:text-[#4B45CC]">ส่วนบริหารงานข่าวกรองการเงิน</Link></li>
+                <li><Link to="#" className="hover:text-[#4B45CC]">ส่วนวิเคราะห์ข่าวกรองทางการเงิน</Link></li>
+                <li><Link to="#" className="hover:text-[#4B45CC]">ส่วนวิเคราะห์ธุรกรรมทางการเงิน</Link></li>
+                <li><Link to= "" className="hover:text-[#4B45CC]">ส่วนสืบสวนทางการเงิน</Link></li>
               </ul>
             </div>
 
@@ -111,10 +110,10 @@ export default function Nav() {
           </div>
         </div>
 
-      {/* เมนู Test */}
+      {/* เมนู Organizational structure */}
       <div 
         className={`absolute top-full left-0 w-full backdrop-blur-md bg-white/90 shadow-xl border-t border-gray-100 transition-all duration-500 ease-out-in ${
-          activeMenu === 'test' ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'
+          activeMenu === 'Organizational structure' ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'
         }`}
       >
           {/* จัดโครงสร้างคอลัมน์ให้อยู่ตรงกลางเหมือน Nav */}

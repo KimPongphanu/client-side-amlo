@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom'; // 1. Import useLocation เพิ่มเข้ามา
 import Nav from '../pages/Nav';
 import Slider from '../pages/Slider';
+import Footer from './Footer';
 
 const slides = [
   { id: 1, image: '/banner.png', title: 'Slide 1' },
@@ -27,7 +28,7 @@ const MainLayout = () => {
   console.log("ตอนนี้อยู่หน้า:", currentPath, " | ต้องโชว์ Slider ไหม?:", showSlider);
 
   return (
-    <div className="min-h-screen relative flex flex-col">
+    <div className="min-h-screen ​w-full relative flex flex-col">
       <Nav />
       
       {showSlider && (
@@ -39,6 +40,7 @@ const MainLayout = () => {
       <main className="flex-grow">
         <Outlet /> 
       </main>
+      <Footer />
     </div>
   );
 };

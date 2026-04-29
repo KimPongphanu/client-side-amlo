@@ -85,8 +85,38 @@ const MOCK_DB: NewsItem[] = [
 const MOCK_DEPARTMENTS_DB: DepartmentItem[] = [
   { 
     id: 1, 
-    title: "หน่วยงาน 1", 
+    title: "ส่วนบริหารหน่วยงานข่าวกรองทางการเงิน", 
     cover_image: "/amlo1.jpg", 
+    gallery: [
+      { type: 'image', url: '/amlo1.jpg' },
+      { type: 'video', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }, // ตัวอย่าง YouTube
+      { type: 'image', url: '/amlo2.jpg' },
+    ] 
+  },
+  { 
+    id: 2, 
+    title: "ส่วนวิเคราะห์ข่าวกรองทางการเงิน", 
+    cover_image: "/amlo3.jpg", 
+    gallery: [
+      { type: 'image', url: '/amlo1.jpg' },
+      { type: 'video', url: 'https://youtu.be/SYHR25vQicU?si=7vlRnIE_vGYRc_3M' }, // ตัวอย่าง YouTube
+      { type: 'image', url: '/amlo2.jpg' },
+    ] 
+  },
+  { 
+    id: 3, 
+    title: "ส่วนวิเคราะห์ธุรกรรมทางการเงิน", 
+    cover_image: "/amlo2.jpg", 
+    gallery: [
+      { type: 'image', url: '/amlo1.jpg' },
+      { type: 'video', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }, // ตัวอย่าง YouTube
+      { type: 'image', url: '/amlo2.jpg' },
+    ] 
+  },
+  { 
+    id: 4, 
+    title: "ส่วนสืบสวนทางการเงิน", 
+    cover_image: "/amlo4.jpg", 
     gallery: [
       { type: 'image', url: '/amlo1.jpg' },
       { type: 'video', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }, // ตัวอย่าง YouTube
