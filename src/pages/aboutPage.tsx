@@ -1,7 +1,11 @@
-import React from 'react'
+import React from "react";
 
-const aboutPage = () => {
-  return <div>aboutPage</div>
-}
+const AboutPage = () => {
+  return (
+    <div className="w-full bg-slate-50 min-h-screen py-10">
+      
+    </div>
+  );
+};
 
-export default aboutPage
+export default AboutPage;
