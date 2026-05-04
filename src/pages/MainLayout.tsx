@@ -16,7 +16,7 @@ const MainLayout = () => {
   const location = useLocation(); 
 
   // แนะนำให้พิมพ์ตัวเล็กทั้งหมดใน Array นี้เลยครับ
-  const hideOnPaths = ['/newsdetailepage', '/agency1', '/news', '/department'];
+  const hideOnPaths = ['/newsdetailepage', '/agency1', '/news', '/department' , '/advertise'];
 
   // จับ URL ปัจจุบันมาแปลงเป็นตัวเล็กก่อน (ป้องกันบั๊ก /News กับ /news)
   const currentPath = location.pathname.toLowerCase();
@@ -32,9 +32,10 @@ const MainLayout = () => {
       <Nav />
       
       {showSlider && (
-        <div className="pb-10 bg-slate-50">
-          <Slider slides={slides} />
-        </div>
+      // 🌟 เปลี่ยนจาก md:pt-0 เป็น lg:pt-0 ครับ
+      <div className="pt-16 lg:pt-0 pb-10 bg-slate-50">
+        <Slider slides={slides} />
+      </div>
       )}
       
       <main className="flex-grow">
