@@ -1,14 +1,13 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
-// 🌟 1. Import Type 'NewsItem' มาจากไฟล์ Context ด้วย
 import { NewsContext, type NewsItem } from '../context/NewsContext';
 
-// 🌟 2. เปลี่ยนจาก item: any เป็น item: NewsItem โค้ดจะโปรขึ้นทันที!
+// Component สำหรับ Card
 const ArticleCard = ({ item, basePath }: { item: NewsItem, basePath: string }) => (
   <div className="shrink-0 w-[280px] md:w-[350px] bg-white border rounded-xl md:rounded-2xl overflow-hidden shadow-md flex flex-col hover:shadow-xl transition-shadow">
-    <div className="h-[180px] md:h-[200px] w-full overflow-hidden">
+    <div className="h-[180px] md:h-[200px] w-full overflow-hidden bg-slate-100">
       <img 
-        src={item.image_src} // ลบ || item.image ออกได้เลย เพราะ Type เราฟิกซ์แล้วว่าต้องเป็น image_src
+        src={item.image_src} 
         alt={item.title} 
         className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
       />
@@ -32,7 +31,6 @@ const HomePage = () => {
     return <div className="p-8 text-red-500 text-2xl font-bold">Error : ไม่พบ Context</div>
   }
 
-  // 🌟 3. ดึง prList ออกมาใช้งาน
   const { newsList, prList, departmentList, isLoading } = context;
 
   return (
@@ -49,10 +47,18 @@ const HomePage = () => {
           {/* 📰 SECTION 1: ข่าวประชาสัมพันธ์ (News) */}
           {/* ========================================= */}
           <div className="pt-8">
-            <h1 className='text-3xl md:text-4xl font-bold mb-6 md:mb-8 text-slate-800'>ข่าวประชาสัมพันธ์</h1>
-            <div className="w-full border-2 border-gray-200 p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm">
-              {newsList?.map((news) => (
-                <ArticleCard key={news.id} item={news} basePath="news" />
+            {/* 🌟 สร้าง Flexbox ให้ Header กับ ปุ่มดูทั้งหมด */}
+            <div className="flex justify-between items-end mb-6 md:mb-8">
+              <h1 className='text-3xl md:text-4xl font-bold text-slate-800'>ข่าวประชาสัมพันธ์</h1>
+              <Link to="/news" className="text-sm md:text-base font-medium text-blue-600 hover:text-blue-800 flex items-center transition-colors">
+                ดูทั้งหมด <span className="ml-1 text-lg leading-none">›</span>
+              </Link>
+            </div>
+
+            <div className="w-full border-2 border-gray-200 p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm hide-scrollbar">
+              {/* 🌟 ใช้ .slice(0, 5) จำกัดโชว์แค่ 5 ข่าวล่าสุด */}
+              {newsList?.slice(0, 5).map((news) => (
+                <ArticleCard key={news.id} item={news} basePath="advertise" />
               ))}
             </div>
           </div>
@@ -60,13 +66,20 @@ const HomePage = () => {
           {/* ========================================= */}
           {/* 📢 SECTION 2: กิจกรรม (Advertise/PR) */}
           {/* ========================================= */}
-          {/* 🌟 4. เปลี่ยนมาใช้ prList ตรงนี้ครับ */}
           {prList && prList.length > 0 && (
             <div className="mt-12 md:mt-16">
-              <h1 className='text-3xl md:text-4xl font-bold mb-6 md:mb-8 text-slate-800'>กิจกรรม</h1>
-              <div className="w-full border-2 border-gray-200 p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm">
-                {prList.map((pr) => (
-                  <ArticleCard key={pr.id} item={pr} basePath="advertise" />
+              {/* 🌟 สร้าง Flexbox ให้ Header กับ ปุ่มดูทั้งหมด */}
+              <div className="flex justify-between items-end mb-6 md:mb-8">
+                <h1 className='text-3xl md:text-4xl font-bold text-slate-800'>กิจกรรมและประกาศ</h1>
+                <Link to="/advertise" className="text-sm md:text-base font-medium text-blue-600 hover:text-blue-800 flex items-center transition-colors">
+                  ดูทั้งหมด <span className="ml-1 text-lg leading-none">›</span>
+                </Link>
+              </div>
+
+              <div className="w-full border-2 border-gray-200 p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm hide-scrollbar">
+                {/* 🌟 ใช้ .slice(0, 5) จำกัดโชว์แค่ 5 ข่าวล่าสุด */}
+                {prList.slice(0, 5).map((pr) => (
+                  <ArticleCard key={pr.id} item={pr} basePath="news" />
                 ))}
               </div>
             </div>

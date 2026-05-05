@@ -9,6 +9,7 @@ import DepartmentDetailPage from './pages/DepartDetailPage'
 import ScrollToTop from './pages/ScrollToTop'
 import Advertise from './pages/Advertise'
 import AdvertiseDetail from './pages/Advertisedetail'
+import News from './pages/News'
 
 function App() {
   return (
@@ -20,11 +21,13 @@ function App() {
             <Route element={<MainLayout />}>
               <Route path='/' element={<Home />} />
               <Route path='/about' element={<About />} />
-              <Route path='/advertise'element={<Advertise/>}></Route>
               <Route path='/duty' element={<DutyPage/>}></Route>
+              <Route path='/news' element={<News/>}></Route>
               <Route path="/news/:id" element={<NewsDetailPage />} />
               <Route path="/department/:id" element={<DepartmentDetailPage />} />
+              <Route path='/advertise'element={<Advertise/>}></Route>
               <Route path="/advertise/:id" element={<AdvertiseDetail />} />
+              
             </Route>
 
             {/* Route สำหรับหน้าที่ไม่อยากมีทั้ง Nav , Slider */}
