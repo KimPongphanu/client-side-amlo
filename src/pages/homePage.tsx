@@ -1,7 +1,8 @@
 <<<<<<< HEAD
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { NewsContext, type NewsItem } from '../context/NewsContext';
+import { NewsContext } from '../context/NewsContext';
+import type { NewsItem } from '../type'
 
 // Component สำหรับ Card
 const ArticleCard = ({ item, basePath }: { item: NewsItem, basePath: string }) => (
