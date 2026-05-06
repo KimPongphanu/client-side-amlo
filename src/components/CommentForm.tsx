@@ -70,7 +70,7 @@ const CommentForm = () => {
       setSnapVertical('bottom'); // ถ้าอยู่ครึ่งล่างของจอ
     }
 
-    if (snapY < 24) snapY = 24;
+    if (snapY < 88) snapY = 88;
     if (snapY > screenHeight - iconSize - 24) snapY = screenHeight - iconSize - 24;
 
     setPosition({ x: snapX, y: snapY });
