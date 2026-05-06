@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import Home from './pages/homePage'
 import About from './pages/aboutPage'
-import DutyPage from './pages/dutyPage'
 import MainLayout from './pages/MainLayout'
 import { NewsProvider } from './context/NewsContext'
 import NewsDetailPage from './pages/NewsDetailePage'
@@ -10,6 +9,7 @@ import ScrollToTop from './pages/ScrollToTop'
 import Advertise from './pages/Advertise'
 import AdvertiseDetail from './pages/Advertisedetail'
 import News from './pages/News'
+import CommentForm from './components/CommentForm'
 
 function App() {
   return (
@@ -21,12 +21,12 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path='/' element={<Home />} />
             <Route path='/about' element={<About />} />
-            <Route path='/duty' element={<DutyPage />}></Route>
             <Route path='/news' element={<News />}></Route>
             <Route path='/news/:id' element={<NewsDetailPage />} />
             <Route path='/department/:id' element={<DepartmentDetailPage />} />
             <Route path='/advertise' element={<Advertise />}></Route>
             <Route path='/advertise/:id' element={<AdvertiseDetail />} />
+            <Route path='/commentform' element={<CommentForm/>}></Route>
           </Route>
 
           {/* Route สำหรับหน้าที่ไม่อยากมีทั้ง Nav , Slider */}

@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom'; // 1. Import useLocation
 import Nav from '../pages/Nav';
 import Slider from '../pages/Slider';
 import Footer from './Footer';
+import CommentForm from '../components/CommentForm';
 
 const slides = [
   { id: 1, image: '/banner.png', title: 'Slide 1' },
@@ -42,6 +43,8 @@ const MainLayout = () => {
         <Outlet /> 
       </main>
       <Footer />
+
+      <CommentForm />
     </div>
   );
 };
