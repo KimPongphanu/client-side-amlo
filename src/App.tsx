@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Home from './pages/homePage'
 import About from './pages/aboutPage'
+import DashboardPage from './pages/DashboardPage'
+import ShowImagePage from './pages/ShowImagePage'
 
 function App() {
   return (
@@ -9,6 +11,8 @@ function App() {
       <Routes>
         <Route path='/' element={<Home />} />
         <Route path='/about' element={<About />} />
+        <Route path='/dashboard' element={<DashboardPage />} />
+        <Route path='/image' element={<ShowImagePage />} />
       </Routes>
     </BrowserRouter>
   )
