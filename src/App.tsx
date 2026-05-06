@@ -10,6 +10,7 @@ import Advertise from './pages/Advertise'
 import AdvertiseDetail from './pages/Advertisedetail'
 import News from './pages/News'
 import CommentForm from './components/CommentForm'
+import ContactForm from './components/ContactForm'
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path='/advertise' element={<Advertise />}></Route>
             <Route path='/advertise/:id' element={<AdvertiseDetail />} />
             <Route path='/commentform' element={<CommentForm/>}></Route>
+            <Route path='/contactform' element={<ContactForm/>}></Route>
           </Route>
 
           {/* Route สำหรับหน้าที่ไม่อยากมีทั้ง Nav , Slider */}

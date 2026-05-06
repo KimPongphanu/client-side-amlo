@@ -38,7 +38,7 @@ const ClearIcon = () => (
 
 const ContactForm = () => {
   const cardStyle =
-    'w-full max-w-[600px] bg-white rounded-2xl m-10 p-8 border border-gray-200 shadow-lg mx-auto'
+    'w-full max-w-[600px] bg-white rounded-2xl m-10 p-8 border border-gray-200 shadow-lg mx-auto mt-25'
   const requireStyle =
     'after:ml-[3px] after:text-red-500 after:content-["*"] text-sm font-medium text-gray-700'
 

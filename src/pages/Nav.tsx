@@ -72,7 +72,7 @@ export default function Nav() {
                 เกี่ยวกับ <span className="ml-1 text-[10px]">▼</span>
               </div>
               <div className="h-full flex items-center cursor-pointer hover:text-blue-600 transition-colors">
-                <Link to="#">ติดต่อ</Link>
+                <Link to="/contactform">ติดต่อ</Link>
               </div>
             </div>
           </div>
@@ -186,7 +186,7 @@ export default function Nav() {
 
             <li className="border-b border-slate-100 pb-4">
               {/* 🌟 ยัด onClick ใส่ลิงก์ */}
-              <Link to="#" onClick={handleCloseMobileMenu}>ติดต่อ</Link>
+              <Link to="/contactform" onClick={handleCloseMobileMenu}>ติดต่อ</Link>
             </li>
 
             <li className="pt-4">

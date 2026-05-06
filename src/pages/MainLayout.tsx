@@ -17,7 +17,7 @@ const MainLayout = () => {
   const location = useLocation(); 
 
   // แนะนำให้พิมพ์ตัวเล็กทั้งหมดใน Array นี้เลยครับ
-  const hideOnPaths = ['/newsdetailepage', '/agency1', '/news', '/department' , '/advertise'];
+  const hideOnPaths = ['/newsdetailepage', '/agency1', '/news', '/department' , '/advertise' , '/contactform'];
 
   // จับ URL ปัจจุบันมาแปลงเป็นตัวเล็กก่อน (ป้องกันบั๊ก /News กับ /news)
   const currentPath = location.pathname.toLowerCase();
