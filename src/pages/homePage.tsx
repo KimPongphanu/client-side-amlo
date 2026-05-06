@@ -45,13 +45,13 @@ const HomePage = () => {
       ) : (
         <>
           {/* ========================================= */}
-          {/* 📰 SECTION 1: ข่าวประชาสัมพันธ์ (News) */}
+          {/* 📰 SECTION 1: ข่าวประชาสัมพันธ์ (Advertise) */}
           {/* ========================================= */}
           <div className="pt-8">
             {/* 🌟 สร้าง Flexbox ให้ Header กับ ปุ่มดูทั้งหมด */}
             <div className="flex justify-between items-end mb-6 md:mb-8">
               <h1 className='text-3xl md:text-4xl font-bold text-slate-800'>ข่าวประชาสัมพันธ์</h1>
-              <Link to="/news" className="text-sm md:text-base font-medium text-blue-600 hover:text-blue-800 flex items-center transition-colors">
+              <Link to="/advertise" className="text-sm md:text-base font-medium text-blue-600 hover:text-blue-800 flex items-center transition-colors">
                 ดูทั้งหมด <span className="ml-1 text-lg leading-none">›</span>
               </Link>
             </div>
@@ -65,14 +65,14 @@ const HomePage = () => {
           </div>
 
           {/* ========================================= */}
-          {/* 📢 SECTION 2: กิจกรรม (Advertise/PR) */}
+          {/* 📢 SECTION 2: กิจกรรม (News/PR) */}
           {/* ========================================= */}
           {prList && prList.length > 0 && (
             <div className="mt-12 md:mt-16">
               {/* 🌟 สร้าง Flexbox ให้ Header กับ ปุ่มดูทั้งหมด */}
               <div className="flex justify-between items-end mb-6 md:mb-8">
                 <h1 className='text-3xl md:text-4xl font-bold text-slate-800'>กิจกรรมและประกาศ</h1>
-                <Link to="/advertise" className="text-sm md:text-base font-medium text-blue-600 hover:text-blue-800 flex items-center transition-colors">
+                <Link to="/news" className="text-sm md:text-base font-medium text-blue-600 hover:text-blue-800 flex items-center transition-colors">
                   ดูทั้งหมด <span className="ml-1 text-lg leading-none">›</span>
                 </Link>
               </div>
