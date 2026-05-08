@@ -33,7 +33,7 @@ const HomePage = () => {
     return <div className="p-8 text-red-500 text-2xl font-bold">Error : ไม่พบ Context</div>
   }
 
-  const { newsList, departmentList, isLoading } = context;
+  const { newsList, prList, departmentList, isLoading } = context;
 
   return (
   <div className="bg-slate-50 min-h-screen pt-0 pb-10 px-4 md:px-8 w-full">
@@ -68,9 +68,9 @@ const HomePage = () => {
           {/* ========================================= */}
           {/* 📢 SECTION 2: กิจกรรม (News/PR) */}
           {/* ========================================= */}
-          {/* {prList && prList.length > 0 && (
+          {prList && prList.length > 0 && (
             <div className="mt-12 md:mt-16">
-
+              {/* 🌟 สร้าง Flexbox ให้ Header กับ ปุ่มดูทั้งหมด */}
               <div className="flex justify-between items-end mb-6 md:mb-8">
                 <h1 className='text-3xl md:text-4xl font-bold text-slate-800'>กิจกรรมและประกาศ</h1>
                 <Link to="/news" className="text-sm md:text-base font-medium text-blue-600 hover:text-blue-800 flex items-center transition-colors">
@@ -79,13 +79,13 @@ const HomePage = () => {
               </div>
 
               <div className="w-full border-2 border-gray-200 p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm hide-scrollbar">
-
+                {/* 🌟 ใช้ .slice(0, 5) จำกัดโชว์แค่ 5 ข่าวล่าสุด */}
                 {prList.slice(0, 5).map((pr) => (
                   <ArticleCard key={pr.id} item={pr} basePath="news" />
                 ))}
               </div>
             </div>
-          )} */}
+          )}
 
           {/* ========================================= */}
           {/* 🏢 SECTION 3: หน่วยงาน (Departments) */}
