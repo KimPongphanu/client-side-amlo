@@ -1,4 +1,3 @@
-import React from 'react'
 import { FaEvernote } from 'react-icons/fa'
 const AppBar = () => {
   return (
