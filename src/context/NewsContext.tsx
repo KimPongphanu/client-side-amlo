@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useState, useEffect, type ReactNode , useMemo} from 'react';
 import type { NewsItem, DepartmentItem, NewsContextType } from '../type';
 
 // ==========================================
@@ -167,11 +167,20 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    fetchMockData();
+      fetchMockData();
   }, []);
 
+  // 🌟 1. สร้างตะกร้าความจำ (จะสร้าง Object ใหม่ก็ต่อเมื่อ 4 ค่าด้านล่างมีการเปลี่ยนแปลงเท่านั้น)
+  const contextValue = useMemo(() => ({
+    newsList, 
+    prList, 
+    departmentList, 
+    isLoading
+  }), [newsList, prList, departmentList, isLoading]);
+  
+  // 🌟 2. ส่งตะกร้าที่แพ็คเสร็จแล้วเข้าไปแทนการเขียนปีกกา {} สดๆ
   return (
-    <NewsContext.Provider value={{ newsList, prList, departmentList, isLoading }}>
+    <NewsContext.Provider value={contextValue}>
       {children}
     </NewsContext.Provider>
   );

@@ -11,6 +11,7 @@ const ArticleCard = ({ item, basePath }: { item: NewsItem, basePath: string }) =
         src={item.image_src} 
         alt={item.title} 
         className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+        loading='lazy'
       />
     </div>
     <div className="p-4 md:p-5 flex flex-col flex-grow">
@@ -100,6 +101,7 @@ const HomePage = () => {
                         src={dept.cover_image} 
                         alt={dept.title} 
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                        loading='lazy'
                       />
                     </div>                
                     <h3 className='text-lg md:text-2xl font-bold mt-3 md:mt-4 text-slate-800 group-hover:text-blue-600'>

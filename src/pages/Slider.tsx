@@ -41,6 +41,7 @@ export default function Slider({ slides }: SliderProps) {
                 src={slide.image}
                 className='w-full h-full object-cover'
                 alt={`Slide ${slide.id}`}
+                loading='lazy'
               />
             </SwiperSlide>
           ))}
