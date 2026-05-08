@@ -6,21 +6,19 @@ const CommentForm = () => {
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const [position, setPosition] = useState({ x: 0, y: 0 })
+  // 🌟 จุดแก้ปัญหา UI Jump: ดึงขนาดจอมาใส่เป็นค่าเริ่มต้นตั้งแต่ตอนประกาศ State เลย!
+  const [position, setPosition] = useState({ 
+    x: window.innerWidth - 80, 
+    y: window.innerHeight - 80 
+  })
+  
   const [isDragging, setIsDragging] = useState(false)
   
-  // 🌟 เพิ่ม State เช็คแกน Y (top, bottom) ควบคู่กับแกน X (left, right)
+  // เช็คแกน Y (top, bottom) ควบคู่กับแกน X (left, right)
   const [snapSide, setSnapSide] = useState('right') 
   const [snapVertical, setSnapVertical] = useState('bottom') 
   
   const dragInfo = useRef({ startX: 0, startY: 0, isMoved: false })
-
-  useEffect(() => {
-    setPosition({
-      x: window.innerWidth - 80,
-      y: window.innerHeight - 80,
-    })
-  }, [])
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (isOpen) return; 
@@ -42,6 +40,44 @@ const CommentForm = () => {
     });
   }
 
+  // 🌟 อัปเกรด useEffect: ให้มันรู้ว่าตอนนี้ปุ่มเกาะขอบไหนอยู่ จะได้ขยายจอตามถูกฝั่ง
+  useEffect(() => {
+    const handleResize = () => {
+      setPosition((prevPos) => {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        const iconSize = 56; 
+
+        let newX = prevPos.x;
+        let newY = prevPos.y;
+
+        // ลอจิกใหม่: ถ้ายูสเซอร์เคยลากไปเกาะขวา ก็จับมันย้ายไปขอบขวาสุดของจอใหม่เสมอ!
+        if (snapSide === 'right') {
+          newX = screenWidth - iconSize - 24;
+        } 
+        // ถ้าเคยเกาะซ้าย ก็ให้มันอยู่ที่ 24px เสมอ
+        else if (snapSide === 'left') {
+          newX = 24;
+        }
+
+        // กันทะลุล่าง
+        if (newY > screenHeight - iconSize - 24) {
+          newY = screenHeight - iconSize - 24;
+        }
+        // กันทะลุบน (Nav)
+        if (newY < 88) {
+          newY = 88;
+        }
+
+        return { x: newX, y: newY };
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+    
+  }, [snapSide]); // 🌟 สำคัญมาก: ดึงค่า snapSide ล่าสุดมาใช้คำนวณ
+
   const handlePointerUp = (e: React.PointerEvent) => {
     if (!isDragging) return;
     setIsDragging(false);
@@ -54,7 +90,7 @@ const CommentForm = () => {
     let snapX = position.x;
     let snapY = position.y;
 
-    // 🌟 เช็คแกน X (ซ้าย/ขวา)
+    // เช็คแกน X (ซ้าย/ขวา)
     if (position.x + iconSize / 2 < screenWidth / 2) {
       snapX = 24; 
       setSnapSide('left');
@@ -63,13 +99,14 @@ const CommentForm = () => {
       setSnapSide('right');
     }
 
-    // 🌟 เช็คแกน Y (บน/ล่าง)
+    // เช็คแกน Y (บน/ล่าง)
     if (position.y + iconSize / 2 < screenHeight / 2) {
-      setSnapVertical('top'); // ถ้าอยู่ครึ่งบนของจอ
+      setSnapVertical('top'); 
     } else {
-      setSnapVertical('bottom'); // ถ้าอยู่ครึ่งล่างของจอ
+      setSnapVertical('bottom'); 
     }
 
+    // จุดแก้ปัญหาทะลุขอบ: 64 คือความสูง Nav (h-16) + 24 (Margin) รวมเป็น 88px
     if (snapY < 88) snapY = 88;
     if (snapY > screenHeight - iconSize - 24) snapY = screenHeight - iconSize - 24;
 
@@ -109,12 +146,12 @@ const CommentForm = () => {
     }
   }
 
-  // 🌟 ฟังก์ชันคำนวณ Class ฝั่ง Tailwind แบบครอบคลุม 4 มุมจอ
+  // ฟังก์ชันคำนวณ Class ฝั่ง Tailwind แบบครอบคลุม 4 มุมจอ
   const getFormPlacementClass = () => {
     if (snapVertical === 'top' && snapSide === 'left') return 'top-0 left-0 origin-top-left';
     if (snapVertical === 'top' && snapSide === 'right') return 'top-0 right-0 origin-top-right';
     if (snapVertical === 'bottom' && snapSide === 'left') return 'bottom-0 left-0 origin-bottom-left';
-    return 'bottom-0 right-0 origin-bottom-right'; // ค่าเริ่มต้น: ล่างขวา
+    return 'bottom-0 right-0 origin-bottom-right'; 
   };
 
   return (
@@ -144,7 +181,6 @@ const CommentForm = () => {
           </button>
         )}
 
-        {/* 🌟 ดึง Class จากฟังก์ชันมาใช้เลย เพื่อให้แอนิเมชันกางออกแบบ Smart 4 ทิศทาง */}
         <div
           className={`absolute ${getFormPlacementClass()} transform transition-all duration-300 ease-out ${
             isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none hidden'
