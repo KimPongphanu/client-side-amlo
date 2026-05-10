@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom'; // 1. Import useLocation
 import Nav from '../pages/Nav';
 import Slider from '../pages/Slider';
 import Footer from './Footer';
+import CommentForm from '../components/CommentForm';
 
 const slides = [
   { id: 1, image: '/banner.png', title: 'Slide 1' },
@@ -16,7 +17,7 @@ const MainLayout = () => {
   const location = useLocation(); 
 
   // แนะนำให้พิมพ์ตัวเล็กทั้งหมดใน Array นี้เลยครับ
-  const hideOnPaths = ['/newsdetailepage', '/agency1', '/news', '/department' , '/advertise'];
+  const hideOnPaths = ['/newsdetailepage', '/agency1', '/news', '/department' , '/advertise' , '/contactform'];
 
   // จับ URL ปัจจุบันมาแปลงเป็นตัวเล็กก่อน (ป้องกันบั๊ก /News กับ /news)
   const currentPath = location.pathname.toLowerCase();
@@ -42,6 +43,8 @@ const MainLayout = () => {
         <Outlet /> 
       </main>
       <Footer />
+
+      <CommentForm />
     </div>
   );
 };

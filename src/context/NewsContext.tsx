@@ -1,41 +1,10 @@
-import { createContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useState, useEffect, type ReactNode , useMemo} from 'react';
+import type { NewsItem, DepartmentItem, NewsContextType } from '../type';
 
 // ==========================================
-// 1. กำหนดโครงสร้างข้อมูล (Type)
-// ==========================================
-export interface NewsItem { // export ออกไปด้วย เผื่อหน้า Detail ต้องใช้
-  id: number;
-  title: string;
-  date: string;
-  image_src: string;
-  description: string;
-  content?: string; // เพิ่ม content เข้ามา เผื่อหน้า Detail อยากอ่านแบบยาวๆ
-}
-
-export interface GalleryItem {
-  type: 'image' | 'video';
-  url: string; 
-}
-
-export interface DepartmentItem {
-  id: number;
-  title: string;
-  cover_image: string;
-  gallery: GalleryItem[]; 
-}
-
-interface NewsContextType {
-  newsList: NewsItem[];
-  prList: NewsItem[]; // 🌟 เพิ่ม Type สำหรับโฆษณา/ประกาศ (ใช้ Type เดียวกับ News ได้เลย)
-  departmentList: DepartmentItem[]; 
-  isLoading: boolean;
-}
-
-// ==========================================
-// 2. ข้อมูลจำลอง (Mock Database)
+// ข้อมูลจำลอง (Mock Database)
 // ==========================================
 
-// --- ข้อมูลข่าว (News) ---
 const MOCK_DB: NewsItem[] = [
   { 
     id: 1, 
@@ -81,15 +50,14 @@ const MOCK_DB: NewsItem[] = [
   }
 ];
 
-// 🌟 --- ข้อมูลประกาศ/โฆษณา (Advertise / PR) ---
 const MOCK_PR_DB: NewsItem[] = [
   {
     id: 1,
     title: "ประกาศรับสมัครบุคคลเพื่อเลือกสรรเป็นพนักงานราชการทั่วไป",
     date: "1 พฤษภาคม 2026",
-    image_src: "/amlo2.jpg", // ใช้รูปที่มีอยู่แล้วทดสอบไปก่อน
+    image_src: "/amlo2.jpg", 
     description: "สำนักงาน ปปง. มีความประสงค์จะรับสมัครบุคคลเพื่อจัดจ้างเป็นพนักงานราชการประเภททั่วไป ในตำแหน่งนักวิเคราะห์นโยบายและแผน",
-    content: "รายละเอียดฉบับเต็มของการรับสมัคร... (เนื้อหาจำลองสำหรับหน้า Detail)\nผู้ที่สนใจสามารถยื่นใบสมัครได้ตั้งแต่วันที่ 1-15 พฤษภาคม 2026"
+    content: "รายละเอียดฉบับเต็มของการรับสมัคร...\nผู้ที่สนใจสามารถยื่นใบสมัครได้ตั้งแต่วันที่ 1-15 พฤษภาคม 2026"
   },
   {
     id: 2,
@@ -133,7 +101,6 @@ const MOCK_PR_DB: NewsItem[] = [
   }
 ];
 
-// --- ข้อมูลหน่วยงาน (Departments) ---
 const MOCK_DEPARTMENTS_DB: DepartmentItem[] = [
   { 
     id: 1, 
@@ -178,35 +145,42 @@ const MOCK_DEPARTMENTS_DB: DepartmentItem[] = [
 ];
 
 // ==========================================
-// 3. สร้าง Context และ Provider
+// สร้าง Context และ Provider
 // ==========================================
 // eslint-disable-next-line react-refresh/only-export-components
 export const NewsContext = createContext<NewsContextType | null>(null);
 
 export const NewsProvider = ({ children }: { children: ReactNode }) => {
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
-  const [prList, setPrList] = useState<NewsItem[]>([]); // 🌟 เก็บ State ของประกาศ
+  const [prList, setPrList] = useState<NewsItem[]>([]); 
   const [departmentList, setDepartmentList] = useState<DepartmentItem[]>([]);
   
   const [isLoading, setIsLoading] = useState(true); 
 
   const fetchMockData = () => {
-    // จำลองการโหลดข้อมูล 1.5 วินาที
     setTimeout(() => {
       setNewsList(MOCK_DB); 
-      setPrList(MOCK_PR_DB); // 🌟 โหลดข้อมูลประกาศ
+      setPrList(MOCK_PR_DB); 
       setDepartmentList(MOCK_DEPARTMENTS_DB); 
       setIsLoading(false);  
     }, 1500); 
   };
 
   useEffect(() => {
-    fetchMockData();
+      fetchMockData();
   }, []);
 
+  // 🌟 1. สร้างตะกร้าความจำ (จะสร้าง Object ใหม่ก็ต่อเมื่อ 4 ค่าด้านล่างมีการเปลี่ยนแปลงเท่านั้น)
+  const contextValue = useMemo(() => ({
+    newsList, 
+    prList, 
+    departmentList, 
+    isLoading
+  }), [newsList, prList, departmentList, isLoading]);
+  
+  // 🌟 2. ส่งตะกร้าที่แพ็คเสร็จแล้วเข้าไปแทนการเขียนปีกกา {} สดๆ
   return (
-    // 🌟 ส่ง prList ออกไปให้ component อื่นๆ ใช้งานได้เลย
-    <NewsContext.Provider value={{ newsList, prList, departmentList, isLoading }}>
+    <NewsContext.Provider value={contextValue}>
       {children}
     </NewsContext.Provider>
   );
