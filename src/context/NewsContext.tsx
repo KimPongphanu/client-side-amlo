@@ -141,7 +141,7 @@ const MOCK_DEPARTMENTS_DB: DepartmentItem[] = [
     cover_image: "/amlo1.jpg", 
     gallery: [
       { type: 'image', url: '/amlo1.jpg' },
-      { type: 'video', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { type: 'video', url: 'https://youtu.be/-Wrv-l3bk8A?si=DyX5oG_E3m0c9oRt' },
       { type: 'image', url: '/amlo2.jpg' },
     ] 
   },
@@ -151,7 +151,7 @@ const MOCK_DEPARTMENTS_DB: DepartmentItem[] = [
     cover_image: "/amlo3.jpg", 
     gallery: [
       { type: 'image', url: '/amlo1.jpg' },
-      { type: 'video', url: 'https://youtu.be/SYHR25vQicU?si=7vlRnIE_vGYRc_3M' }, 
+      { type: 'video', url: 'https://youtu.be/-Wrv-l3bk8A?si=DyX5oG_E3m0c9oRt' }, 
       { type: 'image', url: '/amlo2.jpg' },
     ] 
   },
@@ -161,7 +161,7 @@ const MOCK_DEPARTMENTS_DB: DepartmentItem[] = [
     cover_image: "/amlo2.jpg", 
     gallery: [
       { type: 'image', url: '/amlo1.jpg' },
-      { type: 'video', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { type: 'video', url: 'https://youtu.be/-Wrv-l3bk8A?si=DyX5oG_E3m0c9oRt' },
       { type: 'image', url: '/amlo2.jpg' },
     ] 
   },
@@ -171,7 +171,7 @@ const MOCK_DEPARTMENTS_DB: DepartmentItem[] = [
     cover_image: "/amlo4.jpg", 
     gallery: [
       { type: 'image', url: '/amlo1.jpg' },
-      { type: 'video', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { type: 'video', url: 'https://youtu.be/-Wrv-l3bk8A?si=DyX5oG_E3m0c9oRt' },
       { type: 'image', url: '/amlo2.jpg' },
     ] 
   },
