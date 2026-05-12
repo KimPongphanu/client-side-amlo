@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { NewsContext } from '../context/NewsContext'; // 🌟 เช็ค path ตรงนี้ให้ตรงกับโปรเจกต์น้องนะ
+import DOMPurify from 'dompurify'; // 🌟 1. Import DOMPurify เข้ามา
 
 const AdvertiseDetail = () => {
   const { id } = useParams(); // ดึง ID จาก URL
@@ -63,10 +64,13 @@ const AdvertiseDetail = () => {
 
           <hr className="border-slate-100 mb-8" />
 
-          {/* เนื้อหาเต็ม (ใช้ whitespace-pre-line เพื่อให้มันขึ้นบรรทัดใหม่ตามที่เราเคาะ Enter ไว้ใน Mock Data) */}
-          <div className="text-slate-600 leading-relaxed text-base md:text-lg whitespace-pre-line">
-            {advertiseData.content}
-          </div>
+          {/* 🌟 2. ใช้ dangerouslySetInnerHTML + DOMPurify ตรงจุดที่ต้องการให้แสดง HTML */}
+          <div 
+            className="prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg"
+            dangerouslySetInnerHTML={{ 
+              __html: DOMPurify.sanitize(advertiseData.content || advertiseData.description) 
+            }}
+          />
         </div>
 
       </div>

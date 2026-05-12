@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef, useCallback, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { NewsContext } from '../context/NewsContext';
+import DOMPurify from 'dompurify';
 
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
@@ -74,11 +75,10 @@ const YouTubeSlide = ({ url, isActive, onVideoEnded }: { url: string, isActive: 
   const playingRef   = useRef(false); 
 
   const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(false); // 🌟 บังคับเริ่มต้นแบบ "มีเสียง" เสมอ
+  const [isMuted, setIsMuted] = useState(false); 
 
   const videoId = getYouTubeId(url);
 
-  // คอยอัปเดต onVideoEnded ล่าสุด
   useEffect(() => { onEndedRef.current = onVideoEnded; }, [onVideoEnded]);
 
   const clearFallback = () => {
@@ -92,11 +92,9 @@ const YouTubeSlide = ({ url, isActive, onVideoEnded }: { url: string, isActive: 
     }, FALLBACK_MS);
   }, []);
   
-  // 🌟 Effect: ทำงานทุกครั้งที่ isActive เปลี่ยนแปลง (รวมร่างโค้ดทำลายทิ้งของนายมาไว้ที่นี่!)
   useEffect(() => {
     if (!videoId || !containerRef.current) return;
 
-    // 🌟 ถ้าสไลด์เลื่อนหนี (isActive = false) ให้ "ฆ่าทิ้ง" เลย ป้องกันเสียงผีหลอกตอนโคลนนิ่ง
     if (!isActive) {
       clearFallback();
       try { playerRef.current?.destroy(); } catch { /* ignore */ }
@@ -105,7 +103,6 @@ const YouTubeSlide = ({ url, isActive, onVideoEnded }: { url: string, isActive: 
       return;
     }
 
-    // 🌟 ถ้าสไลด์มาถึง (isActive = true) ให้สร้างใหม่เสมอ จะได้เป็น "Loop แรก" ตลอดไป!
     let cancelled = false;
     startFallback(); 
 
@@ -121,8 +118,8 @@ const YouTubeSlide = ({ url, isActive, onVideoEnded }: { url: string, isActive: 
         width: '100%',
         height: '100%',
         playerVars: {
-          autoplay: 1,         // 🌟 บังคับออโต้
-          mute: 0,             // 🌟 บังคับมีเสียง
+          autoplay: 1,         
+          mute: 0,             
           controls: 0,         
           modestbranding: 1,   
           rel: 0,              
@@ -135,9 +132,9 @@ const YouTubeSlide = ({ url, isActive, onVideoEnded }: { url: string, isActive: 
         events: {
           onReady: (e: { target: YouTubePlayer }) => {
             if (cancelled) return;
-            e.target.unMute();       // 🌟 ย้ำว่าห้าม Mute
-            e.target.setVolume(50);  // 🌟 ตั้งระดับเสียงมาตรฐานที่ 50%
-            e.target.playVideo();    // 🌟 สั่งเล่นทันทีที่โหลดเสร็จ
+            e.target.unMute();       
+            e.target.setVolume(50);  
+            e.target.playVideo();    
           },
           onStateChange: (e: { data: number }) => {
             if (cancelled) return;
@@ -171,7 +168,6 @@ const YouTubeSlide = ({ url, isActive, onVideoEnded }: { url: string, isActive: 
     };
   }, [isActive, videoId, startFallback]); 
 
-  // Cleanup ตอนปิด component
   useEffect(() => () => {
     clearFallback();
     try { playerRef.current?.destroy(); } catch { /* ignore */ }
@@ -191,7 +187,7 @@ const YouTubeSlide = ({ url, isActive, onVideoEnded }: { url: string, isActive: 
     if (!playerRef.current) return;
     if (isMuted) {
       playerRef.current.unMute();
-      playerRef.current.setVolume(50); // กลับมาที่ 50%
+      playerRef.current.setVolume(50); 
       setIsMuted(false);
     } else {
       playerRef.current.mute();
@@ -252,6 +248,7 @@ const YouTubeSlide = ({ url, isActive, onVideoEnded }: { url: string, isActive: 
 // ════════════════════════════════════════════════════════════
 const DepartmentDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const context = useContext(NewsContext);
   const { departmentList } = context || {};
   const department = departmentList?.find((dept) => dept.id === Number(id));
@@ -268,7 +265,7 @@ const DepartmentDetailPage = () => {
     if (!item) return;
 
     if (item.type === 'video') {
-      swiper.autoplay.stop(); // 🌟 ปิด Timer ของ Swiper เด็ดขาด ให้วิดีโอมันคุมการเลื่อนแทน
+      swiper.autoplay.stop(); 
     } else {
       swiper.autoplay.start(); 
     }
@@ -277,7 +274,7 @@ const DepartmentDetailPage = () => {
   const handleAutoplayStart = useCallback((swiper: SwiperType) => {
     const item = department?.gallery?.[swiper.realIndex];
     if (item?.type === 'video') {
-      swiper.autoplay.stop(); // 🌟 กันเหนียว ถ้ายูสเซอร์ปัดกลับมาวิดีโอ ต้องสั่งปิด Timer อีกรอบ
+      swiper.autoplay.stop(); 
     }
   }, [department]);
 
@@ -298,64 +295,83 @@ const DepartmentDetailPage = () => {
   }
 
   return (
-    <div className="pt-32 pb-20 px-8 max-w-5xl mx-auto min-h-screen">
-      <div className="relative flex items-center mb-10 px-4">
-        <Link to="/" className="z-10">
-          <img src="/back.png" alt="ย้อนกลับ" className="w-10 h-10 hover:scale-110 transition-transform cursor-pointer" />
-        </Link>
-        <h1 className="absolute left-1/2 -translate-x-1/2 text-4xl font-bold text-slate-800 text-center w-max">
-          {department.title}
-        </h1>
-      </div>
-
-      <div className="w-full h-[400px] md:h-[500px] mb-12 rounded-3xl overflow-hidden shadow-2xl bg-black">
-        <Swiper
-          modules={[Navigation, Pagination, Autoplay]}
-          navigation
-          pagination={{ clickable: true }}
-          loop={true}
-          allowTouchMove={true}
-          autoplay={{ 
-            delay: 5000, 
-            disableOnInteraction: false 
-          }} 
-          onSwiper={handleSwiperInit}
-          onSlideChange={handleSlideChange}
-          onAutoplayStart={handleAutoplayStart} 
-          className="w-full h-full"
-        >
-          {department.gallery.map((item, index) => (
-            <SwiperSlide key={index} className="w-full h-full flex justify-center items-center bg-black">
-              {({ isActive }) => (
-                item.type === 'video' ? (
-                  <YouTubeSlide
-                    url={item.url}
-                    isActive={isActive}
-                    onVideoEnded={handleVideoEnded}
-                  />
-                ) : (
-                  <img
-                    src={item.url}
-                    alt={`ภาพประกอบ ${department.title} - ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                )
-              )}
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      </div>
-
-      <div className="bg-white p-10 rounded-3xl shadow-sm border border-gray-100">
-        <h2 className="text-2xl font-semibold mb-6 text-blue-700 border-b pb-4">
-          โครงสร้างและหน้าที่รับผิดชอบ
-        </h2>
-        <div className="text-lg text-gray-700 leading-relaxed whitespace-pre-line">
-          ยินดีต้อนรับเข้าสู่ <strong>{department.title}</strong>
-          <br /><br /> 
-          ในอนาคตคุณสามารถนำเนื้อหา เช่น หน้าที่รับผิดชอบ, เบอร์ติดต่อส่วนงาน,
-          หรือโครงสร้างบุคลากร จาก Database มาแสดงผลในกล่องนี้ได้เลยครับ!
+    <div className="bg-slate-50 min-h-screen pt-24 pb-16 px-4 md:px-8">
+      <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-md overflow-hidden border border-slate-200">
+        
+        {/* ส่วน Slider / Cover (อยู่ด้านบนสุดของ Card) */}
+        <div className="w-full h-[250px] md:h-[450px] bg-black">
+          <Swiper
+            modules={[Navigation, Pagination, Autoplay]}
+            navigation
+            pagination={{ clickable: true }}
+            loop={true}
+            allowTouchMove={true}
+            autoplay={{ 
+              delay: 5000, 
+              disableOnInteraction: false 
+            }} 
+            onSwiper={handleSwiperInit}
+            onSlideChange={handleSlideChange}
+            onAutoplayStart={handleAutoplayStart} 
+            className="w-full h-full"
+          >
+            {department.gallery.map((item, index) => (
+              <SwiperSlide key={index} className="w-full h-full flex justify-center items-center bg-black">
+                {({ isActive }) => (
+                  item.type === 'video' ? (
+                    <YouTubeSlide
+                      url={item.url}
+                      isActive={isActive}
+                      onVideoEnded={handleVideoEnded}
+                    />
+                  ) : (
+                    <img
+                      src={item.url}
+                      alt={`ภาพประกอบ ${department.title} - ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  )
+                )}
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </div>
+
+        {/* ส่วนเนื้อหา (เหมือนภาพเป๊ะๆ) */}
+        <div className="p-6 md:p-12">
+          {/* ปุ่มย้อนกลับ */}
+          <button 
+            onClick={() => navigate(-1)} 
+            className="text-md font-medium text-slate-500 hover:text-blue-600 mb-6 flex items-center transition-colors"
+          >
+            ❮ ย้อนกลับ
+          </button>
+
+          {/* ชื่อหน่วยงาน */}
+          <h1 className="text-2xl md:text-4xl font-bold text-slate-800 mb-6 leading-snug">
+            {department.title}
+          </h1>
+
+          {/* เส้นคั่น */}
+          <hr className="border-slate-100 mb-8" />
+
+          {/* เนื้อหา HTML / Description */}
+          {department.content ? (
+            <div 
+              className="prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg"
+              dangerouslySetInnerHTML={{ 
+                __html: DOMPurify.sanitize(department.content) 
+              }}
+            />
+          ) : (
+            <div className="text-lg text-gray-700 leading-relaxed whitespace-pre-line">
+              ยินดีต้อนรับเข้าสู่ <strong>{department.title}</strong>
+              <br /><br /> 
+              ไม่มีข้อมูลโครงสร้างและหน้าที่รับผิดชอบในขณะนี้
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
