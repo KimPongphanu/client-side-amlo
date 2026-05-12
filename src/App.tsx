@@ -12,6 +12,8 @@ const DepartmentDetailPage = lazy (() => import ('./pages/DepartDetailPage'))
 const Advertise = lazy (() => import ('./pages/Advertise'))
 const AdvertiseDetail = lazy (() => import ('./pages/Advertisedetail'))
 const News = lazy (() => import ('./pages/News'))
+const BookGuidePage = lazy (() => import ('./pages/BookGuidePage'))
+
 const CommentForm = lazy (() => import ('./components/CommentForm'))
 const ContactForm = lazy (() => import ('./components/ContactForm'))
 
@@ -39,6 +41,7 @@ function App() {
               <Route path='/advertise/:id' element={<AdvertiseDetail />} />
               <Route path='/commentform' element={<CommentForm/>}></Route>
               <Route path='/contactform' element={<ContactForm/>}></Route>
+              <Route path='/bookguide' element = {<BookGuidePage/>}></Route>
             </Route>
 
             {/* Route สำหรับหน้าที่ไม่อยากมีทั้ง Nav , Slider */}

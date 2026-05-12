@@ -17,6 +17,7 @@ export interface DepartmentItem {
   title: string;
   cover_image: string;
   gallery: GalleryItem[]; 
+  content?: string; // 🌟 เพิ่ม content แบบ optional (มีหรือไม่มีก็ได้) สำหรับใส่ HTML
 }
 
 // export ตัวนี้ด้วย เพราะ Context ต้องใช้
