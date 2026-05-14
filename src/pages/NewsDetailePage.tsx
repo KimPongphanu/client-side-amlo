@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { NewsContext } from '../context/NewsContext';
 import DOMPurify from 'dompurify'; // 🌟 1. Import DOMPurify เข้ามา
+import Breadcrumb from '../components/Breadcrumb';
 
 const NewsDetailPage = () => {
   const { id } = useParams(); 
@@ -46,12 +47,7 @@ const NewsDetailPage = () => {
         </div>
 
         <div className="p-6 md:p-12">
-          <button 
-            onClick={() => navigate(-1)} 
-            className="text-sm font-medium text-slate-500 hover:text-blue-600 mb-6 flex items-center transition-colors"
-          >
-            ❮ ย้อนกลับ
-          </button>
+          <Breadcrumb title={news.title} />
 
           <p className="text-sm text-blue-600 font-bold mb-3">{news.date}</p>
           <h1 className="text-2xl md:text-4xl font-bold text-slate-800 mb-6 leading-snug">

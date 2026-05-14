@@ -1,11 +1,11 @@
 import { useContext } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { NewsContext } from '../context/NewsContext'; // 🌟 เช็ค path ตรงนี้ให้ตรงกับโปรเจกต์น้องนะ
 import DOMPurify from 'dompurify'; // 🌟 1. Import DOMPurify เข้ามา
+import Breadcrumb from '../components/Breadcrumb';
 
 const AdvertiseDetail = () => {
   const { id } = useParams(); // ดึง ID จาก URL
-  const navigate = useNavigate();
   const context = useContext(NewsContext);
 
   if (!context) return <div className="p-8 text-red-500">Error: ไม่พบ Context</div>;
@@ -49,13 +49,8 @@ const AdvertiseDetail = () => {
 
         {/* ส่วนเนื้อหา */}
         <div className="p-6 md:p-12">
-          {/* ปุ่มย้อนกลับ */}
-          <button 
-            onClick={() => navigate(-1)} 
-            className="text-sm font-medium text-slate-500 hover:text-blue-600 mb-6 flex items-center transition-colors"
-          >
-            ❮ ย้อนกลับ
-          </button>
+          {/* 🌟 ส่วนที่เพิ่มเข้ามา: นำ Breadcrumb มาวางไว้บนสุดของเนื้อหา */}
+          <Breadcrumb title={advertiseData.title} />
 
           <p className="text-sm text-blue-600 font-bold mb-3">{advertiseData.date}</p>
           <h1 className="text-2xl md:text-4xl font-bold text-slate-800 mb-6 leading-snug">

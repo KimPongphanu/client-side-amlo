@@ -1,7 +1,8 @@
 import { useContext, useEffect, useRef, useCallback, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { NewsContext } from '../context/NewsContext';
 import DOMPurify from 'dompurify';
+import Breadcrumb from '../components/Breadcrumb';
 
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
@@ -248,7 +249,6 @@ const YouTubeSlide = ({ url, isActive, onVideoEnded }: { url: string, isActive: 
 // ════════════════════════════════════════════════════════════
 const DepartmentDetailPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const context = useContext(NewsContext);
   const { departmentList } = context || {};
   const department = departmentList?.find((dept) => dept.id === Number(id));
@@ -339,13 +339,9 @@ const DepartmentDetailPage = () => {
 
         {/* ส่วนเนื้อหา (เหมือนภาพเป๊ะๆ) */}
         <div className="p-6 md:p-12">
-          {/* ปุ่มย้อนกลับ */}
-          <button 
-            onClick={() => navigate(-1)} 
-            className="text-md font-medium text-slate-500 hover:text-blue-600 mb-6 flex items-center transition-colors"
-          >
-            ❮ ย้อนกลับ
-          </button>
+
+          {/* 🌟 ส่วนที่เพิ่มเข้ามา: นำ Breadcrumb มาวางไว้บนสุดของเนื้อหา */}
+          <Breadcrumb title={department.title} />
 
           {/* ชื่อหน่วยงาน */}
           <h1 className="text-2xl md:text-4xl font-bold text-slate-800 mb-6 leading-snug">
