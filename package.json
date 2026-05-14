@@ -12,6 +12,8 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
     "dompurify": "^3.4.2",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "lucide-react": "^1.14.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -20,8 +22,10 @@
     "react-player": "^3.4.0",
     "react-quill-new": "^3.8.3",
     "react-router-dom": "^7.14.0",
+    "sweetalert2": "^11.26.24",
     "swiper": "^12.1.4",
-    "tailwindcss": "^4.2.2"
+    "tailwindcss": "^4.2.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
