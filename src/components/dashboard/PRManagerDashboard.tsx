@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Swal from 'sweetalert2'
 
 // ==========================================
@@ -73,7 +73,6 @@ const MiniAdvertisePreview = ({ data }: { data: NewsItem | null }) => {
 // 4. Main Component
 // ==========================================
 export default function PRManagerDashboard() {
-  const [prList, setPrList] = useState<NewsItem[]>([])
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -84,10 +83,8 @@ export default function PRManagerDashboard() {
   // 🌟 State สำหรับ Mobile (สลับหน้า Form <-> Preview)
   const [mobileView, setMobileView] = useState<'form' | 'preview'>('form')
 
-  // --- Initial Load ---
-  useEffect(() => {
-    setPrList(generateMockPR())
-  }, [])
+  // 🌟 ใส่ () => เข้าไปใน useState ได้เลย ระบบจะรันฟังก์ชันนี้แค่ครั้งแรกที่โหลดหน้าจอ
+  const [prList, setPrList] = useState<NewsItem[]>(() => generateMockPR())
 
   const shownCount = prList.filter((item) => item.isShow).length
 

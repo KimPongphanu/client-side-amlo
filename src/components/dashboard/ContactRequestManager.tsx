@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import Swal from 'sweetalert2'
 
 // ==========================================
@@ -17,10 +17,10 @@ export interface ContactFormData {
 }
 
 // Interface สำหรับการจัดกลุ่ม
-interface GroupedContact {
-  key: string // email หรือ tel
-  items: ContactFormData[]
-}
+// interface GroupedContact {
+//   key: string // email หรือ tel
+//   items: ContactFormData[]
+// }
 
 // ==========================================
 // 2. Mock Data
@@ -140,7 +140,7 @@ export default function ContactRequestManager() {
       if (result.isConfirmed) {
         setData((prev) =>
           prev.map((item) =>
-            item.id === id ? { ...item, status: newStatus as any } : item,
+            item.id === id ? { ...item, status: newStatus as 'ตอบกลับแล้ว' | 'ยังไม่ตอบกลับ' } : item,
           ),
         )
         Swal.fire({

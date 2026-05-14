@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import ReviewManager from '../components/dashboard/ReviewManager'
 import ContactRequestManager from '../components/dashboard/ContactRequestManager'
 import PRManagerDashboard from '../components/dashboard/PRManagerDashboard'
@@ -85,11 +86,13 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
           </svg>
         </button>
 
+        <Link to = '/'>
         <img
           src='https://www.amlo.go.th/amlo-intranet/images/banners/logo-m.jpg'
           alt='AMLO Logo'
           className='h-12 w-auto object-contain'
         />
+        </Link>
 
         <hr className='hidden md:block w-[2px] h-10 bg-slate-300 border-0' />
 

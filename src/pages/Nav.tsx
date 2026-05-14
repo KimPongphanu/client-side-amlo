@@ -113,6 +113,14 @@ export default function Nav() {
             </div>
             
             <div className="border-l border-slate-100 pl-8">
+              <h3 className="text-slate-400 font-bold mb-4 text-xs tracking-wider uppercase">ประชาสัมพันธ์/กิจกรรม</h3>
+              <ul className="space-y-3 text-sm text-slate-700 font-medium">
+                <li><Link to="/advertise" className="hover:text-blue-600 transition-colors">ประชาสัมพันธ์</Link></li>
+                <li><Link to="/news" className="hover:text-blue-600 transition-colors">กิจกรรม</Link></li>
+              </ul>
+            </div>
+
+            <div className="border-l border-slate-100 pl-8">
               <h3 className="text-slate-400 font-bold mb-4 text-xs tracking-wider uppercase">โครงสร้างหน่วยงาน</h3>
               <ul className="space-y-3 text-sm text-slate-700 font-medium">
                 {departmentList.map((dept) => (
@@ -122,14 +130,6 @@ export default function Nav() {
                     </Link>
                   </li>
                 ))}
-              </ul>
-            </div>
-            
-            <div className="border-l border-slate-100 pl-8">
-              <h3 className="text-slate-400 font-bold mb-4 text-xs tracking-wider uppercase">ประชาสัมพันธ์/กิจกรรม</h3>
-              <ul className="space-y-3 text-sm text-slate-700 font-medium">
-                <li><Link to="/advertise" className="hover:text-blue-600 transition-colors">ประชาสัมพันธ์</Link></li>
-                <li><Link to="/news" className="hover:text-blue-600 transition-colors">กิจกรรม</Link></li>
               </ul>
             </div>
           </div>
