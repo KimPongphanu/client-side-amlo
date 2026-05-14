@@ -1,10 +1,28 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { NewsContext } from '../context/NewsContext';
-import type { NewsItem } from '../type'
+import type { NewsItem } from '../type';
+
+// 🌟 ฟังก์ชันจัดการวันที่ภาษาไทย
+const THAI_MONTHS = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+];
+
+const parseThaiDateToTimestamp = (dateStr: string) => {
+  if (!dateStr) return 0;
+  const parts = dateStr.split(' ');
+  if (parts.length === 3) {
+    const day = parseInt(parts[0]);
+    const month = THAI_MONTHS.indexOf(parts[1]);
+    const year = parseInt(parts[2]);
+    return new Date(year, month, day).getTime();
+  }
+  return new Date(dateStr).getTime();
+};
 
 // =========================================
-// 💀 SKELETON COMPONENTS (แสดงระหว่างรอโหลด)
+// 💀 SKELETON COMPONENTS 
 // =========================================
 const ArticleCardSkeleton = () => (
   <div className="shrink-0 w-[280px] md:w-[350px] bg-white border border-slate-100 rounded-xl md:rounded-2xl overflow-hidden shadow-sm flex flex-col animate-pulse">
@@ -31,12 +49,12 @@ const DepartmentSkeleton = () => (
 );
 
 // =========================================
-// 📄 ACTUAL COMPONENT (แสดงเมื่อมีข้อมูล)
+// 📄 ACTUAL COMPONENT 
 // =========================================
 const ArticleCard = ({ item, basePath }: { item: NewsItem, basePath: string }) => (
   <Link to={`/${basePath}/${item.id}`}>
-    <div className="shrink-0 w-[280px] md:w-[350px] bg-white border rounded-xl md:rounded-2xl overflow-hidden shadow-md flex flex-col hover:shadow-xl transition-shadow">
-      <div className="h-[180px] md:h-[200px] w-full overflow-hidden bg-slate-100">
+    <div className="shrink-0 w-[280px] md:w-[350px] bg-white border rounded-xl md:rounded-2xl overflow-hidden shadow-md flex flex-col hover:shadow-xl transition-shadow h-full">
+      <div className="h-[180px] md:h-[200px] w-full overflow-hidden bg-slate-100 shrink-0">
         <img 
           src={item.image_src} 
           alt={item.title} 
@@ -49,9 +67,9 @@ const ArticleCard = ({ item, basePath }: { item: NewsItem, basePath: string }) =
         <h3 className="text-base md:text-lg font-bold text-gray-800 line-clamp-2 mb-2">{item.title}</h3>
         <p className="text-xs md:text-sm text-gray-500 line-clamp-3 mb-4">{item.description}</p>
 
-        <Link to={`/${basePath}/${item.id}`} className="mt-auto text-left text-sm md:text-base text-blue-500 font-medium hover:text-blue-700 w-fit">
+        <span className="mt-auto text-left text-sm md:text-base text-blue-500 font-medium hover:text-blue-700 w-fit">
           อ่านเพิ่มเติม ➔
-        </Link>
+        </span>
       </div>
     </div>
   </Link>
@@ -66,13 +84,19 @@ const HomePage = () => {
 
   const { newsList, prList, departmentList, isLoading } = context;
 
+  // 🌟 เรียงข้อมูลจากใหม่ไปเก่า
+  const sortedAdvertiseList = newsList 
+    ? [...newsList].sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date))
+    : [];
+
+  const sortedNewsList = prList 
+    ? [...prList].sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date))
+    : [];
+
   return (
-  <div className="bg-slate-50 min-h-screen pt-0 pb-10 px-4 md:px-8 w-full">
-      
+    <div className="bg-slate-50 min-h-screen pt-0 pb-10 px-4 md:px-8 w-full">
       {isLoading ? (
-        // 🌟 SKELETON LAYOUT (แสดงตอนกำลังโหลด)
         <div className="w-full">
-          {/* Skeleton Section 1 */}
           <div className="pt-8">
             <div className="flex justify-between items-end mb-6 md:mb-8">
               <div className="h-8 md:h-10 bg-slate-200 rounded w-48 md:w-64 animate-pulse"></div>
@@ -82,7 +106,6 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Skeleton Section 2 */}
           <div className="mt-12 md:mt-16">
             <div className="flex justify-between items-end mb-6 md:mb-8">
               <div className="h-8 md:h-10 bg-slate-200 rounded w-56 md:w-72 animate-pulse"></div>
@@ -92,20 +115,15 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Skeleton Section 3 (Departments) */}
           <div className="mt-12 md:mt-16">
             <div className="h-8 md:h-10 bg-slate-200 rounded w-32 md:w-40 animate-pulse mb-6 md:mb-8"></div>
-            <div className="grid grid-cols-2 gap-y-8 gap-x-4 md:gap-y-12 md:gap-x-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-8 gap-x-4 md:gap-y-12 md:gap-x-8">
               {[1, 2, 3, 4].map((i) => <DepartmentSkeleton key={i} />)}
             </div>
           </div>
         </div>
       ) : (
-        // 🌟 DATA LAYOUT (แสดงข้อมูลจริง)
         <>
-          {/* ========================================= */}
-          {/* 📰 SECTION 1: ข่าวประชาสัมพันธ์ (Advertise) */}
-          {/* ========================================= */}
           <div className="pt-8">
             <div className="flex justify-between items-end mb-6 md:mb-8">
               <h1 className='text-3xl md:text-4xl font-bold text-slate-800'>ข่าวประชาสัมพันธ์</h1>
@@ -113,18 +131,14 @@ const HomePage = () => {
                 ดูทั้งหมด <span className="ml-1 text-lg leading-none">›</span>
               </Link>
             </div>
-
-            <div className="w-full border-2 border-gray-200 p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm hide-scrollbar">
-              {newsList?.slice(0, 5).map((news) => (
+            <div className="w-full border-2 border-gray-200 p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm hide-scrollbar items-stretch">
+              {sortedAdvertiseList.slice(0, 5).map((news) => (
                 <ArticleCard key={news.id} item={news} basePath="advertise" />
               ))}
             </div>
           </div>
 
-          {/* ========================================= */}
-          {/* 📢 SECTION 2: กิจกรรม (News/PR) */}
-          {/* ========================================= */}
-          {prList && prList.length > 0 && (
+          {sortedNewsList.length > 0 && (
             <div className="mt-12 md:mt-16">
               <div className="flex justify-between items-end mb-6 md:mb-8">
                 <h1 className='text-3xl md:text-4xl font-bold text-slate-800'>กิจกรรมและประกาศ</h1>
@@ -132,21 +146,17 @@ const HomePage = () => {
                   ดูทั้งหมด <span className="ml-1 text-lg leading-none">›</span>
                 </Link>
               </div>
-
-              <div className="w-full border-2 border-gray-200 p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm hide-scrollbar">
-                {prList.slice(0, 5).map((pr) => (
+              <div className="w-full border-2 border-gray-200 p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm hide-scrollbar items-stretch">
+                {sortedNewsList.slice(0, 5).map((pr) => (
                   <ArticleCard key={pr.id} item={pr} basePath="news" />
                 ))}
               </div>
             </div>
           )}
 
-          {/* ========================================= */}
-          {/* 🏢 SECTION 3: หน่วยงาน (Departments) */}
-          {/* ========================================= */}
           <div className="mt-12 md:mt-16">
             <h1 className='text-3xl md:text-4xl font-bold mb-6 md:mb-8 text-slate-800'>หน่วยงาน</h1>
-            <div className="grid grid-cols-2 gap-y-8 gap-x-4 md:gap-y-12 md:gap-x-8">
+            <div className="grid grid-cols-2 lg:grid-cols-2 gap-y-8 gap-x-4 md:gap-y-12 md:gap-x-8">
               {departmentList?.map((dept) => (
                 <div key={dept.id} className="flex justify-center">
                   <Link to={`/department/${dept.id}`} className="flex flex-col items-center group text-center w-fit"> 
@@ -168,8 +178,7 @@ const HomePage = () => {
           </div>
         </>
       )}
-
-  </div>
+    </div>
   );
 }
 

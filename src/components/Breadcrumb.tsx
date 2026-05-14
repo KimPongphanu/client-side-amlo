@@ -25,13 +25,13 @@ export default function Breadcrumb({ title }: BreadcrumbProps) {
       {/* 🌟 ปุ่มย้อนกลับ (ใช้ useNavigate อัตโนมัติ) */}
       <button 
         onClick={() => navigate(-1)} 
-        className="text-md font-medium text-slate-500 hover:text-blue-600 mb-6 flex items-center transition-colors"
+        className="text-lg font-medium text-slate-500 hover:text-blue-600 mb-6 flex items-center transition-colors"
       >
         <ChevronLeft size={16} className="mr-1" /> ย้อนกลับ
       </button>
 
       {/* 🌟 แถบ Breadcrumb */}
-      <nav className="flex text-sm text-slate-500 overflow-x-auto whitespace-nowrap hide-scrollbar w-full" aria-label="Breadcrumb">
+      <nav className="flex text-md text-slate-500 overflow-x-auto whitespace-nowrap hide-scrollbar w-full" aria-label="Breadcrumb">
         <ol className="inline-flex items-center space-x-1 md:space-x-2">
           
           {/* ระดับ 1: หน้าหลัก (มีเสมอ) */}

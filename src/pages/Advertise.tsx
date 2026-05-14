@@ -1,13 +1,29 @@
-import { useContext } from 'react';
+import { useContext, useState, useMemo , useEffect} from 'react';
 import { Link } from 'react-router-dom';
 import { NewsContext } from '../context/NewsContext';
+import SearchFilter from '../components/SearchFilter';
 
-// 🌟 SKELETON COMPONENT (แนวนอน)
+// 🌟 ฟังก์ชันจัดการวันที่ภาษาไทย
+const THAI_MONTHS = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+];
+
+const parseThaiDateToTimestamp = (dateStr: string) => {
+  if (!dateStr) return 0;
+  const parts = dateStr.split(' ');
+  if (parts.length === 3) {
+    const day = parseInt(parts[0]);
+    const month = THAI_MONTHS.indexOf(parts[1]);
+    const year = parseInt(parts[2]);
+    return new Date(year, month, day).getTime();
+  }
+  return new Date(dateStr).getTime();
+};
+
 const HorizontalCardSkeleton = () => (
   <div className="flex flex-col md:flex-row bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden md:h-[280px] animate-pulse">
-    {/* รูปภาพ */}
     <div className="w-full md:w-1/3 lg:w-80 h-56 md:h-full flex-shrink-0 bg-slate-200"></div>
-    {/* เนื้อหา */}
     <div className="p-6 md:p-8 flex flex-col flex-grow justify-between">
       <div>
         <div className="h-4 bg-slate-200 rounded w-24 mb-4"></div>
@@ -23,75 +39,162 @@ const HorizontalCardSkeleton = () => (
 
 const Advertise = () => {
   const context = useContext(NewsContext);
-  
-  // 🌟 ดึง isLoading มาใช้งานด้วย
   const { newsList, isLoading } = context || {}; 
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('');
+
+  // 🌟 Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6; 
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth' // เพิ่มความ smooth ให้ตาไม่ลายเวลาเปลี่ยนหน้า
+    });
+  }, [currentPage]);
+
+  // 🌟 Event Handlers เพื่อแก้ปัญหา Cascading Renders
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // รีเซ็ตไปหน้า 1 เสมอเมื่อค้นหา
+  };
+
+  const handleMonthChange = (value: string) => {
+    setSelectedMonth(value);
+    setCurrentPage(1); // รีเซ็ตไปหน้า 1 เสมอเมื่อเปลี่ยนตัวกรอง
+  };
+
+  // ดึงเดือนที่มีในระบบและเรียงตามปฏิทิน
+  const availableMonths = useMemo(() => {
+    if (!newsList) return [];
+    const months = newsList.map(item => item.date.split(' ')[1]).filter(Boolean);
+    return Array.from(new Set(months)).sort((a, b) => THAI_MONTHS.indexOf(a) - THAI_MONTHS.indexOf(b));
+  }, [newsList]);
+
+  // กรองและเรียงข้อมูล
+  const filteredData = useMemo(() => {
+    if (!newsList) return [];
+    return newsList.filter(item => {
+      const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesMonth = selectedMonth === '' || item.date.includes(selectedMonth);
+      return matchesSearch && matchesMonth;
+    }).sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date));
+  }, [newsList, searchTerm, selectedMonth]);
+
+  // หั่นข้อมูลตามหน้า Pagination
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const currentItems = filteredData.slice(
+    (currentPage - 1) * itemsPerPage, 
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="w-full max-w-7xl mx-auto px-6 pt-32 pb-20 min-h-screen">
       
-      {/* 🟢 Header: หัวข้อหน้า */}
-      <div className="mb-10">
-        <h1 className="text-4xl font-bold text-slate-800 border-l-8 border-blue-600 pl-4">
-          ข่าวประชาสัมพันธ์
-        </h1>
-        <p className="text-gray-500 mt-2 text-lg">
-          ติดตามความเคลื่อนไหวและประกาศสำคัญจากสำนักงาน ปปง.
-        </p>
-      </div>
+      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-4xl font-bold text-slate-800 border-l-8 border-blue-600 pl-4">ข่าวประชาสัมพันธ์</h1>
+          <p className="text-gray-500 mt-2 text-lg">ประกาศสำคัญจากสำนักงาน ปปง.</p>
+        </div>
 
-      {/* 🟢 List Container */}
-      <div className="flex flex-col gap-6">
-        {isLoading ? (
-          // 🌟 1. แสดง Skeleton ถ้ากำลังโหลด (จองไว้ 3 กล่อง)
-          [1, 2, 3].map((key) => <HorizontalCardSkeleton key={key} />)
-        ) : (!newsList || newsList.length === 0) ? (
-          // 🌟 2. ถ้าโหลดเสร็จแล้วไม่มีข้อมูล
-          <div className="text-center text-gray-500 py-10 bg-white rounded-2xl border border-slate-100 shadow-sm">
-            ไม่มีข้อมูลประชาสัมพันธ์ในขณะนี้
-          </div>
-        ) : (
-          // 🌟 3. แสดงข้อมูลจริง
-          newsList.map((item) => (
-            <Link 
-              to={`/advertise/${item.id}`} 
-              key={item.id} 
-              className="group flex flex-col md:flex-row bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 md:h-[280px]"
-            >
-              <div className="w-full md:w-1/3 lg:w-80 h-56 md:h-full flex-shrink-0 overflow-hidden relative bg-slate-100">
-                <img 
-                  src={item.image_src} 
-                  alt={item.title} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                  loading="lazy"
-                />
-                <div className="absolute top-4 right-4 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10">
-                  ประชาสัมพันธ์
-                </div>
-              </div>
-
-              <div className="p-6 md:p-8 flex flex-col flex-grow justify-between">
-                <div>
-                  <div className="text-sm text-slate-400 mb-2 font-medium">
-                    {item.date || '04 พ.ค. 2569'}
-                  </div>
-                  <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
-                    {item.title}
-                  </h2>
-                  <p className="text-slate-600 leading-relaxed line-clamp-3">
-                    {item.description || 'รายละเอียดเนื้อหาข่าวประชาสัมพันธ์...'}
-                  </p>
-                </div>
-                <div className="mt-6 flex items-center text-blue-600 font-semibold text-sm">
-                  อ่านรายละเอียดเพิ่มเติม
-                  <svg className="w-4 h-4 ml-1 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                </div>
-              </div>
-            </Link>
-          ))
+        {!isLoading && newsList && newsList.length > 0 && (
+          <SearchFilter 
+            searchTerm={searchTerm}
+            setSearchTerm={handleSearchChange}
+            selectedMonth={selectedMonth}
+            setSelectedMonth={handleMonthChange}
+            availableMonths={availableMonths}
+            placeholder="ค้นหาประกาศ..."
+          />
         )}
       </div>
 
+      <div className="flex flex-col gap-6">
+        {isLoading ? (
+          [1, 2, 3].map((key) => <HorizontalCardSkeleton key={key} />)
+        ) : (!newsList || newsList.length === 0) ? (
+          <div className="text-center text-gray-500 py-10 bg-white rounded-2xl border border-slate-100 shadow-sm">
+            ไม่มีข้อมูลประชาสัมพันธ์ในขณะนี้
+          </div>
+        ) : filteredData.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center">
+            <svg className="w-16 h-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <h3 className="text-lg font-bold text-slate-700 mb-1">ไม่พบประกาศที่คุณค้นหา</h3>
+            <p className="text-slate-500 text-sm">ลองเปลี่ยนคำค้นหา หรือเลือกเดือนอื่นดูนะครับ</p>
+            <button 
+              onClick={() => { handleSearchChange(''); handleMonthChange(''); }} 
+              className="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors"
+            >
+              ล้างการค้นหา
+            </button>
+          </div>
+        ) : (
+          <>
+            {currentItems.map((item) => (
+              <Link to={`/advertise/${item.id}`} key={item.id} className="group flex flex-col md:flex-row bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 md:h-[280px]">
+                <div className="w-full md:w-1/3 lg:w-80 h-56 md:h-full flex-shrink-0 overflow-hidden relative bg-slate-100">
+                  <img src={item.image_src} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                  <div className="absolute top-4 right-4 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10">ประชาสัมพันธ์</div>
+                </div>
+
+                <div className="p-6 md:p-8 flex flex-col flex-grow justify-between">
+                  <div>
+                    <div className="text-sm text-slate-400 mb-2 font-medium">{item.date}</div>
+                    <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">{item.title}</h2>
+                    <p className="text-slate-600 leading-relaxed line-clamp-3">{item.description}</p>
+                  </div>
+                  <div className="mt-6 flex items-center text-blue-600 font-semibold text-sm">อ่านรายละเอียดเพิ่มเติม <svg className="w-4 h-4 ml-1 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></div>
+                </div>
+              </Link>
+            ))}
+
+            {/* 🌟 Pagination แบบมีตัวเลข */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-1.5 md:gap-2 pt-8 pb-4 flex-wrap">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  className="px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                >
+                  <svg className="w-4 h-4 mr-1 md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+                  <span className="hidden md:inline">❮ ก่อนหน้า</span>
+                </button>
+
+                <div className="flex items-center gap-1.5">
+                  {[...Array(totalPages)].map((_, index) => {
+                    const pageNum = index + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg text-sm font-bold transition-all duration-200 ${
+                          currentPage === pageNum
+                            ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-600/20'
+                            : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-blue-600'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  className="px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                >
+                  <span className="hidden md:inline">ถัดไป ❯</span>
+                  <svg className="w-4 h-4 ml-1 md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };
