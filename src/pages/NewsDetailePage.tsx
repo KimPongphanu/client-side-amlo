@@ -6,13 +6,12 @@ import Breadcrumb from '../components/Breadcrumb';
 import RecommendedSidebar from '../components/ReccommendedSidebar';
 
 const NewsDetailPage = () => {
-  // 🌟 Hooks ต้องอยู่บนสุดเสมอ (ห้ามมี if return มาคั่นกลาง)
-  const { id } = useParams(); 
+  const { id } = useParams();
   const navigate = useNavigate();
   const context = useContext(NewsContext);
-  
+
   const currentId = Number(id);
-  const prList = context?.prList || []; // ข้อมูลกิจกรรมทั้งหมด
+  const prList = context?.prList || [];
   const isLoading = context?.isLoading;
   const news = prList.find((item) => item.id === currentId);
 
@@ -39,11 +38,19 @@ const NewsDetailPage = () => {
     <div className="bg-slate-50 min-h-screen pt-24 pb-16 px-4 md:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-          
-          {/* ฝั่งซ้าย: เนื้อหาข่าว (75%) */}
+
           <div className="lg:col-span-3 bg-white rounded-3xl shadow-md overflow-hidden border border-slate-200">
             <div className="w-full h-[250px] md:h-[450px] overflow-hidden bg-slate-200">
-              <img src={news.image_src} alt={news.title} className="w-full h-full object-cover" />
+              {/* แก้ไข: เพิ่ม loading="lazy" และ decoding="async" เพื่อ Performance */}
+              <img
+                src={news.image_src}
+                alt={news.title}
+                loading="lazy"
+                decoding="async"
+                width="900"
+                height="450"
+                className="w-full h-full object-cover"
+              />
             </div>
 
             <div className="p-6 md:p-10">
@@ -51,16 +58,15 @@ const NewsDetailPage = () => {
               <p className="text-sm text-blue-600 font-bold mb-3">{news.date}</p>
               <h1 className="text-2xl md:text-4xl font-bold text-slate-800 mb-6 leading-snug">{news.title}</h1>
               <hr className="border-slate-100 mb-8" />
-              <div 
+              <div
                 className="prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg"
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(news.content || news.description) }}
               />
             </div>
           </div>
 
-          {/* ฝั่งขวา: กิจกรรมอื่นๆ แนะนำ (25%) */}
           <div className="lg:col-span-1">
-            <RecommendedSidebar 
+            <RecommendedSidebar
               currentId={currentId}
               items={prList}
               basePath="news"

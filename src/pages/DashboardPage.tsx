@@ -4,7 +4,6 @@ import ReviewManager from '../components/dashboard/ReviewManager'
 import ContactRequestManager from '../components/dashboard/ContactRequestManager'
 import PRManagerDashboard from '../components/dashboard/PRManagerDashboard'
 
-// กำหนด Type สำหรับระบุหน้าเมนูที่มีในระบบ
 type MenuId =
   | 'overview'
   | 'data-clean'
@@ -30,6 +29,35 @@ const getThaiTime = (date: Date): string => {
     second: '2-digit',
     hour12: false,
   })
+}
+
+// ---------------------------------------------------------
+// แก้ไข: Avatar Component แบบ Initials แทนการใช้ ui-avatars.com
+// ไม่รั่วชื่อผู้ใช้ไปยัง Third-party และไม่พึ่งพา External Service
+// ---------------------------------------------------------
+interface AvatarProps {
+  name: string
+  bgColor?: string
+  size?: string
+}
+
+const Avatar = ({ name, bgColor = 'bg-blue-600', size = 'w-10 h-10' }: AvatarProps) => {
+  const initials = name
+    .split(' ')
+    .map((n) => n[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+
+  return (
+    <div
+      className={`${size} ${bgColor} rounded-full flex items-center justify-center text-white font-bold text-sm border border-slate-300 flex-shrink-0`}
+      aria-label={`รูปโปรไฟล์ของ ${name}`}
+    >
+      {initials}
+    </div>
+  )
 }
 
 // ---------------------------------------------------------
@@ -59,6 +87,12 @@ type NavBarProps = {
 const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
   const [dateTime, setDateTime] = useState<Date>(new Date())
 
+  // ข้อมูลผู้ใช้ปัจจุบัน — ในระบบจริงดึงมาจาก Auth Context / API
+  const currentUser = {
+    name: 'พงศ์ภานุ แสนสรรค์',
+    role: 'Data Science / Admin',
+  }
+
   useEffect(() => {
     const timer = setInterval(() => setDateTime(new Date()), 1000)
     return () => clearInterval(timer)
@@ -70,28 +104,19 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
         <button
           onClick={toggleMobileMenu}
           className='md:hidden p-2 border border-slate-300 bg-slate-50 active:bg-slate-200'
+          aria-label='เปิด/ปิดเมนู'
         >
-          <svg
-            className='w-6 h-6'
-            fill='none'
-            stroke='currentColor'
-            viewBox='0 0 24 24'
-          >
-            <path
-              strokeLinecap='square'
-              strokeLinejoin='miter'
-              strokeWidth='2'
-              d='M4 6h16M4 12h16M4 18h16'
-            ></path>
+          <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+            <path strokeLinecap='square' strokeLinejoin='miter' strokeWidth='2' d='M4 6h16M4 12h16M4 18h16'></path>
           </svg>
         </button>
 
-        <Link to = '/'>
-        <img
-          src='https://www.amlo.go.th/amlo-intranet/images/banners/logo-m.jpg'
-          alt='AMLO Logo'
-          className='h-12 w-auto object-contain'
-        />
+        <Link to='/'>
+          <img
+            src='https://www.amlo.go.th/amlo-intranet/images/banners/logo-m.jpg'
+            alt='โลโก้ ปปง.'
+            className='h-12 w-auto object-contain'
+          />
         </Link>
 
         <hr className='hidden md:block w-[2px] h-10 bg-slate-300 border-0' />
@@ -107,19 +132,9 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
       </div>
 
       <div className='flex items-center gap-x-6'>
-        <div className='relative cursor-pointer'>
-          <svg
-            className='w-6 h-6 text-slate-700'
-            fill='none'
-            stroke='currentColor'
-            viewBox='0 0 24 24'
-          >
-            <path
-              strokeLinecap='square'
-              strokeLinejoin='miter'
-              strokeWidth='2'
-              d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'
-            ></path>
+        <div className='relative cursor-pointer' aria-label='การแจ้งเตือน'>
+          <svg className='w-6 h-6 text-slate-700' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+            <path strokeLinecap='square' strokeLinejoin='miter' strokeWidth='2' d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'></path>
           </svg>
           <span className='absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full'></span>
         </div>
@@ -128,16 +143,11 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
 
         <div className='flex items-center gap-x-3 cursor-pointer'>
           <div className='text-right hidden sm:block'>
-            <h6 className='text-sm font-bold text-slate-800'>
-              พงศ์ภานุ แสนสรรค์
-            </h6>
-            <p className='text-xs text-slate-500'>Data Science / Admin</p>
+            <h6 className='text-sm font-bold text-slate-800'>{currentUser.name}</h6>
+            <p className='text-xs text-slate-500'>{currentUser.role}</p>
           </div>
-          <img
-            src='https://ui-avatars.com/api/?name=Pongpanu+Sunsun&background=0D8ABC&color=fff&rounded=true'
-            alt='Avatar'
-            className='w-10 h-10 rounded-full border border-slate-300'
-          />
+          {/* แก้ไข: ใช้ Avatar Component แทน ui-avatars.com */}
+          <Avatar name={currentUser.name} />
         </div>
       </div>
     </header>
@@ -163,7 +173,7 @@ const SideBar = ({ activeMenu, setActiveMenu, isMobileOpen }: SideBarProps) => {
   return (
     <aside
       className={`
-        bg-white border-r border-slate-200 w-64 min-h-[calc(100vh-5rem)] 
+        bg-white border-r border-slate-200 w-64 min-h-[calc(100vh-5rem)]
         absolute md:static top-20 left-0 z-10 transition-transform duration-300 ease-in-out
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}
