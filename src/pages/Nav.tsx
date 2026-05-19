@@ -79,7 +79,7 @@ export default function Nav() {
 
           <div className="flex items-center">
             <div className="hidden md:flex items-center gap-4 text-sm font-bold">
-              <Link to="#" className="px-5 py-2 bg-slate-900 text-white rounded-full hover:bg-blue-600 transition-colors shadow-sm">
+              <Link to="/login" className="px-5 py-2 bg-slate-900 text-white rounded-full hover:bg-blue-600 transition-colors shadow-sm">
                 เข้าสู่ระบบ
               </Link>
             </div>

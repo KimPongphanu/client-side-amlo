@@ -6,7 +6,6 @@ export default function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    // สั่งให้เบราว์เซอร์เลื่อนไปที่พิกัด X:0, Y:0 (บนสุดและซ้ายสุด)
     window.scrollTo(0, 0);
   }, [pathname]); // [pathname] หมายความว่า "ให้ทำคำสั่งนี้ทุกครั้งที่ URL เปลี่ยน"
 

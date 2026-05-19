@@ -13,6 +13,7 @@ const Advertise = lazy(() => import('./pages/Advertise'))
 const AdvertiseDetail = lazy(() => import('./pages/Advertisedetail'))
 const News = lazy(() => import('./pages/News'))
 const BookGuidePage = lazy(() => import('./pages/BookGuidePage'))
+const Login = lazy (() => import('./pages/LoginPage'))
 
 const CommentForm = lazy(() => import('./components/CommentForm'))
 const ContactForm = lazy(() => import('./components/ContactForm'))
@@ -49,6 +50,7 @@ function App() {
               <Route path='/bookguide' element={<BookGuidePage />}></Route>
               <Route path='/commentform' element={<CommentForm />}></Route>
               <Route path='/contactform' element={<ContactForm />}></Route>
+              <Route path='/login' element={<Login/>}></Route>
             </Route>
             <Route path='/dashboard' element={<DashboardPage />}></Route>
 

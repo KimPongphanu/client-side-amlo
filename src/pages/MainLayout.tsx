@@ -17,15 +17,14 @@ const MainLayout = () => {
   const location = useLocation(); 
 
   // แนะนำให้พิมพ์ตัวเล็กทั้งหมดใน Array นี้เลยครับ
-  const hideOnPaths = ['/newsdetailepage', '/agency1', '/news', '/department' , '/advertise' , '/contactform' , '/bookguide'];
+  const hideOnPaths = ['/newsdetailepage', '/agency1', '/news', '/department' , '/advertise' ,
+                       '/contactform' , '/bookguide' , '/login'];
 
-  // จับ URL ปัจจุบันมาแปลงเป็นตัวเล็กก่อน (ป้องกันบั๊ก /News กับ /news)
   const currentPath = location.pathname.toLowerCase();
 
   const shouldHideSlider = hideOnPaths.some(path => currentPath.startsWith(path));
   const showSlider = !shouldHideSlider;
   
-  // 🌟 พิมพ์เช็คใน Console ว่าคอมพิวเตอร์เห็นค่าเป็นอะไร
   console.log("ตอนนี้อยู่หน้า:", currentPath, " | ต้องโชว์ Slider ไหม?:", showSlider);
 
   return (
@@ -33,7 +32,6 @@ const MainLayout = () => {
       <Nav />
       
       {showSlider && (
-      // 🌟 เปลี่ยนจาก md:pt-0 เป็น lg:pt-0 ครับ
       <div className="pt-16 lg:pt-0 pb-10 bg-slate-50">
         <Slider slides={slides} />
       </div>
