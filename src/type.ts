@@ -5,6 +5,8 @@ export interface NewsItem {
   image_src: string;
   description: string;
   content?: string; 
+  views?: number;    // เพิ่มมารองรับ Dashboard
+  isShow?: boolean;  // เพิ่มมารองรับ Dashboard
 }
 
 export interface GalleryItem {
@@ -17,13 +19,15 @@ export interface DepartmentItem {
   title: string;
   cover_image: string;
   gallery: GalleryItem[]; 
-  content?: string; // 🌟 เพิ่ม content แบบ optional (มีหรือไม่มีก็ได้) สำหรับใส่ HTML
+  content?: string; 
 }
 
-// export ตัวนี้ด้วย เพราะ Context ต้องใช้
 export interface NewsContextType {
   newsList: NewsItem[];
   prList: NewsItem[]; 
   departmentList: DepartmentItem[]; 
   isLoading: boolean;
+  // 🌟 เพิ่ม 2 บรรทัดนี้
+  setPrList: React.Dispatch<React.SetStateAction<NewsItem[]>>;
+  setNewsList: React.Dispatch<React.SetStateAction<NewsItem[]>>;
 }

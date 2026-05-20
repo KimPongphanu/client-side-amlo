@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useContext } from 'react'
+import { Grid , List} from 'lucide-react';
+import { NewsContext } from '../../context/NewsContext'
 import Swal from 'sweetalert2'
-// 🌟 เปลี่ยนมาใช้ react-quill-new ที่คุณมีติดตั้งไว้อยู่แล้ว
 import ReactQuill from 'react-quill-new'
-import 'react-quill-new/dist/quill.snow.css' 
+import 'react-quill-new/dist/quill.snow.css'
 
 // ==========================================
 // 1. Types & Interfaces
@@ -36,23 +37,6 @@ const quillModules = {
     ['clean']
   ],
 }
-
-// ==========================================
-// 3. Mock Data Generator
-// ==========================================
-const generateMockPR = (): NewsItem[] => {
-  return Array.from({ length: 15 }).map((_, i) => ({
-    id: 1000 + i,
-    title: `ประกาศประชาสัมพันธ์ เรื่องที่ ${i + 1} การปรับปรุงระบบประจำเดือน`,
-    date: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
-    image_src: `https://picsum.photos/seed/${i + 1}/800/400`,
-    description: `คำอธิบายสั้นๆ สำหรับประกาศที่ ${i + 1} เพื่อให้ประชาชนรับทราบ...`,
-    content: `<p>รายละเอียดเนื้อหาฉบับเต็มของประกาศที่ ${i + 1}...</p><p><br></p><p>ระบบจะทำการปิดปรับปรุงในเวลา 23:00 น. ขออภัยในความไม่สะดวกครับ</p>`,
-    views: Math.floor(Math.random() * 1000),
-    isShow: i < 3,
-  }))
-}
-
 // ==========================================
 // 4. Mini Preview Component
 // ==========================================
@@ -167,10 +151,10 @@ const FilterBar = ({
 
           <div className='flex rounded-lg border border-slate-200 overflow-hidden'>
             <button onClick={() => onView('card')} className={`px-3 py-2 transition-colors ${view === 'card' ? 'bg-blue-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
-              Card
+              <div className=""><Grid size={16} color='black' /></div>
             </button>
             <button onClick={() => onView('list')} className={`px-3 py-2 transition-colors ${view === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}>
-              List
+              <div className=""><List size={16} color="black" /></div>
             </button>
           </div>
         </div>
@@ -207,6 +191,11 @@ const ToggleSwitch = ({ checked, onChange, itemId }: ToggleSwitchProps) => (
 // 7. Main Component
 // ==========================================
 export default function PRManagerDashboard() {
+  // 🌟 1. ดึงข้อมูลและฟังก์ชันจาก NewsContext แทน
+  const context = useContext(NewsContext);
+  const prList = context?.prList || [];
+  const setPrList = context?.setPrList || (() => {});
+
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
@@ -218,7 +207,8 @@ export default function PRManagerDashboard() {
   const [isDragging, setIsDragging] = useState(false)
   const [mobileView, setMobileView] = useState<'form' | 'preview'>('form')
 
-  const [prList, setPrList] = useState<NewsItem[]>(() => generateMockPR())
+  // 🌟 2. ลบบรรทัด useState prList เก่าทิ้งไปเลย
+  // const [prList, setPrList] = useState<NewsItem[]>(() => generateMockPR()) 
   const shownCount = prList.filter((item) => item.isShow).length
 
   const filteredList = useMemo(() => {
@@ -557,10 +547,8 @@ export default function PRManagerDashboard() {
         /* ปรับแต่ง Toolbar ของ Quill ให้เข้ากับ Tailwind */
         .ql-toolbar.ql-snow { border: none !important; border-bottom: 1px solid #cbd5e1 !important; background-color: #f8fafc; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
         
-        /* 🌟 แก้ไข: บังคับให้พื้นที่พิมพ์ใช้พื้นที่ที่เหลือและเลื่อนได้ */
         .ql-container.ql-snow { border: none !important; flex: 1; overflow-y: auto; min-height: 0; }
         
-        /* 🌟 แก้ไข: เพิ่ม padding-bottom ให้มีสเปซเหลือๆ ข้างล่าง เลื่อนแล้วไม่ติดขอบ */
         .ql-editor { font-family: 'Sarabun', sans-serif; font-size: 14px; color: #334155; padding-bottom: 60px !important; }
         
         /* ควบคุมรูปภาพที่แทรกเข้ามาให้อยู่ในกรอบ Preview */
