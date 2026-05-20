@@ -16,20 +16,20 @@ export default function HtmlGuidePage() {
   };
 
   const handleClear = () => {
-    // 🌟 ระบบป้องกันการลบพลาด
     const isConfirmed = window.confirm('⚠️ ยืนยันการล้างเนื้อหาทั้งหมด? เนื้อหาที่พิมพ์ไว้จะหายไปและไม่สามารถกู้คืนได้');
     if (isConfirmed) {
       setContent('');
     }
   };
 
+  // 🌟 รวมร่าง Toolbar: มีทั้งเปลี่ยนสีข้อความ/พื้นหลัง (จาก BookGuide) และแทรกรูปภาพ (จาก PRManager)
   const modules = {
     toolbar: [
-      [{ 'header': [3, 4, false] }],
+      [{ 'header': [1, 2, 3, 4, false] }], // อัปเกรดให้มีหัวข้อหลายระดับ
       ['bold', 'italic', 'underline', 'strike'],
-      [{ 'color': [] }, { 'background': [] }],
+      [{ 'color': [] }, { 'background': [] }], // 🎨 ฟังก์ชันเปลี่ยนสี
       [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      ['link'],
+      ['link', 'image'], // 🖼️ ฟังก์ชันแทรกรูปภาพ
       ['clean'] 
     ],
   };
@@ -48,7 +48,6 @@ export default function HtmlGuidePage() {
             </p>
           </div>
           
-          {/* ป้ายกำกับความปลอดภัย */}
           <div className="flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-bold border border-green-200 shadow-sm w-fit">
             <ShieldCheck size={18} />
             Security Mode: Active (DOMPurify)
@@ -117,7 +116,7 @@ export default function HtmlGuidePage() {
                   <textarea
                     readOnly
                     value={content}
-                    className="w-full h-full bg-transparent text-emerald-400 font-mono text-sm md:text-base resize-none focus:outline-none leading-relaxed"
+                    className="w-full h-full bg-transparent text-emerald-400 font-mono text-sm md:text-base resize-none focus:outline-none leading-relaxed custom-scrollbar"
                     spellCheck="false"
                   />
                 )}
@@ -130,7 +129,7 @@ export default function HtmlGuidePage() {
                 <ShieldCheck size={14} className="text-green-500" /> Sanitized Preview
               </p>
               <div 
-                className="prose prose-sm max-w-none text-slate-600 line-clamp-2"
+                className="prose prose-sm max-w-none text-slate-600 line-clamp-2 html-preview-content"
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} 
               />
             </div>
@@ -139,12 +138,26 @@ export default function HtmlGuidePage() {
         </div>
       </div>
 
+      {/* 🌟 อัปเดต CSS เพิ่มส่วนของรูปภาพและการแสดงผล */}
       <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #6b7280; }
+
         .ql-toolbar.ql-snow { border: none !important; border-bottom: 1px solid #e2e8f0 !important; padding: 12px 16px !important; background-color: #f8fafc; }
         .ql-container.ql-snow { border: none !important; font-size: 16px !important; font-family: inherit !important; }
         .ql-editor { min-height: 350px; padding: 24px !important; color: #334155; }
+        
+        /* สไตล์สำหรับพรีวิว */
+        .ql-editor h1 { font-size: 2em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
+        .ql-editor h2 { font-size: 1.75em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
         .ql-editor h3 { font-size: 1.5em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
         .ql-editor h4 { font-size: 1.2em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
+        
+        /* ควบคุมรูปภาพที่แทรกเข้ามาให้อยู่ในกรอบและสวยงาม */
+        .ql-editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; border: 1px solid #e2e8f0; }
+        .html-preview-content img { max-width: 100%; height: auto; border-radius: 4px; margin: 8px 0; }
       `}</style>
     </div>
   );
