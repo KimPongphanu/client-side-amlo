@@ -158,6 +158,9 @@ export default function HtmlGuidePage() {
         /* ควบคุมรูปภาพที่แทรกเข้ามาให้อยู่ในกรอบและสวยงาม */
         .ql-editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; border: 1px solid #e2e8f0; }
         .html-preview-content img { max-width: 100%; height: auto; border-radius: 4px; margin: 8px 0; }
+        .html-preview-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 8px; }
+        .html-preview-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 8px; }
+        .html-preview-content li { margin-bottom: 4px; }
       `}</style>
     </div>
   );

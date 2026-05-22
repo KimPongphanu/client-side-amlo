@@ -67,7 +67,7 @@ const MiniAdvertisePreview = ({ data }: { data: NewsItem | null }) => {
         
         {/* 🌟 แสดงผล HTML ที่ได้จาก React Quill อย่างปลอดภัย */}
         <div 
-          className='text-slate-600 text-sm leading-relaxed html-preview-content'
+          className='text-slate-600 text-sm leading-relaxed ql-rendered'
           dangerouslySetInnerHTML={{ __html: data.content || data.description || 'พิมพ์เนื้อหาประกาศ...' }}
         />
       </div>
@@ -285,6 +285,30 @@ export default function PRManagerDashboard() {
     })
   }
 
+  const handleClearAll = () => {
+   Swal.fire({
+     title: 'ล้างข้อมูลทั้งหมด?',
+     text: 'หัวข้อ, ภาพปก และเนื้อหาจะถูกล้างออกหมด',
+     icon: 'warning',
+     showCancelButton: true,
+     confirmButtonColor: '#ef4444',
+     cancelButtonColor: '#94a3b8',
+     confirmButtonText: 'ล้างทั้งหมด',
+     cancelButtonText: 'ยกเลิก',
+     reverseButtons: true,
+   }).then((result) => {
+     if (result.isConfirmed) {
+       setFormData({
+         ...formData!,
+         title: '',
+         image_src: '',
+         content: '',
+         date: new Date().toISOString().split('T')[0],
+       })
+     }
+   })
+  } 
+
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true) }
   const handleDragLeave = () => setIsDragging(false)
   const handleDrop = (e: React.DragEvent) => {
@@ -370,44 +394,6 @@ export default function PRManagerDashboard() {
           ))}
         </div>
       )}
-      {/* CARD VIEW */}
-{viewMode === 'card' && filteredList.length > 0 && (
-  <div className='max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-20'>
-    {filteredList.map((item) => (
-      <div
-        key={item.id}
-        onClick={() => handleOpenModal(item)}
-        className='bg-white border border-slate-200 rounded-xl hover:border-blue-400 hover:shadow-md transition-all cursor-pointer flex flex-col overflow-hidden group'
-      >
-        <div className='p-4 flex gap-4 flex-1'>
-          <div className='w-20 h-20 bg-slate-100 rounded-lg overflow-hidden shrink-0'>
-            {item.image_src ? (
-              <img
-                src={item.image_src}
-                alt=''
-                className='w-full h-full object-cover'
-              />
-            ) : (
-              <div className='w-full h-full flex items-center justify-center'>
-                ไม่มีรูป
-              </div>
-            )}
-          </div>
-
-          <div>
-            <p className='text-xs text-blue-600 font-bold'>
-              {item.date}
-            </p>
-
-            <h3 className='font-bold'>
-              {item.title}
-            </h3>
-          </div>
-        </div>
-      </div>
-    ))}
-  </div>
-)}
 
 {/* LIST VIEW */}
 {viewMode === 'list' && filteredList.length > 0 && (
@@ -456,6 +442,15 @@ export default function PRManagerDashboard() {
               <h2 className='text-base md:text-lg font-bold text-slate-800'>{activePost === null ? 'สร้างประกาศใหม่' : `แก้ไขข้อมูล: ID ${formData.id}`}</h2>
               <div className='flex items-center gap-2 md:gap-4'>
                 <button onClick={handleRefreshData} className='text-sm text-slate-600 hover:text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-50'>รีเซ็ตข้อมูล</button>
+                <button
+                  onClick={handleClearAll}
+                  className='flex items-center gap-2 text-sm text-red-500 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors'
+                >
+                  <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16' />
+                  </svg>
+                  <span className='hidden sm:inline'>ล้างทั้งหมด</span>
+                </button>
                 <button onClick={handleCloseModal} className='p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg'>✕</button>
               </div>
             </div>
@@ -488,7 +483,19 @@ export default function PRManagerDashboard() {
                     </div>
                     <div className='md:col-span-3 flex flex-col sm:flex-row gap-4 items-center'>
                       {formData.image_src && (
-                        <div className='w-full sm:w-32 h-40 rounded-lg border border-slate-200 overflow-hidden shrink-0'><img src={formData.image_src} alt='cover' className='w-full h-full object-cover' /></div>
+                        <div className='relative w-full sm:w-32 h-40 rounded-lg border border-slate-200 overflow-hidden shrink-0'>
+                          <img src={formData.image_src} alt='cover' className='w-full h-full object-cover' />
+                          <button
+                            type='button'
+                            onClick={() => setFormData({ ...formData, image_src: '' })}
+                            className='absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow transition-colors'
+                            title='ลบรูปภาพ'
+                          >
+                            <svg className='w-3 h-3' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M6 18L18 6M6 6l12 12' />
+                            </svg>
+                          </button>
+                        </div>
                       )}
                       <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`flex-1 w-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-6 text-center transition-colors cursor-pointer relative ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-slate-50'}`}>
                         <input type='file' accept='image/*' onChange={handleFileInput} className='absolute inset-0 w-full h-full opacity-0 cursor-pointer' />
@@ -540,31 +547,6 @@ export default function PRManagerDashboard() {
           </div>
         </div>
       )}
-
-      {/* 🌟 CSS เพิ่มเติมสำหรับปรับแต่ง Editor และรูปภาพ Base64 */}
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(20px) scale(0.98); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .animate-fade-in-up { animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        
-        /* ปรับแต่ง Toolbar ของ Quill ให้เข้ากับ Tailwind */
-        .ql-toolbar.ql-snow { border: none !important; border-bottom: 1px solid #cbd5e1 !important; background-color: #f8fafc; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
-        
-        .ql-container.ql-snow { border: none !important; flex: 1; overflow-y: auto; min-height: 0; }
-        
-        .ql-editor { font-family: 'Sarabun', sans-serif; font-size: 14px; color: #334155; padding-bottom: 60px !important; }
-        
-        /* ควบคุมรูปภาพที่แทรกเข้ามาให้อยู่ในกรอบ Preview */
-        .html-preview-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; border: 1px solid #e2e8f0; }
-        .html-preview-content p { margin-bottom: 8px; }
-        .html-preview-content h1, .html-preview-content h2, .html-preview-content h3 { color: #1e293b; font-weight: bold; margin-top: 16px; margin-bottom: 8px; }
-      `}</style>
     </div>
   )
 }

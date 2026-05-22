@@ -474,7 +474,7 @@ export default function ReviewManager() {
 
           {/* Mini Stack View (Responsive) */}
           {showSelectedStack && (
-            <div className='absolute bottom-full left-0 mb-2 w-full md:min-w-[350px] max-h-60 overflow-y-auto bg-white text-slate-800 border border-slate-300 p-2 shadow-lg rounded md:rounded-none'>
+            <div className='absolute bottom-full left-0 mb-2 w-full md:min-w-[350px] max-h-60 overflow-y-auto bg-white text-slate-800 border border-slate-300 shadow-lg rounded md:rounded-none'>
               <div className='text-sm font-bold p-2 border-b border-slate-100 mb-2 sticky top-0 bg-white z-10'>
                 รายการที่เลือก ({selectedIds.size})
               </div>

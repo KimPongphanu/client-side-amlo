@@ -63,7 +63,7 @@ const AdvertiseDetail = () => {
               </h1>
               <hr className="border-slate-100 mb-8" />
               <div
-                className="prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg"
+                className="prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg ql-rendered"
                 dangerouslySetInnerHTML={{
                   __html: DOMPurify.sanitize(advertiseData.content || advertiseData.description),
                 }}

@@ -354,7 +354,7 @@ const DepartmentDetailPage = () => {
           {/* เนื้อหา HTML / Description */}
           {department.content ? (
             <div 
-              className="prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg"
+              className="prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg ql-rendered"
               dangerouslySetInnerHTML={{ 
                 __html: DOMPurify.sanitize(department.content) 
               }}

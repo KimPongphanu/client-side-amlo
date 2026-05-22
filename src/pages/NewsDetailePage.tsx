@@ -59,7 +59,7 @@ const NewsDetailPage = () => {
               <h1 className="text-2xl md:text-4xl font-bold text-slate-800 mb-6 leading-snug">{news.title}</h1>
               <hr className="border-slate-100 mb-8" />
               <div
-                className="prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg"
+                className="prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg ql-rendered"
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(news.content || news.description) }}
               />
             </div>
