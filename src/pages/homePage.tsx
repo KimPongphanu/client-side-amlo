@@ -86,12 +86,13 @@ const HomePage = () => {
 
   const { newsList, prList, isLoading } = context;
 
-  const sortedAdvertiseList = newsList
-    ? [...newsList].sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date))
+  // ✅ แก้แล้ว — ถูก list + filter isShow
+  const sortedAdvertiseList = prList
+    ? [...prList].filter(item => item.isShow).sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date))
     : [];
-
-  const sortedNewsList = prList
-    ? [...prList].sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date))
+  
+  const sortedNewsList = newsList
+    ? [...newsList].filter(item => item.isShow).sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date))
     : [];
 
   return (

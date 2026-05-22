@@ -193,9 +193,8 @@ const ToggleSwitch = ({ checked, onChange, itemId }: ToggleSwitchProps) => (
 export default function PRManagerDashboard() {
   // 🌟 1. ดึงข้อมูลและฟังก์ชันจาก NewsContext แทน
   const context = useContext(NewsContext);
-  const prList = context?.prList || [];
+  const prList = useMemo(() => context?.prList || [], [context?.prList]);
   const setPrList = context?.setPrList || (() => {});
-
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
@@ -295,13 +294,23 @@ export default function PRManagerDashboard() {
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) handleFileUpload(e.target.files[0])
   }
+  // ✅ แก้แล้ว — Base64 อยู่ได้ใน localStorage ข้ามหน้าข้าม session
   const handleFileUpload = (file: File) => {
-    if (!file.type.match(/image.*|video.*/)) {
-      Swal.fire({ icon: 'error', title: 'ไฟล์ไม่รองรับ', text: 'กรุณาอัปโหลดรูปภาพหรือวิดีโอเท่านั้น' })
+    if (!file.type.match(/image.*/)) {
+      Swal.fire({ icon: 'error', title: 'ไฟล์ไม่รองรับ', text: 'กรุณาอัปโหลดรูปภาพเท่านั้น' })
       return
     }
-    const fakeUrl = URL.createObjectURL(file)
-    if (formData) setFormData({ ...formData, image_src: fakeUrl })
+    // ตรวจขนาดไฟล์ก่อน — Base64 จะใหญ่ขึ้น ~33% localStorage มีขีดจำกัด 5MB
+    if (file.size > 2 * 1024 * 1024) {
+      Swal.fire({ icon: 'warning', title: 'ไฟล์ใหญ่เกินไป', text: 'กรุณาเลือกรูปที่มีขนาดไม่เกิน 2MB' })
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string
+      if (formData) setFormData({ ...formData, image_src: base64 })
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleSave = () => {
