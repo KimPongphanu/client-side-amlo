@@ -11,9 +11,9 @@ const NewsDetailPage = () => {
   const context = useContext(NewsContext);
 
   const currentId = Number(id);
-  const prList = context?.prList || [];
+  const newsList = context?.newsList || [];
   const isLoading = context?.isLoading;
-  const news = prList.find((item) => item.id === currentId);
+  const news = newsList.find((item) => item.id === currentId);
 
   if (isLoading) {
     return (
@@ -68,7 +68,7 @@ const NewsDetailPage = () => {
           <div className="lg:col-span-1">
             <RecommendedSidebar
               currentId={currentId}
-              items={prList}
+              items={newsList}
               basePath="news"
               title="กิจกรรมอื่นๆ ที่น่าสนใจ"
             />

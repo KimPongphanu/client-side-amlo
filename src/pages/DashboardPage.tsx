@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import ReviewManager from '../components/dashboard/ReviewManager'
 import ContactRequestManager from '../components/dashboard/ContactRequestManager'
 import PRManagerDashboard from '../components/dashboard/PRManagerDashboard'
+import NewsManagerDashboard from '../components/dashboard/NewsManagerDashboard'
 
 type MenuId =
   | 'overview'
@@ -11,6 +12,7 @@ type MenuId =
   | 'reviews'
   | 'contacts'
   | 'advertises'
+  | 'news'
 
 // ---------------------------------------------------------
 // Helper Functions
@@ -168,6 +170,7 @@ const SideBar = ({ activeMenu, setActiveMenu, isMobileOpen }: SideBarProps) => {
     { id: 'reviews', label: 'รีวิว/ความคิดเห็น' },
     { id: 'contacts', label: 'การติดต่อ' },
     { id: 'advertises', label: 'ประชาสัมพันธ์' },
+    { id: 'news', label: 'กิจกรรมและประกาศ' },
   ]
 
   return (
@@ -219,6 +222,8 @@ const DashboardPage = () => {
         return <ContactRequestManager />
       case 'advertises':
         return <PRManagerDashboard />
+      case 'news':
+        return <NewsManagerDashboard />
       default:
         return <div className='p-6'>อยู่ระหว่างการพัฒนา...</div>
     }

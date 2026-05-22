@@ -1,16 +1,14 @@
 import { useState, useEffect, type ReactNode, useMemo } from 'react'
-import type { NewsItem, DepartmentItem } from '../type'
+import type { NewsItem, DepartmentItem, CommentItem } from '../type'
 
-// แก้ ESLint: react-refresh/only-export-components
-// NewsContext ถูกย้ายออกไปที่ newsContextDef.ts แล้ว
-// import ต่อจากที่นั่นแทนการ createContext ในไฟล์นี้
+// แยก NewsContext Object ออกไปที่ newsContextDef.ts เพื่อแก้ ESLint Fast Refresh
 import { NewsContext } from './NewsContextDef'
 
-// re-export ให้ไฟล์อื่นที่ import จาก NewsContext.tsx ยังใช้งานได้เหมือนเดิม
+// re-export เพื่อให้ Component อื่นๆ ที่เรียกจาก Path นี้ยังคงทำงานได้ตามปกติ
 export { NewsContext }
 
 // ==========================================
-// Mock Database - กิจกรรม (prList)
+// 1. Mock Database - กิจกรรม (newsList)
 // ==========================================
 const MOCK_DB: NewsItem[] = [
   { id: 1, title: 'ประกาศเจตนารมณ์ต่อต้านการทุจริต', date: '23 เมษายน 2026', image_src: '/banner.png', description: 'สำนักงาน ปปง. ประกาศเจตนารมณ์ในการต่อต้านการทุจริตคอร์รัปชัน', content: '<h2>เจตนารมณ์การป้องกันทุจริต</h2><p>เพื่อสร้างความเชื่อมั่นให้กับประชาชน สำนักงานขอประกาศนโยบาย <strong>No Gift Policy</strong></p>' },
@@ -36,7 +34,7 @@ const MOCK_DB: NewsItem[] = [
 ]
 
 // ==========================================
-// Mock Database - ข่าวประชาสัมพันธ์ (newsList)
+// 2. Mock Database - ข่าวประชาสัมพันธ์ (prList)
 // ==========================================
 const MOCK_PR_DB: NewsItem[] = [
   { id: 1, title: 'ประกาศรับสมัครบุคคลเพื่อเลือกสรรเป็นพนักงานราชการ', date: '1 พฤษภาคม 2026', image_src: '/amlo2.jpg', description: 'รับสมัครตำแหน่งนักวิเคราะห์นโยบายและแผน', content: '<h3>ตำแหน่งที่เปิดรับ</h3><p><strong>นักวิเคราะห์นโยบายและแผน (1 อัตรา)</strong></p>' },
@@ -61,6 +59,9 @@ const MOCK_PR_DB: NewsItem[] = [
   { id: 20, title: 'ประกาศเจตจำนงการบริหารงานด้วยความสุจริต', date: '4 มกราคม 2026', image_src: '/amlo2.jpg', description: 'คำประกาศจากเลขาธิการประจำปี 2569', content: '<p>มุ่งมั่นยกระดับคะแนน ITA ของหน่วยงาน</p>' },
 ]
 
+// ==========================================
+// 3. Mock Database - โครงสร้างหน่วยงาน (departmentList)
+// ==========================================
 const MOCK_DEPARTMENTS_DB: DepartmentItem[] = [
   {
     id: 1,
@@ -109,18 +110,163 @@ const MOCK_DEPARTMENTS_DB: DepartmentItem[] = [
 ]
 
 // ==========================================
-// NewsProvider
+// 4. Mock Database - ความคิดเห็น (commentList)
+// ==========================================
+const MOCK_COMMENTS: CommentItem[] = [
+  {
+    id: 'CMT-1020',
+    msg: 'ระบบใช้งานง่ายและรวดเร็วมากครับ ลดขั้นตอนการทำงานไปได้เยอะเลย ชอบ UI ที่ดูสะอาดตา',
+    star: 5,
+    createdAt: new Date().toISOString(), // วันนี้
+    isShow: true,
+  },
+  {
+    id: 'CMT-1019',
+    msg: 'ฟังก์ชันการค้นหาทำงานได้ดีเยี่ยม หาข้อมูลที่ต้องการเจอในเวลาไม่กี่วินาที',
+    star: 5,
+    createdAt: new Date(Date.now() - 3600000).toISOString(), // วันนี้ (1 ชม. ที่แล้ว)
+    isShow: true,
+  },
+  {
+    id: 'CMT-1018',
+    msg: 'ยังมีบางจุดที่โหลดช้าเมื่อดึงข้อมูลเยอะๆ อยากให้ปรับปรุงส่วนนี้ครับ',
+    star: 3,
+    createdAt: new Date(Date.now() - 7200000).toISOString(), // วันนี้ (2 ชม. ที่แล้ว)
+    isShow: false,
+  },
+  {
+    id: 'CMT-1017',
+    msg: 'ยอดเยี่ยมมากครับ เป็นกำลังใจให้ทีมพัฒนาสร้างสรรค์ผลงานดีๆ ต่อไป',
+    star: 5,
+    createdAt: new Date(Date.now() - 86400000).toISOString(), // เมื่อวาน
+    isShow: true,
+  },
+  {
+    id: 'CMT-1016',
+    msg: 'การแสดงผลบนมือถือยังดูเบียดๆ กันอยู่บ้างในบางหน้าจอครับ',
+    star: 3,
+    createdAt: new Date(Date.now() - 90000000).toISOString(), // เมื่อวาน
+    isShow: false,
+  },
+  {
+    id: 'CMT-1015',
+    msg: 'คู่มือการใช้งานละเอียดดีมาก ช่วยให้เข้าใจระบบได้ไวขึ้นเยอะเลย',
+    star: 4,
+    createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 วันที่แล้ว
+    isShow: true,
+  },
+  {
+    id: 'CMT-1014',
+    msg: 'อยากให้เพิ่มช่องทางการติดต่อรับเรื่องที่สะดวกและครอบคลุมมากกว่านี้ครับ',
+    star: 4,
+    createdAt: new Date(Date.now() - 180000000).toISOString(), // 2 วันที่แล้ว
+    isShow: true,
+  },
+  {
+    id: 'CMT-1013',
+    msg: 'เข้าสู่ระบบยากมากครับ บางครั้งรหัส OTP ส่งมาช้าเกินไป',
+    star: 2,
+    createdAt: new Date(Date.now() - 259200000).toISOString(), // 3 วันที่แล้ว
+    isShow: false,
+  },
+  {
+    id: 'CMT-1012',
+    msg: 'ชอบระบบ Dashboard มากครับ สรุปข้อมูลให้เห็นภาพรวมได้ชัดเจนดี',
+    star: 5,
+    createdAt: new Date(Date.now() - 265000000).toISOString(), // 3 วันที่แล้ว
+    isShow: true,
+  },
+  {
+    id: 'CMT-1011',
+    msg: 'สีของปุ่มบางจุดยังกลืนกับพื้นหลังไปหน่อย คนสายตาไม่ดีอาจจะมองยากครับ',
+    star: 3,
+    createdAt: new Date(Date.now() - 345600000).toISOString(), // 4 วันที่แล้ว
+    isShow: false,
+  },
+  {
+    id: 'CMT-1010',
+    msg: 'เสถียรขึ้นกว่าเวอร์ชันก่อนหน้าเยอะมาก ไม่มีอาการค้างหลุดเวลาทำงานแล้ว',
+    star: 5,
+    createdAt: new Date(Date.now() - 432000000).toISOString(), // 5 วันที่แล้ว
+    isShow: true,
+  },
+  {
+    id: 'CMT-1009',
+    msg: 'อยากให้ระบบสามารถ Export ข้อมูลออกมาเป็นไฟล์ PDF ได้ด้วยครับ',
+    star: 4,
+    createdAt: new Date(Date.now() - 518400000).toISOString(), // 6 วันที่แล้ว
+    isShow: true,
+  },
+  {
+    id: 'CMT-1008',
+    msg: 'การตอบกลับของเจ้าหน้าที่ผ่านระบบข้อความไวมาก ประทับใจในการบริการครับ',
+    star: 5,
+    createdAt: new Date(Date.now() - 604800000).toISOString(), // 7 วันที่แล้ว
+    isShow: true,
+  },
+  {
+    id: 'CMT-1007',
+    msg: 'ระบบอัปโหลดเอกสารยังมีบั๊กอยู่บ้าง บางทีอัปแล้วไฟล์ไม่ขึ้น ต้องกดรีเฟรชใหม่',
+    star: 2,
+    createdAt: new Date(Date.now() - 691200000).toISOString(), // 8 วันที่แล้ว
+    isShow: false,
+  },
+  {
+    id: 'CMT-1006',
+    msg: 'ดีมากเลยครับที่มีระบบแจ้งเตือนผ่านอีเมล ทำให้ไม่พลาดข่าวสารสำคัญ',
+    star: 5,
+    createdAt: new Date(Date.now() - 777600000).toISOString(), // 9 วันที่แล้ว
+    isShow: true,
+  },
+  {
+    id: 'CMT-1005',
+    msg: 'อยากให้มีโหมด Dark Mode สำหรับคนทำงานดึกๆ ครับ แสงหน้าจอสว่างเกินไป',
+    star: 4,
+    createdAt: new Date(Date.now() - 864000000).toISOString(), // 10 วันที่แล้ว
+    isShow: true,
+  },
+  {
+    id: 'CMT-1004',
+    msg: 'ภาพรวมทำออกมาได้ตอบโจทย์การใช้งานของประชาชนทั่วไปครับ ขอบคุณครับ',
+    star: 5,
+    createdAt: new Date(Date.now() - 1296000000).toISOString(), // 15 วันที่แล้ว
+    isShow: true,
+  },
+  {
+    id: 'CMT-1003',
+    msg: 'แบบฟอร์มให้กรอกข้อมูลเยอะเกินไปในบางจุด น่าจะลดทอนลงได้บ้างครับ',
+    star: 3,
+    createdAt: new Date(Date.now() - 1728000000).toISOString(), // 20 วันที่แล้ว
+    isShow: false,
+  },
+  {
+    id: 'CMT-1002',
+    msg: 'เพิ่งเคยเข้ามาใช้งานครั้งแรก รู้สึกว่าเมนูจัดวางเป็นระเบียบหาของง่ายดีครับ',
+    star: 5,
+    createdAt: new Date(Date.now() - 2160000000).toISOString(), // 25 วันที่แล้ว
+    isShow: true,
+  },
+  {
+    id: 'CMT-1001',
+    msg: 'ขอเสนอแนะให้มีวิดีโอสอนการใช้งานระบบแบบ Step-by-step แทรกไว้ในหน้าเว็บเลยครับ',
+    star: 4,
+    createdAt: new Date(Date.now() - 2592000000).toISOString(), // 30 วันที่แล้ว
+    isShow: true,
+  }
+];
+
+// ==========================================
+// 5. NewsProvider Component
 // ==========================================
 export const NewsProvider = ({ children }: { children: ReactNode }) => {
 
-  // prList (ข่าวประชาสัมพันธ์) — sync กับ localStorage
-  // Dashboard toggle isShow → บันทึกลง localStorage → หน้าเว็บอ่านจากที่นี่
+  // ข่าวประชาสัมพันธ์ (prList) — เชื่อมต่อกับ localStorage
   const [prList, setPrList] = useState<NewsItem[]>(() => {
     try {
       const saved = localStorage.getItem('amlo_prList')
       if (saved) return JSON.parse(saved)
     } catch {
-      // localStorage อาจถูก block (Private mode บางเบราว์เซอร์)
+      // ป้องกันการแครชกรณีเบราว์เซอร์บล็อก localStorage
     }
     return MOCK_PR_DB.map((item) => ({
       ...item,
@@ -129,7 +275,7 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     }))
   })
 
-  // newsList (กิจกรรม) — sync กับ localStorage เช่นกัน
+  // กิจกรรมและประกาศ (newsList) — เชื่อมต่อกับ localStorage
   const [newsList, setNewsList] = useState<NewsItem[]>(() => {
     try {
       const saved = localStorage.getItem('amlo_newsList')
@@ -144,10 +290,21 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     }))
   })
 
+  // ความคิดเห็น/รีวิว (commentList) — เชื่อมต่อกับ localStorage
+  const [commentList, setCommentList] = useState<CommentItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('amlo_commentList')
+      if (saved) return JSON.parse(saved)
+    } catch {
+      // ignore
+    }
+    return MOCK_COMMENTS
+  })
+
   const [departmentList, setDepartmentList] = useState<DepartmentItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // ทุกครั้งที่ prList เปลี่ยน → บันทึกลง localStorage อัตโนมัติ
+  // บันทึก prList ลงใน localStorage เสมอเมื่อมีการเปลี่ยนแปลง
   useEffect(() => {
     try {
       localStorage.setItem('amlo_prList', JSON.stringify(prList))
@@ -156,7 +313,7 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [prList])
 
-  // ทุกครั้งที่ newsList เปลี่ยน → บันทึกลง localStorage อัตโนมัติ
+  // บันทึก newsList ลงใน localStorage เสมอเมื่อมีการเปลี่ยนแปลง
   useEffect(() => {
     try {
       localStorage.setItem('amlo_newsList', JSON.stringify(newsList))
@@ -165,7 +322,16 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [newsList])
 
-  // โหลด departmentList ครั้งแรก (ยังไม่มี toggle isShow สำหรับ department)
+  // บันทึก commentList ลงใน localStorage เสมอเมื่อมีการเปลี่ยนแปลง
+  useEffect(() => {
+    try {
+      localStorage.setItem('amlo_commentList', JSON.stringify(commentList))
+    } catch {
+      // ignore
+    }
+  }, [commentList])
+
+  // โหลดข้อมูลหน่วยงานโครงสร้างหลักแบบดีเลย์จำลอง
   useEffect(() => {
     const timer = setTimeout(() => {
       setDepartmentList(MOCK_DEPARTMENTS_DB)
@@ -174,16 +340,19 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     return () => clearTimeout(timer)
   }, [])
 
+  // สรุปข้อมูลทั้งหมดส่งผ่าน Context Provider ไปยัง Component ลูกๆ
   const contextValue = useMemo(
     () => ({
       newsList,
       prList,
       departmentList,
+      commentList,
       isLoading,
       setPrList,
       setNewsList,
+      setCommentList,
     }),
-    [newsList, prList, departmentList, isLoading],
+    [newsList, prList, departmentList, commentList, isLoading],
   )
 
   return (

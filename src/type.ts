@@ -31,3 +31,35 @@ export interface NewsContextType {
   setPrList: React.Dispatch<React.SetStateAction<NewsItem[]>>;
   setNewsList: React.Dispatch<React.SetStateAction<NewsItem[]>>;
 }
+
+// ... โค้ดบรรทัดบนๆ เหมือนเดิม ...
+
+export interface DepartmentItem {
+  id: number;
+  title: string;
+  cover_image: string;
+  gallery: GalleryItem[]; 
+  content?: string; 
+}
+
+// 🌟 1. เพิ่ม Interface สำหรับ Comment
+export interface CommentItem {
+  id: string;
+  msg: string;
+  star: number;
+  createdAt: string;
+  isShow: boolean; // 🌟 ใช้ isShow ตามแบบ PRManager
+}
+
+export interface NewsContextType {
+  newsList: NewsItem[];
+  prList: NewsItem[]; 
+  departmentList: DepartmentItem[]; 
+  isLoading: boolean;
+  setPrList: React.Dispatch<React.SetStateAction<NewsItem[]>>;
+  setNewsList: React.Dispatch<React.SetStateAction<NewsItem[]>>;
+  
+  // 🌟 2. เพิ่ม state สำหรับ Comment เข้าไปใน Context
+  commentList: CommentItem[];
+  setCommentList: React.Dispatch<React.SetStateAction<CommentItem[]>>;
+}

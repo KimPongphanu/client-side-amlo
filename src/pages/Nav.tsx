@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom'; // เอา useLocation ออกแล้ว
+import { Link } from 'react-router-dom';
 import { NewsContext } from '../context/NewsContext'; 
 
 export default function Nav() {
@@ -12,13 +12,11 @@ export default function Nav() {
   const context = useContext(NewsContext);
   const departmentList = context?.departmentList || []; 
 
-  // 🌟 ฟังก์ชันใหม่: เอาไว้เรียกตอนผู้ใช้กดลิงก์ในมือถือ
   const handleCloseMobileMenu = () => {
     setIsMobileMenuOpen(false);
     setMobileExpandedMenu(null);
   };
 
-  // 🌟 Effect ตัวนี้ยังต้องเก็บไว้นะ เพราะเป็นการเชื่อมกับระบบภายนอก (DOM document) ถือว่าถูกต้องตามหลักการ
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -45,45 +43,80 @@ export default function Nav() {
   return (
     <>
       <nav 
-        className="fixed top-0 left-0 w-full z-[60] transition-all duration-500 backdrop-blur-[25px] bg-white/80 border-b border-gray-200 shadow-sm"
+        className="fixed top-0 left-0 w-full z-[60] transition-all duration-500 backdrop-blur-[25px] bg-white/90 border-b border-gray-200 shadow-sm"
         onMouseEnter={handleMouseEnterNav}
         onMouseLeave={handleMouseLeaveNav}
       >
-        <div className="w-full flex items-center justify-between px-4 md:px-8 h-16">
+        {/* 🌟 ปรับความสูงเป็น h-20 (80px) และใส่ relative เพื่อให้เมนูตรงกลางจัด Center ได้ */}
+        <div className="w-full flex items-center justify-between px-4 md:px-8 h-20 relative">
           
-          <div className="flex items-center h-full">
-            <div className="h-full py-2 flex-shrink-0">
-              <Link to="/">
-                <img src="/Logo.png" alt="โลโก้ ปปง." className="w-auto h-full" />
-              </Link>
-            </div>
-
-            <div className="hidden md:flex items-center gap-6 h-full font-bold text-slate-700 text-sm lg:text-base ml-8">
-              <div className="h-full flex items-center cursor-pointer hover:text-blue-600 transition-colors">
-                <Link to="/">หน้าหลัก</Link>
+          {/* ========================================== */}
+          {/* 1. ฝั่งซ้าย: โลโก้ + ชื่อหน่วยงาน */}
+          {/* ========================================== */}
+          <div className="h-full py-3 flex-shrink-0 flex items-center z-20">
+            <Link to="/" className="h-full flex items-center group">
+              <img src="/Logo.png" alt="โลโก้ ปปง." className="w-auto h-full group-hover:scale-105 transition-transform duration-300" />
+              
+              {/* เส้นคั่นแนวตั้ง (สูงขึ้นและสีละมุนขึ้น) */}
+              <div className="hidden sm:block w-[1.5px] h-10 bg-slate-300 mx-4 md:mx-5"></div>
+              
+              <div className="hidden sm:flex flex-col justify-center">
+                <h1 className="text-base md:text-lg font-extrabold text-slate-800 leading-tight group-hover:text-blue-700 transition-colors tracking-wide">
+                  กองข่าวกรองทางการเงิน
+                </h1>
+                <span className="text-xs text-slate-500 font-semibold tracking-wider mt-0.5">
+                  สำนักงาน ปปง.
+                </span>
               </div>
-              <div 
-                className={`h-full flex items-center cursor-pointer transition-colors ${activeMenu === 'about' ? 'text-blue-600' : 'hover:text-blue-600'}`}
-                onMouseEnter={() => {
-                  handleMouseEnterNav();
-                  setActiveMenu('about');
-                }}
-              >
-                เกี่ยวกับ <span className="ml-1 text-[10px]">▼</span>
-              </div>
-              <div className="h-full flex items-center cursor-pointer hover:text-blue-600 transition-colors">
-                <Link to="/contactform">ติดต่อ</Link>
-              </div>
-            </div>
+            </Link>
           </div>
 
-          <div className="flex items-center">
-            <div className="hidden md:flex items-center gap-4 text-sm font-bold">
-              <Link to="/login" className="px-5 py-2 bg-slate-900 text-white rounded-full hover:bg-blue-600 transition-colors shadow-sm">
+          {/* ========================================== */}
+          {/* 2. ตรงกลาง: เมนู Nav (สำหรับจอคอมพิวเตอร์) */}
+          {/* ========================================== */}
+          <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-10 h-full font-bold text-slate-600 text-base z-10">
+            <Link to="/" className="hover:text-blue-600 transition-colors py-2 relative group">
+              หน้าหลัก
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+            </Link>
+            
+            <div 
+              className={`flex items-center cursor-pointer transition-colors py-2 relative group ${activeMenu === 'about' ? 'text-blue-600' : 'hover:text-blue-600'}`}
+              onMouseEnter={() => { handleMouseEnterNav(); setActiveMenu('about'); }}
+            >
+              เกี่ยวกับ <span className="ml-1.5 text-[10px] opacity-70">▼</span>
+              <span className={`absolute bottom-0 left-0 h-0.5 bg-blue-600 transition-all duration-300 ${activeMenu === 'about' ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
+            </div>
+            
+            <Link to="/contactform" className="hover:text-blue-600 transition-colors py-2 relative group">
+              ติดต่อ
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+            </Link>
+          </div>
+
+          {/* 2.1 ตรงกลาง: เมนู Nav (สำรองสำหรับหน้าจอ iPad/Tablet ที่พื้นที่ตรงกลางแคบ) */}
+          <div className="hidden md:flex lg:hidden items-center gap-6 h-full font-bold text-slate-600 text-sm ml-auto mr-6 z-20">
+            <Link to="/" className="hover:text-blue-600 transition-colors">หน้าหลัก</Link>
+            <div 
+              className={`flex items-center cursor-pointer transition-colors ${activeMenu === 'about' ? 'text-blue-600' : 'hover:text-blue-600'}`}
+              onMouseEnter={() => { handleMouseEnterNav(); setActiveMenu('about'); }}
+            >
+              เกี่ยวกับ <span className="ml-1 text-[10px]">▼</span>
+            </div>
+            <Link to="/contactform" className="hover:text-blue-600 transition-colors">ติดต่อ</Link>
+          </div>
+
+          {/* ========================================== */}
+          {/* 3. ฝั่งขวา: ปุ่มเข้าสู่ระบบ + เมนูมือถือ */}
+          {/* ========================================== */}
+          <div className="flex items-center z-20">
+            <div className="hidden md:flex items-center">
+              <Link to="/login" className="px-6 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-full hover:bg-blue-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
                 เข้าสู่ระบบ
               </Link>
             </div>
 
+            {/* ปุ่มแฮมเบอร์เกอร์สำหรับมือถือ */}
             <div className="md:hidden flex items-center ml-4">
               <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -138,13 +171,12 @@ export default function Nav() {
 
       {/* 📱 เมนู Mobile แบบเต็มจอ */}
       <div 
-        className={`md:hidden fixed inset-0 z-50 bg-white transition-transform duration-300 ease-in-out pt-16 ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`md:hidden fixed inset-0 z-50 bg-white transition-transform duration-300 ease-in-out pt-20 ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="h-full overflow-y-auto px-6 py-8 pb-24">
           <ul className="flex flex-col gap-6 text-lg font-bold text-slate-800">
             
             <li className="border-b border-slate-100 pb-4">
-              {/* 🌟 ยัด onClick ใส่ลิงก์ */}
               <Link to="/" onClick={handleCloseMobileMenu}>หน้าหลัก</Link>
             </li>
 
@@ -162,7 +194,6 @@ export default function Nav() {
                   <div>
                     <h3 className="text-slate-400 text-xs uppercase mb-2">ประวัติของหน่วยงาน</h3>
                     <ul className="space-y-3 text-sm font-medium text-slate-600">
-                      {/* 🌟 ยัด onClick ใส่ลิงก์ */}
                       <li><Link to="#" onClick={handleCloseMobileMenu}>ประวัติ</Link></li>
                       <li><Link to="#" onClick={handleCloseMobileMenu}>หน้าที่และอำนาจ</Link></li>
                     </ul>
@@ -172,7 +203,6 @@ export default function Nav() {
                     <ul className="space-y-3 text-sm font-medium text-slate-600">
                       {departmentList.map((dept) => (
                         <li key={dept.id}>
-                          {/* 🌟 ยัด onClick ใส่ลิงก์ของ Dynamic Menu ด้วย */}
                           <Link to={`/department/${dept.id}`} onClick={handleCloseMobileMenu}>
                             {dept.title}
                           </Link>
@@ -185,13 +215,11 @@ export default function Nav() {
             </li>
 
             <li className="border-b border-slate-100 pb-4">
-              {/* 🌟 ยัด onClick ใส่ลิงก์ */}
               <Link to="/contactform" onClick={handleCloseMobileMenu}>ติดต่อ</Link>
             </li>
 
             <li className="pt-4">
-              {/* 🌟 ยัด onClick ใส่ลิงก์ */}
-              <Link to="#" onClick={handleCloseMobileMenu} className="block w-full py-3 bg-slate-900 text-white text-center rounded-xl shadow-md active:scale-95 transition-transform">
+              <Link to="/login" onClick={handleCloseMobileMenu} className="block w-full py-3 bg-slate-900 text-white text-center rounded-xl shadow-md active:scale-95 transition-transform">
                 เข้าสู่ระบบ
               </Link>
             </li>

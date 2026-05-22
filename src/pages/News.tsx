@@ -38,7 +38,8 @@ const HorizontalCardSkeleton = () => (
 
 const News = () => {
   const context = useContext(NewsContext);
-  const { prList, isLoading } = context || {}; 
+  const { newsList, isLoading } = context || {};
+  const prList = newsList?.filter(item => item.isShow) ?? [];
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
@@ -66,7 +67,7 @@ const News = () => {
   };
 
   const availableMonths = useMemo(() => {
-    if (!prList) return [];
+    if (!prList || prList.length === 0) return [];
     const months = prList.map(item => item.date.split(' ')[1]).filter(Boolean);
     return Array.from(new Set(months)).sort((a, b) => THAI_MONTHS.indexOf(a) - THAI_MONTHS.indexOf(b));
   }, [prList]);
