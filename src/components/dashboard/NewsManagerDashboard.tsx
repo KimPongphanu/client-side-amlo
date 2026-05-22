@@ -468,6 +468,25 @@ export default function NewsManagerDashboard() {
                     </div>
                   </div>
 
+                  {/* คำอธิบายสั้น */}
+                  <div className='grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-start border-b border-slate-100 pb-6 md:pb-8'>
+                    <div>
+                      <label className='text-sm font-bold text-slate-700 block mb-1'>คำอธิบายสั้น</label>
+                      <span className='text-[10px] text-slate-400'>แสดงบนการ์ดกิจกรรม (ไม่เกิน 200 ตัวอักษร)</span>
+                    </div>
+                    <div className='md:col-span-3'>
+                      <textarea
+                        value={formData.description || ''}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder='ระบุคำอธิบายสั้นๆ เพื่อแสดงบนการ์ดกิจกรรม...'
+                        maxLength={200}
+                        rows={3}
+                        className='w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 resize-none'
+                      />
+                      <p className='text-[11px] text-slate-400 mt-1 text-right'>{(formData.description || '').length}/200</p>
+                    </div>
+                  </div>
+
                   {/* ภาพปก */}
                   <div className='grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-start border-b border-slate-100 pb-6 md:pb-8'>
                     <div>

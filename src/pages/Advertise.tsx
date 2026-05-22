@@ -66,7 +66,7 @@ const Advertise = () => {
   // ทำให้เมื่อ Admin กดซ่อนใน Dashboard หน้านี้จะไม่แสดงรายการนั้นทันที
   const visibleList = useMemo(() => {
     if (!prList) return [];
-    return prList.filter((item) => item.isShow);
+    return prList.filter((item) => item.isShow !== false);
   }, [prList]);
 
   const availableMonths = useMemo(() => {

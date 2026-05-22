@@ -127,11 +127,11 @@ const HomePage = () => {
   const { newsList, prList, commentList, isLoading } = context;
 
   const sortedAdvertiseList = prList
-    ? [...prList].filter(item => item.isShow).sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date))
+    ? [...prList].filter(item => item.isShow !== false).sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date))
     : [];
 
   const sortedNewsList = newsList
-    ? [...newsList].filter(item => item.isShow).sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date))
+    ? [...newsList].filter(item => item.isShow !== false).sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date))
     : [];
 
   const publishedComments = commentList?.filter(c => c.isShow) || [];
