@@ -6,7 +6,6 @@ interface FilterState {
   endDate: string
 }
 
-// 🌟 นำ ToggleSwitch จาก PRManager มาใช้
 interface ToggleSwitchProps {
   checked: boolean
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
@@ -23,7 +22,6 @@ const ToggleSwitch = ({ checked, onChange, itemId }: ToggleSwitchProps) => (
 )
 
 export default function ReviewManager() {
-  // 🌟 1. ดึงข้อมูลจาก Context
   const context = useContext(NewsContext)
   const commentList = useMemo(() => context?.commentList || [], [context?.commentList])
   const setCommentList = context?.setCommentList || (() => {})
@@ -35,19 +33,23 @@ export default function ReviewManager() {
 
   const itemsPerPage = 12
 
-  // 🌟 ฟังก์ชันสลับการแสดงผล (isShow)
+  // สลับแสดง/ซ่อน รายเดียว
   const handleToggleShow = (id: string, e: React.MouseEvent | React.ChangeEvent) => {
     e.stopPropagation()
     setCommentList((prev) => prev.map((c) => (c.id === id ? { ...c, isShow: !c.isShow } : c)))
   }
 
+  // 🌟 Bulk Action: แสดง/ซ่อน ทุกรายการที่เลือก
+  const handleBulkSetShow = (show: boolean) => {
+    setCommentList((prev) =>
+      prev.map((c) => (selectedIds.has(c.id) ? { ...c, isShow: show } : c))
+    )
+    setSelectedIds(new Set())
+  }
+
   const processedData = useMemo(() => {
     let filtered = [...commentList]
-
-    if (viewMode === 'published') {
-      filtered = filtered.filter((item) => item.isShow)
-    }
-
+    if (viewMode === 'published') filtered = filtered.filter((item) => item.isShow)
     if (filter.startDate && filter.endDate) {
       const start = new Date(filter.startDate).getTime()
       const end = new Date(filter.endDate).getTime() + 86400000
@@ -56,10 +58,10 @@ export default function ReviewManager() {
         return time >= start && time <= end
       })
     }
-
     return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   }, [commentList, filter, viewMode])
 
+  const totalPages = Math.ceil(processedData.length / itemsPerPage)
   const currentItems = processedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
   const totalComments = processedData.length
   const avgStar = totalComments > 0 ? (processedData.reduce((acc, curr) => acc + curr.star, 0) / totalComments).toFixed(2) : '0.00'
@@ -89,7 +91,7 @@ export default function ReviewManager() {
   return (
     <div className='bg-slate-100 min-h-screen p-4 md:p-8 font-sans text-slate-800 pb-32 md:pb-8'>
       <div className='max-w-7xl mx-auto space-y-6'>
-        
+
         {/* Header */}
         <header className='flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 pb-4'>
           <div className='w-full lg:w-auto'>
@@ -102,9 +104,7 @@ export default function ReviewManager() {
               {totalComments > 0 && (
                 <div className='bg-white border border-slate-300 px-4 py-2 flex items-center gap-3 flex-1 sm:flex-none justify-center rounded-lg shadow-sm'>
                   <span className='text-slate-500 text-sm'>คะแนนเฉลี่ย</span>
-                  <div className='flex items-center gap-1 text-orange-500'>
-                    <span className='text-xl font-bold'>{avgStar}</span>
-                  </div>
+                  <span className='text-xl font-bold text-orange-500'>{avgStar}</span>
                 </div>
               )}
             </div>
@@ -113,58 +113,64 @@ export default function ReviewManager() {
 
         {/* Tabs & Select All */}
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-2 gap-4'>
-          <div className='flex gap-6 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-hide'>
-            <button
-              onClick={() => handleTabChange('all')}
-              className={`pb-2 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-            >
+          <div className='flex gap-6'>
+            <button onClick={() => handleTabChange('all')} className={`pb-2 text-sm font-bold border-b-2 transition-colors ${viewMode === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
               ข้อมูลทั้งหมด
             </button>
-            <button
-              onClick={() => handleTabChange('published')}
-              className={`pb-2 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'published' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-            >
+            <button onClick={() => handleTabChange('published')} className={`pb-2 text-sm font-bold border-b-2 transition-colors ${viewMode === 'published' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
               แสดงผลหน้าเว็บ
             </button>
           </div>
-          <button onClick={handleSelectAll} className='text-sm text-blue-600 hover:underline w-full sm:w-auto text-left sm:text-right'>
+          <button onClick={handleSelectAll} className='text-sm text-blue-600 hover:underline'>
             {selectedIds.size > 0 && selectedIds.size === currentItems.length ? 'ยกเลิกการเลือกหน้าปัจจุบัน' : 'เลือกทั้งหมดในหน้านี้'}
           </button>
         </div>
 
-        {/* 🌟 Grid Content (Card ตามดีไซน์) */}
+        {/* 🌟 Bulk Action Bar */}
+        <div className={`transition-all duration-300 overflow-hidden ${selectedIds.size > 0 ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+          <div className='bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3'>
+            <span className='text-sm font-bold text-blue-700'>เลือกแล้ว {selectedIds.size} รายการ</span>
+            <div className='flex gap-2'>
+              <button onClick={() => handleBulkSetShow(true)} className='flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold transition-colors shadow-sm'>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                แสดงทั้งหมด
+              </button>
+              <button onClick={() => handleBulkSetShow(false)} className='flex items-center gap-1.5 px-4 py-2 rounded-lg bg-slate-500 hover:bg-slate-600 text-white text-sm font-bold transition-colors shadow-sm'>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+                ซ่อนทั้งหมด
+              </button>
+              <button onClick={() => setSelectedIds(new Set())} className='px-3 py-2 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-500 text-sm font-bold transition-colors'>
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Grid */}
         {processedData.length === 0 ? (
           <div className='text-center py-20 text-slate-500'>ไม่พบข้อมูลในหมวดหมู่นี้</div>
         ) : (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
             {currentItems.map((item) => {
-              const isToday = new Date(item.createdAt).toDateString() === new Date().toDateString();
-
+              const isToday = new Date(item.createdAt).toDateString() === new Date().toDateString()
               return (
                 <div
                   key={item.id}
                   onClick={() => handleSelect(item.id)}
                   className={`relative bg-white border rounded-2xl p-5 flex flex-col h-full transition-all cursor-pointer shadow-sm hover:shadow-md ${selectedIds.has(item.id) ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/20' : 'border-slate-200'}`}
                 >
-                  {/* แถว 1: ป้ายวันนี้ + Checkbox */}
                   <div className='flex justify-between items-start mb-3'>
                     <div className='h-6'>
-                      {isToday && (
-                        <span className='bg-green-100 text-green-700 border border-green-200 text-xs px-3 py-1 rounded-md font-bold'>
-                          วันนี้
-                        </span>
-                      )}
+                      {isToday && <span className='bg-green-100 text-green-700 border border-green-200 text-xs px-3 py-1 rounded-md font-bold'>วันนี้</span>}
                     </div>
-                    <input
-                      type='checkbox'
-                      checked={selectedIds.has(item.id)}
-                      onChange={() => handleSelect(item.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      className='w-5 h-5 cursor-pointer accent-slate-600 border-slate-300 rounded'
-                    />
+                    <input type='checkbox' checked={selectedIds.has(item.id)} onChange={() => handleSelect(item.id)} onClick={(e) => e.stopPropagation()} className='w-5 h-5 cursor-pointer accent-slate-600 border-slate-300 rounded' />
                   </div>
 
-                  {/* แถว 2: ดาว */}
                   <div className='flex gap-1 mb-4 text-orange-400'>
                     {[...Array(5)].map((_, i) => (
                       <svg key={i} className={`w-5 h-5 ${i < item.star ? 'fill-current' : 'text-slate-200 fill-current'}`} viewBox='0 0 20 20'>
@@ -173,28 +179,31 @@ export default function ReviewManager() {
                     ))}
                   </div>
 
-                  {/* แถว 3: ข้อความ */}
-                  <p className='text-slate-700 text-base font-medium flex-1 mb-6 leading-relaxed'>
-                    {item.msg}
-                  </p>
+                  <p className='text-slate-700 text-base font-medium flex-1 mb-6 leading-relaxed'>{item.msg}</p>
 
-                  {/* แถว 4: ID + วันที่ */}
                   <div className='text-sm text-slate-400 font-medium flex justify-between items-center border-t border-slate-100 pt-4 mt-auto mb-4'>
                     <span>{item.id}</span>
-                    <span>
-                      {new Date(item.createdAt).toLocaleDateString('th-TH')} {new Date(item.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                    <span>{new Date(item.createdAt).toLocaleDateString('th-TH')} {new Date(item.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
 
-                  {/* แถว 5: Toggle Switch (แบบเดียวกับ PRManager) */}
                   <div className='bg-slate-50 border-t border-slate-100 px-5 py-3 -mx-5 -mb-5 flex justify-between items-center rounded-b-2xl' onClick={(e) => e.stopPropagation()}>
                     <div className='text-xs text-slate-500 font-bold uppercase tracking-wide'>แสดงหน้าเว็บ</div>
                     <ToggleSwitch checked={!!item.isShow} onChange={(e) => handleToggleShow(item.id, e)} itemId={item.id} />
                   </div>
-
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className='flex justify-center gap-2 pt-4'>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button key={page} onClick={() => setCurrentPage(page)} className={`w-9 h-9 rounded-lg text-sm font-bold transition-colors ${currentPage === page ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                {page}
+              </button>
+            ))}
           </div>
         )}
 

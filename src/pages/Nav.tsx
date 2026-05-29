@@ -77,12 +77,19 @@ export default function Nav() {
           {/* 1. ฝั่งซ้าย: โลโก้ + ชื่อหน่วยงาน */}
           {/* ========================================== */}
           <div className="h-full py-3 flex-shrink-0 flex items-center z-20">
-            <Link to="/" className="h-full flex items-center group">
+            <button
+              onClick={() => {
+                if (window.location.pathname === '/') {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                  navigate('/');
+                }
+              }}
+              className="h-full flex items-center group bg-transparent border-0 p-0 cursor-pointer"
+              aria-label="กลับหน้าหลักหรือเลื่อนขึ้นบนสุด"
+            >
               <img src="/Logo.png" alt="โลโก้ ปปง." className="w-auto h-full group-hover:scale-105 transition-transform duration-300" />
-              
-              {/* เส้นคั่นแนวตั้ง (สูงขึ้นและสีละมุนขึ้น) */}
               <div className="hidden sm:block w-[1.5px] h-10 bg-slate-300 mx-4 md:mx-5"></div>
-              
               <div className="hidden sm:flex flex-col justify-center">
                 <h1 className="text-base md:text-lg font-extrabold text-slate-800 leading-tight group-hover:text-blue-700 transition-colors tracking-wide">
                   กองข่าวกรองทางการเงิน
@@ -91,7 +98,7 @@ export default function Nav() {
                   สำนักงาน ปปง.
                 </span>
               </div>
-            </Link>
+            </button>
           </div>
 
           {/* ========================================== */}
