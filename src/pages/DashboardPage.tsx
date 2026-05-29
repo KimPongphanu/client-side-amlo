@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useContext } from 'react'
+import Swal from 'sweetalert2'
 import { Link, useNavigate } from 'react-router-dom'
 import ReviewManager from '../components/dashboard/ReviewManager'
 import ContactRequestManager from '../components/dashboard/ContactRequestManager'
 import PRManagerDashboard from '../components/dashboard/PRManagerDashboard'
 import NewsManagerDashboard from '../components/dashboard/NewsManagerDashboard'
+import { NewsContext } from '../context/NewsContext'
 
 type MenuId =
   | 'overview'
@@ -82,15 +84,38 @@ const DataCleansingComponent = () => (
 // ---------------------------------------------------------
 // Layout Components
 // ---------------------------------------------------------
+const ClockDisplay = () => {
+  const [dateTime, setDateTime] = useState<Date>(new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => setDateTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  return (
+    <div className='hidden md:block'>
+      <h6 className='text-sm md:text-base font-bold text-slate-800'>
+        {getThaiFullDate(dateTime)}
+      </h6>
+      <p className='text-xs md:text-sm text-slate-500'>
+        เวลา {getThaiTime(dateTime)} น.
+      </p>
+    </div>
+  )
+}
 type NavBarProps = {
   toggleMobileMenu: () => void
 }
 
 const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
-  const [dateTime, setDateTime] = useState<Date>(new Date())
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isNotifOpen, setIsNotifOpen] = useState(false)
+  const [expandedNotifView, setExpandedNotifView] = useState<'none' | 'contacts' | 'reviews'>('none')
+  
   const navigate = useNavigate()
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const notifRef = useRef<HTMLDivElement>(null)
+  const context = useContext(NewsContext)
 
   const handleLogout = () => {
     sessionStorage.removeItem('token')
@@ -103,16 +128,28 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
     role: 'Data Science / Admin',
   }
 
-  useEffect(() => {
-    const timer = setInterval(() => setDateTime(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
+  // ข้อมูลจำลองสำหรับ Notification (ใช้ชุดเดียวกับ ContactRequestManager)
+  const mockContacts = [
+    { id: 'CON-001', firstName: 'สมชาย', lastName: 'สายลม', message: 'สนใจสอบถามบริการติดตั้งอินเทอร์เน็ตครับ', createdAt: '2024-05-10T10:00:00Z' },
+    { id: 'CON-002', firstName: 'สมชาย', lastName: 'สายลม', message: 'ยังไม่ได้รับเมลตอบกลับจากเจ้าหน้าที่เลยครับ', createdAt: '2024-05-10T14:30:00Z' },
+    { id: 'CON-003', firstName: 'วิภา', lastName: 'ใจดี', message: 'ต้องการใบเสนอราคาโครงการหมู่บ้าน', createdAt: '2024-05-09T09:15:00Z' },
+    { id: 'CON-004', firstName: 'มานะ', lastName: 'รักเรียน', message: 'ขอสอบถามที่ตั้งสำนักงานใหญ่', createdAt: '2024-05-08T16:00:00Z' },
+  ]
+
+  // ข้อมูลจริงจาก Context และ Mock ของ Contact
+  const realReviews = context?.commentList ? [...context.commentList] : []
+  const latestReviews = realReviews.reverse() // ย้อนเอาอันล่าสุดขึ้นก่อน
+  const latestContacts = [...mockContacts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
   // ปิด Dropdown เมื่อคลิกข้างนอก
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setIsUserMenuOpen(false)
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setIsNotifOpen(false)
+        setExpandedNotifView('none') // Reset view เมื่อปิด
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -142,22 +179,106 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
 
         <hr className='hidden md:block w-[2px] h-10 bg-slate-300 border-0' />
 
-        <div className='hidden md:block'>
-          <h6 className='text-sm md:text-base font-bold text-slate-800'>
-            {getThaiFullDate(dateTime)}
-          </h6>
-          <p className='text-xs md:text-sm text-slate-500'>
-            เวลา {getThaiTime(dateTime)} น.
-          </p>
-        </div>
+        <ClockDisplay />
       </div>
 
       <div className='flex items-center gap-x-6'>
-        <div className='relative cursor-pointer' aria-label='การแจ้งเตือน'>
-          <svg className='w-6 h-6 text-slate-700' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-            <path strokeLinecap='square' strokeLinejoin='miter' strokeWidth='2' d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'></path>
-          </svg>
-          <span className='absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full'></span>
+        <div className='relative' ref={notifRef}>
+          <button 
+            className='relative cursor-pointer p-1 hover:bg-slate-100 rounded-full transition-colors' 
+            aria-label='การแจ้งเตือน'
+            onClick={() => setIsNotifOpen(!isNotifOpen)}
+          >
+            <svg className='w-6 h-6 text-slate-700' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+              <path strokeLinecap='square' strokeLinejoin='miter' strokeWidth='2' d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'></path>
+            </svg>
+            <span className='absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full'></span>
+          </button>
+
+          {/* Notif Dropdown Menu */}
+          <div
+            className={`absolute right-0 top-full mt-3 w-80 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden transition-all duration-200 ${
+              isNotifOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'
+            }`}
+          >
+            <div className='px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center'>
+              <h6 className='text-sm font-bold text-slate-800'>การแจ้งเตือน</h6>
+              <span className='text-[10px] font-semibold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full'>
+                รวม {latestContacts.length + latestReviews.length}
+              </span>
+            </div>
+
+            <div className='max-h-96 overflow-y-auto p-2'>
+              {/* Contacts */}
+              {(expandedNotifView === 'none' || expandedNotifView === 'contacts') && (
+                <div className='mb-2'>
+                  <div className='px-2 py-1 flex items-center gap-2'>
+                    <span className='text-xs font-bold text-slate-500'>ติดต่อ</span>
+                    <hr className='flex-1 border-slate-200' />
+                  </div>
+                  {latestContacts.slice(0, expandedNotifView === 'contacts' ? 5 : 2).map((item) => (
+                    <div 
+                      key={item.id} 
+                      className='px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors'
+                    >
+                      <p className='text-sm text-slate-800 truncate font-medium'>{item.message}</p>
+                      <p className='text-[10px] text-slate-400 mt-0.5'>{item.firstName} {item.lastName}</p>
+                    </div>
+                  ))}
+                  
+                  {expandedNotifView === 'none' && latestContacts.length > 2 && (
+                    <div 
+                      onClick={(e) => { e.stopPropagation(); setExpandedNotifView('contacts') }}
+                      className='px-3 py-1.5 text-xs text-center text-blue-500 font-medium cursor-pointer hover:bg-blue-50 rounded-lg'
+                    >
+                      +{latestContacts.length - 2} เพิ่มเติม
+                    </div>
+                  )}
+                  {expandedNotifView === 'contacts' && (
+                    <div 
+                      onClick={(e) => { e.stopPropagation(); setExpandedNotifView('none') }}
+                      className='px-3 py-1.5 text-xs text-center text-slate-500 font-medium cursor-pointer hover:bg-slate-100 rounded-lg'
+                    >
+                      แสดงน้อยลง
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Reviews */}
+              {(expandedNotifView === 'none' || expandedNotifView === 'reviews') && (
+                <div>
+                  <div className='px-2 py-1 flex items-center gap-2'>
+                    <span className='text-xs font-bold text-slate-500'>ความคิดเห็น</span>
+                    <hr className='flex-1 border-slate-200' />
+                  </div>
+                  {latestReviews.slice(0, expandedNotifView === 'reviews' ? 5 : 2).map((item) => (
+                    <div key={item.id} className='px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors'>
+                      <p className='text-sm text-slate-800 truncate font-medium'>{item.msg}</p>
+                      <p className='text-[10px] text-slate-400 mt-0.5'>{item.star} ดาว</p>
+                    </div>
+                  ))}
+                  
+                  {expandedNotifView === 'none' && latestReviews.length > 2 && (
+                    <div 
+                      onClick={(e) => { e.stopPropagation(); setExpandedNotifView('reviews') }}
+                      className='px-3 py-1.5 text-xs text-center text-blue-500 font-medium cursor-pointer hover:bg-blue-50 rounded-lg'
+                    >
+                      +{latestReviews.length - 2} เพิ่มเติม
+                    </div>
+                  )}
+                  {expandedNotifView === 'reviews' && (
+                    <div 
+                      onClick={(e) => { e.stopPropagation(); setExpandedNotifView('none') }}
+                      className='px-3 py-1.5 text-xs text-center text-slate-500 font-medium cursor-pointer hover:bg-slate-100 rounded-lg'
+                    >
+                      แสดงน้อยลง
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <hr className='w-[2px] h-8 bg-slate-200 border-0' />
@@ -254,11 +375,89 @@ const SideBar = ({ activeMenu, setActiveMenu, isMobileOpen }: SideBarProps) => {
 }
 
 // ---------------------------------------------------------
-// Root Component
+// Root Component (Auto Logout Logic Included)
 // ---------------------------------------------------------
+const useIdleTimeout = (onIdle: () => void, idleTimeMs: number = 15 * 60 * 1000) => {
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const warningRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isIdleWarningOpen = useRef<boolean>(false)
+
+  useEffect(() => {
+    const warningTimeMs = 60 * 1000 // แจ้งเตือน 60 วินาทีก่อนเตะออก
+
+    const resetTimer = () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (warningRef.current) clearTimeout(warningRef.current)
+
+      if (Swal.isVisible() && isIdleWarningOpen.current) {
+        Swal.close()
+        isIdleWarningOpen.current = false
+      }
+
+      warningRef.current = setTimeout(() => {
+        let timerInterval: ReturnType<typeof setInterval>
+        isIdleWarningOpen.current = true
+        Swal.fire({
+          title: 'เซสชันของคุณกำลังจะหมดอายุ',
+          html: 'ระบบจะออกจากระบบอัตโนมัติใน <b></b> วินาที เนื่องจากไม่มีการใช้งาน',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'ฉันยังใช้งานอยู่',
+          cancelButtonText: 'ออกจากระบบ',
+          confirmButtonColor: '#3b82f6',
+          cancelButtonColor: '#ef4444',
+          timer: warningTimeMs,
+          timerProgressBar: true,
+          didOpen: () => {
+            const b = Swal.getHtmlContainer()?.querySelector('b')
+            timerInterval = setInterval(() => {
+              if (b) b.textContent = Math.ceil(Swal.getTimerLeft()! / 1000).toString()
+            }, 100)
+          },
+          willClose: () => {
+            clearInterval(timerInterval)
+            isIdleWarningOpen.current = false
+          }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            resetTimer()
+          } else if (result.dismiss === Swal.DismissReason.timer || result.isDismissed) {
+            onIdle()
+          }
+        })
+      }, idleTimeMs - warningTimeMs)
+
+      timeoutRef.current = setTimeout(() => {
+        onIdle()
+        Swal.close()
+      }, idleTimeMs)
+    }
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart']
+    const handleEvent = () => resetTimer()
+    
+    events.forEach(event => document.addEventListener(event, handleEvent))
+    resetTimer()
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      if (warningRef.current) clearTimeout(warningRef.current)
+      events.forEach(event => document.removeEventListener(event, handleEvent))
+    }
+  }, [onIdle, idleTimeMs])
+}
 const DashboardPage = () => {
   const [activeMenu, setActiveMenu] = useState<MenuId>('overview')
   const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false)
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('token')
+    navigate('/login', { replace: true })
+  }
+
+  // เรียกใช้ Hook โดยตั้งเวลา 15 นาที
+  useIdleTimeout(handleLogout, 15 * 60 * 1000)
 
   const renderMainContent = () => {
     switch (activeMenu) {

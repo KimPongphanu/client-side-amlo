@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { NewsContext } from '../context/NewsContext';
 import type { NewsItem } from '../type';
@@ -120,19 +120,25 @@ const HomePage = () => {
     }
   }, [commentOffset, context]);
 
+  const prList = context?.prList;
+  const sortedAdvertiseList = useMemo(() => {
+    return prList
+      ? [...prList].filter(item => item.isShow !== false).sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date))
+      : [];
+  }, [prList]);
+
+  const newsList = context?.newsList;
+  const sortedNewsList = useMemo(() => {
+    return newsList
+      ? [...newsList].filter(item => item.isShow !== false).sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date))
+      : [];
+  }, [newsList]);
+
   if (!context) {
     return <div className="p-8 text-red-500 text-2xl font-bold">Error : ไม่พบ Context</div>;
   }
 
-  const { newsList, prList, commentList, isLoading } = context;
-
-  const sortedAdvertiseList = prList
-    ? [...prList].filter(item => item.isShow !== false).sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date))
-    : [];
-
-  const sortedNewsList = newsList
-    ? [...newsList].filter(item => item.isShow !== false).sort((a, b) => parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date))
-    : [];
+  const { commentList, isLoading } = context;
 
   const publishedComments = commentList?.filter(c => c.isShow) || [];
 

@@ -39,7 +39,9 @@ const HorizontalCardSkeleton = () => (
 const News = () => {
   const context = useContext(NewsContext);
   const { newsList, isLoading } = context || {};
-  const prList = newsList?.filter(item => item.isShow !== false) ?? [];
+  const prList = useMemo(() => {
+    return newsList?.filter(item => item.isShow !== false) ?? [];
+  }, [newsList]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('');
