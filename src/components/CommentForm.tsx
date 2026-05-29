@@ -100,12 +100,11 @@ const CommentForm = () => {
 
     if (position.y + iconSize / 2 < screenHeight / 2) {
       setSnapVertical('top')
+      snapY = 88
     } else {
       setSnapVertical('bottom')
+      snapY = screenHeight - iconSize - 24
     }
-
-    if (snapY < 88) snapY = 88
-    if (snapY > screenHeight - iconSize - 24) snapY = screenHeight - iconSize - 24
 
     setPosition({ x: snapX, y: snapY })
   }

@@ -3,6 +3,8 @@ import Nav from '../pages/Nav';
 import Slider from '../pages/Slider';
 import Footer from './Footer';
 import CommentForm from '../components/CommentForm';
+import ScrollToTopButton from '../components/ScrollToTopButton';
+import CookieConsent from '../components/CookieConsent';
 
 const slides = [
   { id: 1, image: '/banner.png', title: 'Slide 1' },
@@ -43,6 +45,8 @@ const MainLayout = () => {
       <Footer />
 
       <CommentForm />
+      <ScrollToTopButton />
+      <CookieConsent />
     </div>
   );
 };

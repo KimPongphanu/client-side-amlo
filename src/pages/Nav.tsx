@@ -1,13 +1,18 @@
 import { useState, useRef, useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { User } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { NewsContext } from '../context/NewsContext'; 
 
 export default function Nav() {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navigate = useNavigate();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileExpandedMenu, setMobileExpandedMenu] = useState<string | null>(null);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!sessionStorage.getItem('token'));
+  const accountRef = useRef<HTMLDivElement>(null);
 
   const context = useContext(NewsContext);
   const departmentList = context?.departmentList || []; 
@@ -16,6 +21,24 @@ export default function Nav() {
     setIsMobileMenuOpen(false);
     setMobileExpandedMenu(null);
   };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setIsAccountOpen(false);
+    navigate('/');
+  };
+
+  // ปิด Dropdown เมื่อคลิกข้างนอก
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
+        setIsAccountOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -110,10 +133,49 @@ export default function Nav() {
           {/* 3. ฝั่งขวา: ปุ่มเข้าสู่ระบบ + เมนูมือถือ */}
           {/* ========================================== */}
           <div className="flex items-center z-20">
-            <div className="hidden md:flex items-center">
-              <Link to="/login" className="px-6 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-full hover:bg-blue-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
-                เข้าสู่ระบบ
-              </Link>
+            <div className="hidden md:flex items-center" ref={accountRef}>
+              {isLoggedIn ? (
+                // --- กรณี Login แล้ว: แสดง Dropdown ---
+                <div className="relative">
+                  <button
+                    onClick={() => setIsAccountOpen(!isAccountOpen)}
+                    aria-label="เมนูบัญชี"
+                    className="flex items-center gap-1.5 text-slate-600 hover:text-blue-600 transition-colors"
+                  >
+                    <User size={20} />
+                    <span className={`text-[10px] transition-transform duration-200 ${isAccountOpen ? 'rotate-180' : ''}`}>▼</span>
+                  </button>
+
+                  {/* Dropdown */}
+                  <div
+                    className={`absolute right-0 top-full mt-3 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden transition-all duration-200 ${
+                      isAccountOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'
+                    }`}
+                  >
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setIsAccountOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                      หน้า Dashboard
+                    </Link>
+                    <div className="h-px bg-slate-100" />
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                      ออกจากระบบ
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // --- กรณียังไม่ Login: ไปหน้า Login ---
+                <Link to="/login" aria-label="เข้าสู่ระบบ" className="text-slate-600 hover:text-blue-600 transition-colors">
+                  <User size={20} />
+                </Link>
+              )}
             </div>
 
             {/* ปุ่มแฮมเบอร์เกอร์สำหรับมือถือ */}
@@ -219,9 +281,27 @@ export default function Nav() {
             </li>
 
             <li className="pt-4">
-              <Link to="/login" onClick={handleCloseMobileMenu} className="block w-full py-3 bg-slate-900 text-white text-center rounded-xl shadow-md active:scale-95 transition-transform">
-                เข้าสู่ระบบ
-              </Link>
+              {isLoggedIn ? (
+                <>
+                  <Link
+                    to="/dashboard"
+                    onClick={handleCloseMobileMenu}
+                    className="block w-full py-3 mb-2 bg-blue-600 text-white text-center rounded-xl shadow-md active:scale-95 transition-transform font-bold"
+                  >
+                    หน้า Dashboard
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full py-3 bg-red-500 text-white text-center rounded-xl shadow-md active:scale-95 transition-transform font-bold"
+                  >
+                    ออกจากระบบ
+                  </button>
+                </>
+              ) : (
+                <Link to="/login" onClick={handleCloseMobileMenu} className="block w-full py-3 bg-slate-900 text-white text-center rounded-xl shadow-md active:scale-95 transition-transform">
+                  เข้าสู่ระบบ
+                </Link>
+              )}
             </li>
 
           </ul>

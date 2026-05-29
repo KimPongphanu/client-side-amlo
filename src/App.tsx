@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
 import { Suspense, lazy } from 'react'
 
 import { NewsProvider } from './context/NewsContext'
@@ -18,6 +18,13 @@ const Login = lazy (() => import('./pages/LoginPage'))
 const CommentForm = lazy(() => import('./components/CommentForm'))
 const ContactForm = lazy(() => import('./components/ContactForm'))
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+
+// Guard: เช็ค Token ใน sessionStorage ก่อน เข้า Dashboard ได้เฉพาะคนที่ Login แล้วเท่านั้น
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const isLoggedIn = !!sessionStorage.getItem('token')
+  return isLoggedIn ? <>{children}</> : <Navigate to='/login' replace />
+}
+
 function App() {
   return (
     <NewsProvider>
@@ -52,7 +59,7 @@ function App() {
               <Route path='/contactform' element={<ContactForm />}></Route>
               <Route path='/login' element={<Login/>}></Route>
             </Route>
-            <Route path='/dashboard' element={<DashboardPage />}></Route>
+            <Route path='/dashboard' element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}></Route>
 
             {/* Route สำหรับหน้าที่ไม่อยากมีทั้ง Nav , Slider */}
             {/* <Route path="/duty" element={<DutyPage />} /> */}

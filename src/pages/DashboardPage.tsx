@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import ReviewManager from '../components/dashboard/ReviewManager'
 import ContactRequestManager from '../components/dashboard/ContactRequestManager'
 import PRManagerDashboard from '../components/dashboard/PRManagerDashboard'
@@ -88,6 +88,14 @@ type NavBarProps = {
 
 const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
   const [dateTime, setDateTime] = useState<Date>(new Date())
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const navigate = useNavigate()
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('token')
+    navigate('/login', { replace: true })
+  }
 
   // ข้อมูลผู้ใช้ปัจจุบัน — ในระบบจริงดึงมาจาก Auth Context / API
   const currentUser = {
@@ -98,6 +106,17 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
   useEffect(() => {
     const timer = setInterval(() => setDateTime(new Date()), 1000)
     return () => clearInterval(timer)
+  }, [])
+
+  // ปิด Dropdown เมื่อคลิกข้างนอก
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setIsUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   return (
@@ -143,18 +162,49 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
 
         <hr className='w-[2px] h-8 bg-slate-200 border-0' />
 
-        <div className='flex items-center gap-x-3 cursor-pointer'>
-          <div className='text-right hidden sm:block'>
-            <h6 className='text-sm font-bold text-slate-800'>{currentUser.name}</h6>
-            <p className='text-xs text-slate-500'>{currentUser.role}</p>
+        {/* User Profile Dropdown */}
+        <div className='relative' ref={userMenuRef}>
+          <button
+            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            className='flex items-center gap-x-3 cursor-pointer hover:opacity-80 transition-opacity'
+            aria-label='เมนูบัญชีผู้ใช้'
+          >
+            <div className='text-right hidden sm:block'>
+              <h6 className='text-sm font-bold text-slate-800'>{currentUser.name}</h6>
+              <p className='text-xs text-slate-500'>{currentUser.role}</p>
+            </div>
+            <Avatar name={currentUser.name} />
+            <span className={`text-[10px] text-slate-500 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`}>▼</span>
+          </button>
+
+          {/* Dropdown Menu */}
+          <div
+            className={`absolute right-0 top-full mt-3 w-52 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden transition-all duration-200 ${
+              isUserMenuOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'
+            }`}
+          >
+            {/* ข้อมูลผู้ใช้ */}
+            <div className='px-4 py-3 border-b border-slate-100'>
+              <p className='text-xs font-bold text-slate-800'>{currentUser.name}</p>
+              <p className='text-xs text-slate-400 mt-0.5'>{currentUser.role}</p>
+            </div>
+            {/* ปุ่ม Logout */}
+            <button
+              onClick={handleLogout}
+              className='flex items-center gap-2.5 w-full px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors'
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              ออกจากระบบ
+            </button>
           </div>
-          {/* แก้ไข: ใช้ Avatar Component แทน ui-avatars.com */}
-          <Avatar name={currentUser.name} />
         </div>
       </div>
     </header>
   )
 }
+
 
 type SideBarProps = {
   activeMenu: MenuId

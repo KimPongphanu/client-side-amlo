@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useContext } from 'react'
-import { Grid, List } from 'lucide-react';
+import { Grid, List} from 'lucide-react';
 import { NewsContext } from '../../context/NewsContext'
 import Swal from 'sweetalert2'
 import ReactQuill from 'react-quill-new'
