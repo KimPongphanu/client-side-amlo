@@ -21,6 +21,9 @@ const getYouTubeId = (url = '') => {
   return match ? match[1] : null;
 };
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const resolveUrl = (url: string) => url?.startsWith('/') ? `${API_URL}${url}` : url
+
 interface YouTubePlayer {
   destroy: () => void;
   playVideo: () => void;
@@ -326,7 +329,7 @@ const DepartmentDetailPage = () => {
                     />
                   ) : (
                     <img
-                      src={item.url}
+                      src={resolveUrl(item.url)}
                       alt={`ภาพประกอบ ${department.title} - ${index + 1}`}
                       className="w-full h-full object-cover"
                     />

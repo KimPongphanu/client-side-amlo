@@ -13,6 +13,10 @@ const DepartmentShowcase = () => {
   const context = useContext(NewsContext)
   const departments = useMemo(() => context?.departmentList || [], [context?.departmentList])
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+  const resolveImg = (url: string) =>
+    url?.startsWith('/') ? `${API_URL}${url}` : url
+
   // ==========================================
   // 💻 Logic สำหรับ Desktop
   // ==========================================
@@ -151,7 +155,7 @@ const DepartmentShowcase = () => {
                       ${isActive ? 'scale-100 opacity-100 shadow-2xl ring-4 ring-blue-500/10' : 'scale-[0.85] opacity-40 shadow-sm'}
                     `}
                   >
-                    <img src={dept.cover_image} alt={dept.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-1000 hover:scale-105" />
+                    <img src={resolveImg(dept.cover_image)} alt={dept.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-1000 hover:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                   </div>
                 </div>
@@ -186,7 +190,7 @@ const DepartmentShowcase = () => {
                 <div key={dept.id} className="w-full h-full px-6 flex flex-col justify-center">
                   <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-100 flex flex-col h-full max-h-[500px]">
                     <div className="h-[45%] w-full relative shrink-0 bg-slate-200">
-                      <img src={dept.cover_image} alt={dept.title} className="w-full h-full object-cover" />
+                      <img src={resolveImg(dept.cover_image)} alt={dept.title} className="w-full h-full object-cover" />
                       <div className="absolute top-4 right-4 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10">
                         กอง {code}
                       </div>

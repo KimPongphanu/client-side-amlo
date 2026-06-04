@@ -28,20 +28,25 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
           setPrList(prRes.data)
         }
 
-        // 2. 🌟 แก้ไข: ดึงข้อมูลกิจกรรม (NEWS) จาก API หลังบ้านจริงแทนการใช้ค่าวัดดวงในเครื่อง
+        // 2. ดึงข้อมูลกิจกรรม (NEWS)
         const newsRes = await api('/news?type=NEWS&limit=50', { method: 'GET' })
         if (newsRes && newsRes.data) {
           setNewsList(newsRes.data)
         }
 
-        // 3. (Optional) โหลดค่าคอมเมนต์และโครงสร้างภายในแบบ Mock สำรองไว้ก่อน
-        // หากในอนาคตหลังบ้านทำ Endpoint /comments หรือ /departments เสร็จ สามารถมายัดใส่ตรงนี้ได้เลย
+        // 🌟 เพิ่มส่วนนี้: 3. ดึงข้อมูลหน่วยงาน (Department) จาก Backend
+        const deptRes = await api('/departments', { method: 'GET' })
+        if (deptRes && Array.isArray(deptRes)) {
+          setDepartmentList(deptRes)
+        }
+
+        // 4. (Optional) โหลดค่าคอมเมนต์...
         const savedComments = localStorage.getItem('amlo_commentList')
         if (savedComments) setCommentList(JSON.parse(savedComments))
       } catch (error) {
         console.error('Failed to fetch public website data:', error)
       } finally {
-        setIsLoading(false) // ปิดตัวโหลด Skeleton พร้อมกันเมื่อข้อมูลหลักมาครบ
+        setIsLoading(false)
       }
     }
 
@@ -53,7 +58,9 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     if (commentList.length > 0) {
       try {
         localStorage.setItem('amlo_commentList', JSON.stringify(commentList))
-      } catch {}
+      } catch(error) {
+        console.error('ไม่สามารถบันทึกคอมเมนต์ลง LocalStorage ได้:', error)
+      }
     }
   }, [commentList])
 
@@ -67,6 +74,7 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
       setPrList,
       setNewsList,
       setCommentList,
+      setDepartmentList,
     }),
     [newsList, prList, departmentList, commentList, isLoading],
   )

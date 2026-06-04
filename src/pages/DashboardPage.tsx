@@ -2,6 +2,7 @@ import { useContext, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Swal from 'sweetalert2'
 import ContactRequestManager from '../components/dashboard/ContactRequestManager'
+import DepartmentManagerDashboard from '../components/dashboard/DepartmentManagerDashboard'
 import NewsManagerDashboard from '../components/dashboard/NewsManagerDashboard'
 import PRManagerDashboard from '../components/dashboard/PRManagerDashboard'
 import ReviewManager from '../components/dashboard/ReviewManager'
@@ -18,6 +19,7 @@ type MenuId =
   | 'contacts'
   | 'advertises'
   | 'news'
+  | 'departments'
 
 // ---------------------------------------------------------
 // Helper Functions
@@ -472,6 +474,7 @@ const SideBar = ({ activeMenu, setActiveMenu, isMobileOpen }: SideBarProps) => {
     { id: 'contacts', label: 'การติดต่อ' },
     { id: 'advertises', label: 'ประชาสัมพันธ์' },
     { id: 'news', label: 'กิจกรรมและประกาศ' },
+    { id: 'departments', label: 'จัดการหน่วยงาน' },
   ]
 
   return (
@@ -620,6 +623,8 @@ const DashboardPage = () => {
         return <PRManagerDashboard />
       case 'news':
         return <NewsManagerDashboard />
+      case 'departments':
+        return <DepartmentManagerDashboard />
       default:
         return <div className='p-6'>อยู่ระหว่างการพัฒนา...</div>
     }

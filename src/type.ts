@@ -30,6 +30,7 @@ export interface NewsContextType {
   // 🌟 เพิ่ม 2 บรรทัดนี้
   setPrList: React.Dispatch<React.SetStateAction<NewsItem[]>>
   setNewsList: React.Dispatch<React.SetStateAction<NewsItem[]>>
+  setDepartmentList: React.Dispatch<React.SetStateAction<DepartmentItem[]>>
 }
 
 // ... โค้ดบรรทัดบนๆ เหมือนเดิม ...
