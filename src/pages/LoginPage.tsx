@@ -1,47 +1,125 @@
-import { useEffect, useState } from 'react'
+// src/pages/LoginPage.tsx
+import { useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Swal from 'sweetalert2'
+import { AuthContext } from '../context/AuthContextDef'
+import { api } from '../utils/api'
 
 const LoginPage = () => {
   const navigate = useNavigate()
+  const auth = useContext(AuthContext)
 
   const [phase, setPhase] = useState<'zoom-in' | 'zoom-out' | 'done'>('zoom-in')
-  const [username, setUsername] = useState('')
+  const [email, setemail] = useState('')
   const [password, setPassword] = useState('')
+  const [botTrap, setBotTrap] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
+    console.log('[Login LifeCycle] Component mounted')
     const t = setTimeout(() => setPhase('zoom-out'), 400)
     const t2 = setTimeout(() => setPhase('done'), 1600)
     return () => {
+      console.log('[Login LifeCycle] Component unmounted / Cleaning timers')
       clearTimeout(t)
       clearTimeout(t2)
     }
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
+    // 🔒 Intercept default browser behavior
     e.preventDefault()
+    e.stopPropagation()
+
+    console.log('[Form Event] Form submission intercepted via handleSubmit()')
     setError('')
 
-    if (!username.trim() || !password.trim()) {
+    // 🛡️ Honeypot Field Check
+    if (botTrap) {
+      console.warn(
+        '[Security Alert] Bot detected! Honeypot field has a value:',
+        botTrap,
+      )
+      return
+    }
+
+    // 🔍 Client-side Validation
+    if (!email.trim() || !password.trim()) {
+      console.log(
+        '[Validation Failed] Email or Password string is empty after trimming',
+      )
       setError('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน')
       return
     }
 
+    console.log('[Validation Passed] Initiating login sequence with payload:', {
+      email,
+    })
     setIsLoading(true)
 
     try {
-      await new Promise((res) => setTimeout(res, 800))
+      console.log('[API Request] Sending POST credentials to /api/auth/login')
+      const response = await api('/auth/login', {
+        method: 'POST',
+        body: { email, password },
+      })
 
-      if (username === 'admin' && password === 'admin1234') {
-        sessionStorage.setItem('token', 'mock-token')
+      console.log('[API Response] Received payload back from server:', response)
+
+      if (response.success) {
+        console.log(
+          '[Auth Context] Triggering auth?.login() global state update',
+        )
+        auth?.login()
+
+        console.log('[Modal Trigger] Displaying Swal success notification box')
+        await Swal.fire({
+          icon: 'success',
+          title: 'เข้าสู่ระบบสำเร็จ',
+          text: response.message || 'ยินดีต้อนรับเข้าสู่ระบบจัดการภายใน',
+          timer: 1500,
+          showConfirmButton: false,
+          allowOutsideClick: false,
+        })
+
+        console.log(
+          '[Navigation] Swal resolved. Redirecting user to /dashboard',
+        )
         navigate('/dashboard')
       } else {
-        setError('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
+        console.warn(
+          '[Business Error] API returned HTTP 200 but response.success is false',
+        )
       }
-    } catch {
-      setError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่')
+    } catch (err: unknown) {
+      console.error(
+        '[Runtime Error] Form submission crashed inside catch block:',
+        err,
+      )
+
+      const errorMessage =
+        err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ'
+
+      console.log('[Modal Trigger] Displaying Swal error notification box')
+      await Swal.fire({
+        icon: 'error',
+        title: 'เข้าสู่ระบบล้มเหลว',
+        text: errorMessage || 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง',
+        confirmButtonColor: '#185FA5',
+        confirmButtonText: 'ลองใหม่อีกครั้ง',
+        allowOutsideClick: false,
+      })
+
+      console.log(
+        '[State Update] Local error string updated with:',
+        errorMessage,
+      )
+      setError(errorMessage)
     } finally {
+      console.log(
+        '[Execution Ended] Resetting isLoading trigger state back to false',
+      )
       setIsLoading(false)
     }
   }
@@ -50,129 +128,122 @@ const LoginPage = () => {
   const showCard = phase === 'done'
 
   return (
-    <div className="fixed inset-0 bg-slate-50 flex items-center justify-center overflow-hidden font-sans">
-      
-      {/* ── Radial glow ── */}
+    <div className='fixed inset-0 bg-slate-50 flex items-center justify-center overflow-hidden font-sans'>
+      {/* Radial glow */}
       <div
-        className={`absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_50%,rgba(24,95,165,0.06)_0%,transparent_70%)] pointer-events-none transition-opacity duration-[1400ms] delay-300 ease-in-out ${
-          isZoomedOut ? 'opacity-100' : 'opacity-0'
-        }`}
+        className={`absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_50%,rgba(24,95,165,0.06)_0%,transparent_70%)] pointer-events-none transition-opacity duration-[1400ms] delay-300 ease-in-out ${isZoomedOut ? 'opacity-100' : 'opacity-0'}`}
       />
 
-      {/* ── Logo Background ── */}
+      {/* Logo Background */}
       <div
-        className={`absolute flex items-center justify-center pointer-events-none z-10 transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          isZoomedOut ? 'scale-100 opacity-15' : 'scale-[5] opacity-100'
-        }`}
+        className={`absolute flex items-center justify-center pointer-events-none z-10 transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${isZoomedOut ? 'scale-100 opacity-15' : 'scale-[5] opacity-100'}`}
       >
         <img
-          src="/Logo.png"
-          alt="โลโก้ ปปง. พื้นหลัง"
-          className="w-[260px] h-[260px] object-contain"
+          src='/Logo.png'
+          alt='โลโก้ ปปง. พื้นหลัง'
+          className='w-[260px] h-[260px] object-contain'
         />
       </div>
 
-      {/* ── Light overlay ── */}
+      {/* Light overlay */}
       <div
-        className={`absolute inset-0 bg-white/40 pointer-events-none z-20 transition-opacity duration-700 ease-in-out ${
-          showCard ? 'opacity-100' : 'opacity-0'
-        }`}
+        className={`absolute inset-0 bg-white/40 pointer-events-none z-20 transition-opacity duration-700 ease-in-out ${showCard ? 'opacity-100' : 'opacity-0'}`}
       />
 
-      {/* ── Login Card (🌟 ขยาย Scale ใหม่ทั้งหมด) ── */}
+      {/* Login Card */}
       <div
-        className={`relative z-30 w-[420px] px-12 py-10 bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.08),0_10px_10px_-5px_rgba(0,0,0,0.03)] rounded-2xl transition-all duration-[550ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          showCard ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-5 scale-[0.97] opacity-0'
-        }`}
+        className={`relative z-30 w-[420px] px-12 py-10 bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.08),0_10px_10px_-5px_rgba(0,0,0,0.03)] rounded-2xl transition-all duration-[550ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${showCard ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-5 scale-[0.97] opacity-0'}`}
       >
-        {/* Card header */}
-        <div className="flex flex-col items-center text-center mb-8">
+        <div className='flex flex-col items-center text-center mb-8'>
           <img
-            src="/Logo.png"
-            alt="โลโก้ ปปง."
-            className="w-20 h-20 object-contain mb-4 mx-auto" 
+            src='/Logo.png'
+            alt='โลโก้ ปปง.'
+            className='w-20 h-20 object-contain mb-4 mx-auto'
           />
-          <h1 className="text-2xl font-bold text-slate-800 m-0 mb-1.5">
+          <h1 className='text-2xl font-bold text-slate-800 m-0 mb-1.5'>
             เข้าสู่ระบบ
           </h1>
-          <p className="text-sm text-slate-500 m-0">
+          <p className='text-sm text-slate-500 m-0'>
             สำนักงาน ปปง. — ระบบจัดการภายใน
           </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col w-full">
-          {/* Username */}
-          <div className="mb-4">
+        <form
+          onSubmit={handleSubmit}
+          className='flex flex-col w-full'
+          autoComplete='on'
+        >
+          {/* Honeypot Field */}
+          <input
+            type='text'
+            name='website_security_field'
+            value={botTrap}
+            onChange={(e) => setBotTrap(e.target.value)}
+            className='hidden'
+            tabIndex={-1}
+            autoComplete='off'
+          />
+
+          {/* Email field */}
+          <div className='mb-4'>
             <label
-              htmlFor="username"
-              className="block text-xs font-bold tracking-[0.07em] uppercase text-slate-500 mb-2"
+              htmlFor='email'
+              className='block text-xs font-bold tracking-[0.07em] uppercase text-slate-500 mb-2'
             >
               ชื่อผู้ใช้งาน
             </label>
             <input
-              id="username"
-              type="text"
-              value={username}
+              id='email'
+              type='email'
+              value={email}
               onChange={(e) => {
-                setUsername(e.target.value)
+                setemail(e.target.value)
                 setError('')
               }}
-              placeholder="username@amlo.go.th"
-              autoComplete="username"
-              className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-slate-800 text-base outline-none transition-colors ${
-                error ? 'border-red-500 focus:border-red-500' : 'border-slate-300 focus:border-blue-500'
-              }`}
+              placeholder='email@amlo.go.th'
+              autoComplete='email'
+              className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-slate-800 text-base outline-none transition-colors ${error ? 'border-red-500 focus:border-red-500' : 'border-slate-300 focus:border-blue-500'}`}
             />
           </div>
 
-          {/* Password */}
-          <div className="mb-6">
+          {/* Password field */}
+          <div className='mb-6'>
             <label
-              htmlFor="password"
-              className="block text-xs font-bold tracking-[0.07em] uppercase text-slate-500 mb-2"
+              htmlFor='password'
+              className='block text-xs font-bold tracking-[0.07em] uppercase text-slate-500 mb-2'
             >
               รหัสผ่าน
             </label>
             <input
-              id="password"
-              type="password"
+              id='password'
+              type='password'
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value)
                 setError('')
               }}
-              placeholder="••••••••"
-              autoComplete="current-password"
-              className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-slate-800 text-base outline-none transition-colors ${
-                error ? 'border-red-500 focus:border-red-500' : 'border-slate-300 focus:border-blue-500'
-              }`}
+              placeholder='••••••••'
+              autoComplete='current-password'
+              className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-slate-800 text-base outline-none transition-colors ${error ? 'border-red-500 focus:border-red-500' : 'border-slate-300 focus:border-blue-500'}`}
             />
           </div>
 
-          {/* Error Message */}
           {error && (
-            <p className="text-[13px] text-red-500 font-bold text-center -mt-3 mb-4">
+            <p className='text-[13px] text-red-500 font-bold text-center -mt-3 mb-4'>
               {error}
             </p>
           )}
 
-          {/* Submit Button */}
           <button
-            type="submit"
+            type='submit'
             disabled={isLoading}
-            className={`w-full py-3.5 rounded-xl text-white text-lg font-bold transition-colors ${
-              isLoading
-                ? 'bg-blue-600/50 cursor-not-allowed'
-                : 'bg-[#185FA5] hover:bg-[#134b82] cursor-pointer'
-            }`}
+            className={`w-full py-3.5 rounded-xl text-white text-lg font-bold transition-colors ${isLoading ? 'bg-blue-600/50 cursor-not-allowed' : 'bg-[#185FA5] hover:bg-[#134b82] cursor-pointer'}`}
           >
             {isLoading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
           </button>
         </form>
 
-        {/* Footer */}
-        <p className="mt-6 text-center text-xs text-slate-400 font-medium">
+        <p className='mt-6 text-center text-xs text-slate-400 font-medium'>
           สำนักงานป้องกันและปราบปรามการฟอกเงิน
         </p>
       </div>

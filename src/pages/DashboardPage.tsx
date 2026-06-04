@@ -1,11 +1,14 @@
-import { useState, useEffect, useRef, useContext } from 'react'
-import Swal from 'sweetalert2'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import ReviewManager from '../components/dashboard/ReviewManager'
+import Swal from 'sweetalert2'
 import ContactRequestManager from '../components/dashboard/ContactRequestManager'
-import PRManagerDashboard from '../components/dashboard/PRManagerDashboard'
 import NewsManagerDashboard from '../components/dashboard/NewsManagerDashboard'
+import PRManagerDashboard from '../components/dashboard/PRManagerDashboard'
+import ReviewManager from '../components/dashboard/ReviewManager'
+import { AuthContext } from '../context/AuthContextDef'
+import { useDashboard } from '../context/DashboardContext'
 import { NewsContext } from '../context/NewsContext'
+import { api } from '../utils/api'
 
 type MenuId =
   | 'overview'
@@ -36,8 +39,7 @@ const getThaiTime = (date: Date): string => {
 }
 
 // ---------------------------------------------------------
-// แก้ไข: Avatar Component แบบ Initials แทนการใช้ ui-avatars.com
-// ไม่รั่วชื่อผู้ใช้ไปยัง Third-party และไม่พึ่งพา External Service
+// Avatar Component
 // ---------------------------------------------------------
 interface AvatarProps {
   name: string
@@ -45,7 +47,11 @@ interface AvatarProps {
   size?: string
 }
 
-const Avatar = ({ name, bgColor = 'bg-blue-600', size = 'w-10 h-10' }: AvatarProps) => {
+const Avatar = ({
+  name,
+  bgColor = 'bg-blue-600',
+  size = 'w-10 h-10',
+}: AvatarProps) => {
   const initials = name
     .split(' ')
     .map((n) => n[0])
@@ -110,41 +116,46 @@ type NavBarProps = {
 const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotifOpen, setIsNotifOpen] = useState(false)
-  const [expandedNotifView, setExpandedNotifView] = useState<'none' | 'contacts' | 'reviews'>('none')
-  
+  const [expandedNotifView, setExpandedNotifView] = useState<
+    'none' | 'contacts' | 'reviews'
+  >('none')
+
   const navigate = useNavigate()
   const userMenuRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
   const context = useContext(NewsContext)
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('token')
-    navigate('/login', { replace: true })
-  }
-
-  // ข้อมูลผู้ใช้ปัจจุบัน — ในระบบจริงดึงมาจาก Auth Context / API
+  // 🌟 ดักดึงสิทธิ์จาก Context สากลของระบบ
+  const auth = useContext(AuthContext)
+  const { contacts } = useDashboard()
+  // ข้อมูลผู้ใช้ปัจจุบัน
   const currentUser = {
-    name: 'พงศ์ภานุ แสนสรรค์',
-    role: 'Data Science / Admin',
+    firstName: auth?.user?.firstname || 'Guest',
+    lastName: auth?.user?.lastname || 'User',
+    role: 'Admin',
   }
 
-  // ข้อมูลจำลองสำหรับ Notification (ใช้ชุดเดียวกับ ContactRequestManager)
-  const mockContacts = [
-    { id: 'CON-001', firstName: 'สมชาย', lastName: 'สายลม', message: 'สนใจสอบถามบริการติดตั้งอินเทอร์เน็ตครับ', createdAt: '2024-05-10T10:00:00Z' },
-    { id: 'CON-002', firstName: 'สมชาย', lastName: 'สายลม', message: 'ยังไม่ได้รับเมลตอบกลับจากเจ้าหน้าที่เลยครับ', createdAt: '2024-05-10T14:30:00Z' },
-    { id: 'CON-003', firstName: 'วิภา', lastName: 'ใจดี', message: 'ต้องการใบเสนอราคาโครงการหมู่บ้าน', createdAt: '2024-05-09T09:15:00Z' },
-    { id: 'CON-004', firstName: 'มานะ', lastName: 'รักเรียน', message: 'ขอสอบถามที่ตั้งสำนักงานใหญ่', createdAt: '2024-05-08T16:00:00Z' },
-  ]
+  // นำไปใช้ร่วมกับ Avatar
+  const fullName = `${currentUser.firstName} ${currentUser.lastName}`.trim()
 
-  // ข้อมูลจริงจาก Context และ Mock ของ Contact
   const realReviews = context?.commentList ? [...context.commentList] : []
-  const latestReviews = realReviews.reverse() // ย้อนเอาอันล่าสุดขึ้นก่อน
-  const latestContacts = [...mockContacts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  const latestReviews = realReviews.reverse()
+
+  // 🌟 เปลี่ยนมาใช้ข้อมูลจริงที่ดึงมาจาก Dashboard Context แทน Mockup
+  const latestContacts = contacts?.data
+    ? [...contacts.data].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+    : []
 
   // ปิด Dropdown เมื่อคลิกข้างนอก
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(e.target as Node)
+      ) {
         setIsUserMenuOpen(false)
       }
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
@@ -156,16 +167,66 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // 🌟 ฟังก์ชัน Logout เคลียร์สิทธิ์ทั้งหน้าบ้านและหลังบ้านอย่างปลอดภัย
+  const handleLogout = async () => {
+    setIsUserMenuOpen(false) // สั่งปิด Dropdown เมนูก่อนทันที
+    console.log('[Logout Flow] Initiating secure logout sequence...')
+
+    try {
+      // 📡 1. ยิง API บอกหลังบ้านให้ทำการทำลายคุกกี้สิทธิ์ (res.clearCookie)
+      await api('/auth/logout', { method: 'POST' }).catch((err) => {
+        console.warn(
+          '[Logout Flow] Backend session clear skipped or network failed:',
+          err.message,
+        )
+      })
+
+      // 🛡️ 2. ล้างค่าสถานะสากลหน้าบ้าน (เคลียร์ธงระบบสเตตัสใน React)
+      auth?.logout()
+      console.log('[Logout Flow] Frontend local authentication flag cleared')
+
+      // 🟢 3. แสดงกล่อง SweetAlert2 ล็อคหน้าจอแจ้งสถานะความสำเร็จ
+      await Swal.fire({
+        icon: 'success',
+        title: 'ออกจากระบบสำเร็จ',
+        text: 'กำลังพาท่านกลับไปยังหน้าแรก',
+        timer: 1500,
+        showConfirmButton: false,
+        allowOutsideClick: false,
+      })
+
+      // 🚀 4. พาย้ายเพจกลับหน้าล็อกอินแบบล้างประวัติการกด Back
+      navigate('/login', { replace: true })
+    } catch (error) {
+      console.error(
+        '[Logout Critical Failed] System crashed during reset:',
+        error,
+      )
+      auth?.logout()
+      navigate('/login', { replace: true })
+    }
+  }
+
   return (
     <header className='bg-white h-20 border-b border-slate-200 flex justify-between items-center px-4 md:px-6 sticky top-0 z-20'>
       <div className='flex items-center gap-x-4 md:gap-x-6'>
         <button
           onClick={toggleMobileMenu}
-          className='md:hidden p-2 border border-slate-300 bg-slate-50 active:bg-slate-200'
+          className='md:hidden p-2 border border-slate-300 bg-slate-50 active:bg-slate-200 cursor-pointer'
           aria-label='เปิด/ปิดเมนู'
         >
-          <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-            <path strokeLinecap='square' strokeLinejoin='miter' strokeWidth='2' d='M4 6h16M4 12h16M4 18h16'></path>
+          <svg
+            className='w-6 h-6'
+            fill='none'
+            stroke='currentColor'
+            viewBox='0 0 24 24'
+          >
+            <path
+              strokeLinecap='square'
+              strokeLinejoin='miter'
+              strokeWidth='2'
+              d='M4 6h16M4 12h16M4 18h16'
+            />
           </svg>
         </button>
 
@@ -184,13 +245,23 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
 
       <div className='flex items-center gap-x-6'>
         <div className='relative' ref={notifRef}>
-          <button 
-            className='relative cursor-pointer p-1 hover:bg-slate-100 rounded-full transition-colors' 
+          <button
+            className='relative cursor-pointer p-1 hover:bg-slate-100 rounded-full transition-colors'
             aria-label='การแจ้งเตือน'
             onClick={() => setIsNotifOpen(!isNotifOpen)}
           >
-            <svg className='w-6 h-6 text-slate-700' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-              <path strokeLinecap='square' strokeLinejoin='miter' strokeWidth='2' d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'></path>
+            <svg
+              className='w-6 h-6 text-slate-700'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path
+                strokeLinecap='square'
+                strokeLinejoin='miter'
+                strokeWidth='2'
+                d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'
+              ></path>
             </svg>
             <span className='absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full'></span>
           </button>
@@ -198,7 +269,9 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
           {/* Notif Dropdown Menu */}
           <div
             className={`absolute right-0 top-full mt-3 w-80 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden transition-all duration-200 ${
-              isNotifOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'
+              isNotifOpen
+                ? 'opacity-100 translate-y-0 pointer-events-auto'
+                : 'opacity-0 -translate-y-2 pointer-events-none'
             }`}
           >
             <div className='px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center'>
@@ -210,33 +283,49 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
 
             <div className='max-h-96 overflow-y-auto p-2'>
               {/* Contacts */}
-              {(expandedNotifView === 'none' || expandedNotifView === 'contacts') && (
+              {(expandedNotifView === 'none' ||
+                expandedNotifView === 'contacts') && (
                 <div className='mb-2'>
                   <div className='px-2 py-1 flex items-center gap-2'>
-                    <span className='text-xs font-bold text-slate-500'>ติดต่อ</span>
+                    <span className='text-xs font-bold text-slate-500'>
+                      ติดต่อ
+                    </span>
                     <hr className='flex-1 border-slate-200' />
                   </div>
-                  {latestContacts.slice(0, expandedNotifView === 'contacts' ? 5 : 2).map((item) => (
-                    <div 
-                      key={item.id} 
-                      className='px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors'
-                    >
-                      <p className='text-sm text-slate-800 truncate font-medium'>{item.message}</p>
-                      <p className='text-[10px] text-slate-400 mt-0.5'>{item.firstName} {item.lastName}</p>
-                    </div>
-                  ))}
-                  
-                  {expandedNotifView === 'none' && latestContacts.length > 2 && (
-                    <div 
-                      onClick={(e) => { e.stopPropagation(); setExpandedNotifView('contacts') }}
-                      className='px-3 py-1.5 text-xs text-center text-blue-500 font-medium cursor-pointer hover:bg-blue-50 rounded-lg'
-                    >
-                      +{latestContacts.length - 2} เพิ่มเติม
-                    </div>
-                  )}
+                  {latestContacts
+                    .slice(0, expandedNotifView === 'contacts' ? 5 : 2)
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className='px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors'
+                      >
+                        <p className='text-sm text-slate-800 truncate font-medium'>
+                          {item.message}
+                        </p>
+                        <p className='text-[10px] text-slate-400 mt-0.5'>
+                          {item.firstName} {item.lastName}
+                        </p>
+                      </div>
+                    ))}
+
+                  {expandedNotifView === 'none' &&
+                    latestContacts.length > 2 && (
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setExpandedNotifView('contacts')
+                        }}
+                        className='px-3 py-1.5 text-xs text-center text-blue-500 font-medium cursor-pointer hover:bg-blue-50 rounded-lg'
+                      >
+                        +{latestContacts.length - 2} เพิ่มเติม
+                      </div>
+                    )}
                   {expandedNotifView === 'contacts' && (
-                    <div 
-                      onClick={(e) => { e.stopPropagation(); setExpandedNotifView('none') }}
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setExpandedNotifView('none')
+                      }}
                       className='px-3 py-1.5 text-xs text-center text-slate-500 font-medium cursor-pointer hover:bg-slate-100 rounded-lg'
                     >
                       แสดงน้อยลง
@@ -246,30 +335,48 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
               )}
 
               {/* Reviews */}
-              {(expandedNotifView === 'none' || expandedNotifView === 'reviews') && (
+              {(expandedNotifView === 'none' ||
+                expandedNotifView === 'reviews') && (
                 <div>
                   <div className='px-2 py-1 flex items-center gap-2'>
-                    <span className='text-xs font-bold text-slate-500'>ความคิดเห็น</span>
+                    <span className='text-xs font-bold text-slate-500'>
+                      ความคิดเห็น
+                    </span>
                     <hr className='flex-1 border-slate-200' />
                   </div>
-                  {latestReviews.slice(0, expandedNotifView === 'reviews' ? 5 : 2).map((item) => (
-                    <div key={item.id} className='px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors'>
-                      <p className='text-sm text-slate-800 truncate font-medium'>{item.msg}</p>
-                      <p className='text-[10px] text-slate-400 mt-0.5'>{item.star} ดาว</p>
-                    </div>
-                  ))}
-                  
+                  {latestReviews
+                    .slice(0, expandedNotifView === 'reviews' ? 5 : 2)
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className='px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors'
+                      >
+                        <p className='text-sm text-slate-800 truncate font-medium'>
+                          {item.msg}
+                        </p>
+                        <p className='text-[10px] text-slate-400 mt-0.5'>
+                          {item.star} ดาว
+                        </p>
+                      </div>
+                    ))}
+
                   {expandedNotifView === 'none' && latestReviews.length > 2 && (
-                    <div 
-                      onClick={(e) => { e.stopPropagation(); setExpandedNotifView('reviews') }}
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setExpandedNotifView('reviews')
+                      }}
                       className='px-3 py-1.5 text-xs text-center text-blue-500 font-medium cursor-pointer hover:bg-blue-50 rounded-lg'
                     >
                       +{latestReviews.length - 2} เพิ่มเติม
                     </div>
                   )}
                   {expandedNotifView === 'reviews' && (
-                    <div 
-                      onClick={(e) => { e.stopPropagation(); setExpandedNotifView('none') }}
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setExpandedNotifView('none')
+                      }}
                       className='px-3 py-1.5 text-xs text-center text-slate-500 font-medium cursor-pointer hover:bg-slate-100 rounded-lg'
                     >
                       แสดงน้อยลง
@@ -287,35 +394,56 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
         <div className='relative' ref={userMenuRef}>
           <button
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-            className='flex items-center gap-x-3 cursor-pointer hover:opacity-80 transition-opacity'
+            className='flex items-center gap-x-3 cursor-pointer hover:opacity-80 transition-opacity outline-none'
             aria-label='เมนูบัญชีผู้ใช้'
           >
             <div className='text-right hidden sm:block'>
-              <h6 className='text-sm font-bold text-slate-800'>{currentUser.name}</h6>
+              <h6 className='text-sm font-bold text-slate-800'>
+                {currentUser.firstName} {currentUser.lastName}
+              </h6>
               <p className='text-xs text-slate-500'>{currentUser.role}</p>
             </div>
-            <Avatar name={currentUser.name} />
-            <span className={`text-[10px] text-slate-500 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`}>▼</span>
+            <Avatar name={`${currentUser.firstName} ${currentUser.lastName}`} />
+            <span
+              className={`text-[10px] text-slate-500 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`}
+            >
+              ▼
+            </span>
           </button>
 
           {/* Dropdown Menu */}
           <div
             className={`absolute right-0 top-full mt-3 w-52 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden transition-all duration-200 ${
-              isUserMenuOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'
+              isUserMenuOpen
+                ? 'opacity-100 translate-y-0 pointer-events-auto'
+                : 'opacity-0 -translate-y-2 pointer-events-none'
             }`}
           >
-            {/* ข้อมูลผู้ใช้ */}
             <div className='px-4 py-3 border-b border-slate-100'>
-              <p className='text-xs font-bold text-slate-800'>{currentUser.name}</p>
-              <p className='text-xs text-slate-400 mt-0.5'>{currentUser.role}</p>
+              <p className='text-xs font-bold text-slate-800'>{fullName}</p>
+              <p className='text-xs text-slate-400 mt-0.5'>
+                {currentUser.role}
+              </p>
             </div>
-            {/* ปุ่ม Logout */}
+
+            {/* 🌟 ผูกฟังก์ชันเข้ากับปุ่มกดตรงนี้เรียบร้อยแล้ว */}
             <button
               onClick={handleLogout}
-              className='flex items-center gap-2.5 w-full px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors'
+              className='flex items-center gap-2.5 w-full px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors cursor-pointer outline-none'
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                className='w-4 h-4'
+                fill='none'
+                viewBox='0 0 24 24'
+                stroke='currentColor'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1'
+                />
               </svg>
               ออกจากระบบ
             </button>
@@ -326,7 +454,9 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
   )
 }
 
-
+// ---------------------------------------------------------
+// Sidebar Component
+// ---------------------------------------------------------
 type SideBarProps = {
   activeMenu: MenuId
   setActiveMenu: (id: MenuId) => void
@@ -358,7 +488,7 @@ const SideBar = ({ activeMenu, setActiveMenu, isMobileOpen }: SideBarProps) => {
             key={menu.id}
             onClick={() => setActiveMenu(menu.id)}
             className={`
-              w-full text-left px-4 py-3 text-sm font-medium border-l-4 transition-colors
+              w-full text-left px-4 py-3 text-sm font-medium border-l-4 transition-colors cursor-pointer outline-none
               ${
                 activeMenu === menu.id
                   ? 'border-blue-600 bg-blue-50 text-blue-700'
@@ -377,7 +507,10 @@ const SideBar = ({ activeMenu, setActiveMenu, isMobileOpen }: SideBarProps) => {
 // ---------------------------------------------------------
 // Root Component (Auto Logout Logic Included)
 // ---------------------------------------------------------
-const useIdleTimeout = (onIdle: () => void, idleTimeMs: number = 15 * 60 * 1000) => {
+const useIdleTimeout = (
+  onIdle: () => void,
+  idleTimeMs: number = 15 * 60 * 1000,
+) => {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const warningRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isIdleWarningOpen = useRef<boolean>(false)
@@ -411,17 +544,23 @@ const useIdleTimeout = (onIdle: () => void, idleTimeMs: number = 15 * 60 * 1000)
           didOpen: () => {
             const b = Swal.getHtmlContainer()?.querySelector('b')
             timerInterval = setInterval(() => {
-              if (b) b.textContent = Math.ceil(Swal.getTimerLeft()! / 1000).toString()
+              if (b)
+                b.textContent = Math.ceil(
+                  Swal.getTimerLeft()! / 1000,
+                ).toString()
             }, 100)
           },
           willClose: () => {
             clearInterval(timerInterval)
             isIdleWarningOpen.current = false
-          }
+          },
         }).then((result) => {
           if (result.isConfirmed) {
             resetTimer()
-          } else if (result.dismiss === Swal.DismissReason.timer || result.isDismissed) {
+          } else if (
+            result.dismiss === Swal.DismissReason.timer ||
+            result.isDismissed
+          ) {
             onIdle()
           }
         })
@@ -433,16 +572,24 @@ const useIdleTimeout = (onIdle: () => void, idleTimeMs: number = 15 * 60 * 1000)
       }, idleTimeMs)
     }
 
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart']
+    const events = [
+      'mousedown',
+      'mousemove',
+      'keypress',
+      'scroll',
+      'touchstart',
+    ]
     const handleEvent = () => resetTimer()
-    
-    events.forEach(event => document.addEventListener(event, handleEvent))
+
+    events.forEach((event) => document.addEventListener(event, handleEvent))
     resetTimer()
 
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
       if (warningRef.current) clearTimeout(warningRef.current)
-      events.forEach(event => document.removeEventListener(event, handleEvent))
+      events.forEach((event) =>
+        document.removeEventListener(event, handleEvent),
+      )
     }
   }, [onIdle, idleTimeMs])
 }

@@ -6,24 +6,23 @@ import RecommendedSidebar from '../components/ReccommendedSidebar'
 import { NewsContext } from '../context/NewsContext'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
-// ฟังก์ชันแปลงเวลาเป็น UTC
+
 const formatToUTC = (dateString: string) => {
   if (!dateString) return ''
   const date = new Date(dateString)
-  // หากแปลงไม่ได้ (เช่น รูปแบบ string ไม่ตรงตามมาตรฐาน) ให้แสดงค่าเดิม
   return isNaN(date.getTime()) ? dateString : date.toUTCString()
 }
 
-const AdvertiseDetail = () => {
+const NewsDetailPage = () => {
   const { id } = useParams()
+  const currentId = Number(id)
   const navigate = useNavigate()
   const context = useContext(NewsContext)
 
-  const currentId = Number(id)
-
-  const prList = context?.prList || []
+  // เปลี่ยนมาดึงข้อมูลจากชุด newsList ของหน้าบ้าน
+  const newsList = context?.newsList || []
   const isLoading = context?.isLoading
-  const advertiseData = prList.find((pr) => pr.id === currentId)
+  const newsData = newsList.find((item) => item.id === currentId)
 
   if (isLoading) {
     return (
@@ -33,11 +32,11 @@ const AdvertiseDetail = () => {
     )
   }
 
-  if (!advertiseData) {
+  if (!newsData) {
     return (
       <div className='min-h-screen flex flex-col justify-center items-center bg-slate-50 p-4 text-center'>
         <h1 className='text-2xl md:text-3xl font-bold text-slate-800 mb-4'>
-          ไม่พบข้อมูลประกาศนี้
+          ไม่พบข้อมูลกิจกรรมนี้
         </h1>
         <button
           onClick={() => navigate(-1)}
@@ -55,15 +54,15 @@ const AdvertiseDetail = () => {
         <div className='grid grid-cols-1 lg:grid-cols-4 gap-8 items-start'>
           <div className='lg:col-span-3 bg-white rounded-3xl shadow-md overflow-hidden border border-slate-200'>
             <div className='w-full h-[250px] md:h-[450px] overflow-hidden bg-slate-200 flex justify-center items-center'>
-              {advertiseData.image_src ? (
+              {newsData.image_src ? (
                 <img
                   src={
-                    advertiseData.image_src.startsWith('blob:')
-                      ? advertiseData.image_src
-                      : `${API_URL}${advertiseData.image_src}`
+                    newsData.image_src.startsWith('blob:')
+                      ? newsData.image_src
+                      : `${API_URL}${newsData.image_src}`
                   }
-                  alt={advertiseData.title}
-                  fetchPriority='high' // ช่วยให้โหลดภาพหลักได้ไวขึ้น
+                  alt={newsData.title}
+                  fetchPriority='high'
                   className='w-full h-full object-cover'
                 />
               ) : (
@@ -72,19 +71,19 @@ const AdvertiseDetail = () => {
             </div>
 
             <div className='p-6 md:p-10'>
-              <Breadcrumb title={advertiseData.title} />
+              <Breadcrumb title={newsData.title} />
               <p className='text-sm text-blue-600 font-bold mb-3'>
-                {formatToUTC(advertiseData.date)}
+                {formatToUTC(newsData.date)}
               </p>
               <h1 className='text-2xl md:text-4xl font-bold text-slate-800 mb-6 leading-snug'>
-                {advertiseData.title}
+                {newsData.title}
               </h1>
               <hr className='border-slate-100 mb-8' />
               <div
                 className='prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg ql-rendered'
                 dangerouslySetInnerHTML={{
                   __html: DOMPurify.sanitize(
-                    advertiseData.content || advertiseData.description,
+                    newsData.content || newsData.description,
                   ),
                 }}
               />
@@ -94,9 +93,9 @@ const AdvertiseDetail = () => {
           <div className='lg:col-span-1'>
             <RecommendedSidebar
               currentId={currentId}
-              items={prList}
-              basePath='advertise'
-              title='ประกาศอื่นๆ จาก ปปง.'
+              items={newsList}
+              basePath='news'
+              title='กิจกรรมอื่นๆ จาก ปปง.'
             />
           </div>
         </div>
@@ -105,4 +104,4 @@ const AdvertiseDetail = () => {
   )
 }
 
-export default AdvertiseDetail
+export default NewsDetailPage
