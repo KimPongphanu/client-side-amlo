@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { NewsContext } from '../context/NewsContext';
 import DOMPurify from 'dompurify';
 import Breadcrumb from '../components/Breadcrumb';
+import ImageModal from '../components/ImageModal';
 
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
@@ -256,6 +257,10 @@ const DepartmentDetailPage = () => {
   const { departmentList } = context || {};
   const department = departmentList?.find((dept) => dept.id === Number(id));
 
+  const [isApiReady, setIsApiReady] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null); 
+
   const swiperRef = useRef<SwiperType | null>(null);
 
   const handleVideoEnded = useCallback(() => {
@@ -331,7 +336,11 @@ const DepartmentDetailPage = () => {
                     <img
                       src={resolveUrl(item.url)}
                       alt={`ภาพประกอบ ${department.title} - ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => {
+                        setSelectedImageUrl(resolveUrl(item.url));
+                        setIsModalOpen(true);
+                      }}
                     />
                   )
                 )}
@@ -370,8 +379,12 @@ const DepartmentDetailPage = () => {
             </div>
           )}
         </div>
-
       </div>
+      <ImageModal 
+        isOpen={isModalOpen} 
+        imageUrl={selectedImageUrl} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </div>
   );
 };

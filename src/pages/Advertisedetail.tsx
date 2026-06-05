@@ -4,6 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Breadcrumb from '../components/Breadcrumb'
 import RecommendedSidebar from '../components/ReccommendedSidebar'
 import { NewsContext } from '../context/NewsContext'
+import ImageModal from '../components/ImageModal'
+import { useState } from 'react'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 // ฟังก์ชันแปลงเวลาเป็น UTC
@@ -20,6 +22,7 @@ const AdvertiseDetail = () => {
   const context = useContext(NewsContext)
 
   const currentId = Number(id)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const prList = context?.prList || []
   const isLoading = context?.isLoading
@@ -63,8 +66,9 @@ const AdvertiseDetail = () => {
                       : `${API_URL}${advertiseData.image_src}`
                   }
                   alt={advertiseData.title}
-                  fetchPriority='high' // ช่วยให้โหลดภาพหลักได้ไวขึ้น
-                  className='w-full h-full object-cover'
+                  fetchPriority='high'
+                  className='w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity'
+                  onClick={() => setIsModalOpen(true)}
                 />
               ) : (
                 <span className='text-slate-400'>ไม่มีรูปภาพประกอบ</span>
@@ -101,6 +105,11 @@ const AdvertiseDetail = () => {
           </div>
         </div>
       </div>
+      <ImageModal 
+        isOpen={isModalOpen} 
+        imageUrl={advertiseData?.image_src?.startsWith('blob:') ? advertiseData.image_src : `${API_URL}${advertiseData?.image_src}`}
+        onClose={() => setIsModalOpen(false)} 
+      />
     </div>
   )
 }

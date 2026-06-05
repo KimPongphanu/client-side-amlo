@@ -32,7 +32,7 @@ const parseThaiDateToTimestamp = (dateStr: string) => {
 }
 
 const HorizontalCardSkeleton = () => (
-  <div className='flex flex-col md:flex-row bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden md:h-[280px] animate-pulse'>
+  <div className='flex flex-col md:flex-row bg-white rounded-2xl shadow-sm overflow-hidden md:h-[280px] animate-pulse'>
     <div className='w-full md:w-1/3 lg:w-80 h-56 md:h-full flex-shrink-0 bg-slate-200'></div>
     <div className='p-6 md:p-8 flex flex-col flex-grow justify-between'>
       <div>
@@ -139,11 +139,11 @@ const News = () => {
         {isLoading ? (
           [1, 2, 3].map((key) => <HorizontalCardSkeleton key={key} />)
         ) : !prList || prList.length === 0 ? (
-          <div className='text-center text-gray-500 py-10 bg-white rounded-2xl border border-slate-100 shadow-sm'>
+          <div className='text-center text-gray-500 py-10 bg-white rounded-2xl shadow-sm'>
             ไม่มีกิจกรรมในขณะนี้
           </div>
         ) : filteredData.length === 0 ? (
-          <div className='text-center py-16 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col items-center'>
+          <div className='text-center py-16 bg-white rounded-2xl shadow-sm flex flex-col items-center'>
             <svg
               className='w-16 h-16 text-slate-300 mb-4'
               fill='none'
@@ -179,7 +179,7 @@ const News = () => {
               <Link
                 to={`/news/${item.id}`}
                 key={item.id}
-                className='group flex flex-col md:flex-row bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 md:h-[280px]'
+                className='group flex flex-col md:flex-row bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 md:h-[280px]'
               >
                 <div className='w-full md:w-1/3 lg:w-80 h-56 md:h-full flex-shrink-0 overflow-hidden relative bg-slate-100'>
                   <img

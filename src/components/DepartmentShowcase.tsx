@@ -75,7 +75,8 @@ const DepartmentShowcase = () => {
 
   const stripHtmlToText = (html?: string) => {
     if (!html) return 'ไม่มีข้อมูลรายละเอียด'
-    return html.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...'
+    const doc = new DOMParser().parseFromString(html, 'text/html')
+    return doc.body.textContent || ''
   }
 
   if (departments.length === 0) return null
@@ -123,8 +124,8 @@ const DepartmentShowcase = () => {
                       {dept.title}
                     </h3>
                     <div className={`grid transition-all duration-500 ease-in-out ${isActive ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-                      <div className="overflow-hidden">
-                        <div className="text-slate-500 leading-relaxed text-sm pt-3 pb-2">
+                      <div className="overflow-hidden pt-3 pb-2">
+                        <div className="text-slate-500 leading-relaxed text-sm line-clamp-3 break-words">
                           {stripHtmlToText(dept.content)}
                         </div>
                       </div>
@@ -197,7 +198,7 @@ const DepartmentShowcase = () => {
                     </div>
                     <div className="flex-1 p-6 flex flex-col bg-slate-50">
                       <h3 className="text-xl font-bold text-slate-800 mb-3">{dept.title}</h3>
-                      <p className="text-slate-500 text-sm leading-relaxed line-clamp-4">
+                      <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 break-words">
                         {stripHtmlToText(dept.content)}
                       </p>
                       <div className="mt-auto pt-4 flex items-center text-blue-600 font-semibold text-sm">

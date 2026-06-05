@@ -41,11 +41,11 @@ const Footer = () => {
           </div>
 
           {/* 📦 ส่วนขวา: กล่องใส่แผนที่ */}
-          <div className="w-full h-full min-h-[200px] md:min-h-[200px]">
-            <div className="w-full h-full rounded-2xl overflow-hidden shadow-xl border border-slate-700/50 bg-slate-800">
+          <div className="w-full h-full min-h-[250px] md:min-h-[300px]">
+            <div className="w-full h-full min-h-[250px] md:min-h-[300px] rounded-2xl overflow-hidden shadow-xl border border-slate-700/50 bg-slate-800">
               <iframe 
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3875.5088760861113!2d100.52815717538161!3d13.748157697377236!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x30e29ecd23502191%3A0x6727623006f0914c!2z4Liq4Liz4LiZ4Lix4LiB4LiH4Liy4LiZ4Lib4LmJ4Lit4LiH4LiB4Lix4LiZ4LmB4Lil4Liw4Lib4Lij4Liy4Lia4Lib4Lij4Liy4Lih4LiB4Liy4Lij4Lif4Lit4LiB4LmA4LiH4Li04LiZICjguKrguLPguJnguLHguIHguIfguLLguJkg4Lib4Lib4LiHLik!5e0!3m2!1sth!2sth!4v1777450612263!5m2!1sth!2sth" 
-                className="w-full h-full"
+                className="w-full h-full min-h-[250px] md:min-h-[300px]"
                 style={{ border: 0 }} 
                 allowFullScreen={false} 
                 loading="lazy" 

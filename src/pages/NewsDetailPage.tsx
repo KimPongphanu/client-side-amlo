@@ -4,6 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Breadcrumb from '../components/Breadcrumb'
 import RecommendedSidebar from '../components/ReccommendedSidebar'
 import { NewsContext } from '../context/NewsContext'
+import ImageModal from '../components/ImageModal'
+import { useState } from 'react'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -16,6 +18,7 @@ const formatToUTC = (dateString: string) => {
 const NewsDetailPage = () => {
   const { id } = useParams()
   const currentId = Number(id)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const navigate = useNavigate()
   const context = useContext(NewsContext)
 
@@ -63,7 +66,8 @@ const NewsDetailPage = () => {
                   }
                   alt={newsData.title}
                   fetchPriority='high'
-                  className='w-full h-full object-cover'
+                  className='w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity'
+                  onClick={() => setIsModalOpen(true)}
                 />
               ) : (
                 <span className='text-slate-400'>ไม่มีรูปภาพประกอบ</span>
@@ -100,6 +104,11 @@ const NewsDetailPage = () => {
           </div>
         </div>
       </div>
+      <ImageModal 
+        isOpen={isModalOpen} 
+        imageUrl={newsData?.image_src?.startsWith('blob:') ? newsData.image_src : `${API_URL}${newsData?.image_src}`}
+        onClose={() => setIsModalOpen(false)} 
+      />
     </div>
   )
 }
