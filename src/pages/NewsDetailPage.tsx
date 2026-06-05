@@ -9,10 +9,16 @@ import { useState } from 'react'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-const formatToUTC = (dateString: string) => {
+const formatToThaiDate = (dateString: string) => {
   if (!dateString) return ''
   const date = new Date(dateString)
-  return isNaN(date.getTime()) ? dateString : date.toUTCString()
+  if (isNaN(date.getTime())) return dateString
+  
+  return date.toLocaleDateString('th-TH', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 }
 
 const NewsDetailPage = () => {
@@ -77,7 +83,7 @@ const NewsDetailPage = () => {
             <div className='p-6 md:p-10'>
               <Breadcrumb title={newsData.title} />
               <p className='text-sm text-blue-600 font-bold mb-3'>
-                {formatToUTC(newsData.date)}
+                {formatToThaiDate(newsData.date)}
               </p>
               <h1 className='text-2xl md:text-4xl font-bold text-slate-800 mb-6 leading-snug'>
                 {newsData.title}

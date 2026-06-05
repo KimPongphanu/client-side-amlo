@@ -37,7 +37,7 @@ const parseThaiDateToTimestamp = (dateStr: string) => {
 // SKELETON COMPONENTS
 // =========================================
 const ArticleCardSkeleton = () => (
-  <div className='shrink-0 w-[280px] md:w-[350px] bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm flex flex-col animate-pulse'>
+  <div className='shrink-0 w-[260px] md:w-[320px] bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm flex flex-col animate-pulse'>
     <div className='h-[180px] md:h-[200px] w-full bg-slate-200'></div>
     <div className='p-4 md:p-5 flex flex-col flex-grow'>
       <div className='h-3 md:h-4 bg-slate-200 rounded w-1/4 mb-3'></div>
@@ -70,8 +70,8 @@ const ArticleCard = ({
   item: NewsItem
   basePath: string
 }) => (
-  <Link to={`/${basePath}/${item.id}`}>
-    <div className='shrink-0 w-[280px] md:w-[350px] bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-md flex flex-col hover:shadow-xl transition-shadow h-full'>
+  <Link to={`/${basePath}/${item.id}`} className='shrink-0 w-[260px] md:w-[320px] h-full block'>
+    <div className='bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-md flex flex-col hover:shadow-xl transition-shadow h-full'>
       <div className='h-[180px] md:h-[200px] w-full overflow-hidden bg-slate-100 shrink-0'>
         <img
           /* 🌟 แก้ไข: ตรวจสอบและเชื่อมต่อพอร์ตหลังบ้านให้ถูกต้องสำหรับรูปภาพ */
@@ -217,7 +217,7 @@ const HomePage = () => {
             <div className='flex justify-between items-end mb-6 md:mb-8'>
               <div className='h-8 md:h-10 bg-slate-200 rounded w-48 md:w-64 animate-pulse'></div>
             </div>
-            <div className='w-full border-2 border-slate-100 p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-hidden bg-white shadow-sm'>
+            <div className='w-full p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-hidden bg-white shadow-sm'>
               {[1, 2, 3, 4, 5].map((i) => (
                 <ArticleCardSkeleton key={i} />
               ))}
@@ -228,7 +228,7 @@ const HomePage = () => {
             <div className='flex justify-between items-end mb-6 md:mb-8'>
               <div className='h-8 md:h-10 bg-slate-200 rounded w-56 md:w-72 animate-pulse'></div>
             </div>
-            <div className='w-full border-2 border-slate-100 p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-hidden bg-white shadow-sm'>
+            <div className='w-full p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-hidden bg-white shadow-sm'>
               {[1, 2, 3, 4, 5].map((i) => (
                 <ArticleCardSkeleton key={i} />
               ))}
@@ -261,7 +261,7 @@ const HomePage = () => {
                   ดูทั้งหมด <span className='ml-1 text-lg leading-none'>›</span>
                 </Link>
               </div>
-              <div className='w-full border-2 border-gray-200 p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm hide-scrollbar items-stretch'>
+              <div className='w-full p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm hide-scrollbar items-stretch'>
                 {sortedAdvertiseList.slice(0, 5).map((news) => (
                   <ArticleCard key={news.id} item={news} basePath='advertise' />
                 ))}

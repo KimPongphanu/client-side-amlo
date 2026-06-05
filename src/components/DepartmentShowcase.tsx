@@ -153,7 +153,7 @@ const DepartmentShowcase = () => {
                   {/* 🌟 กล่องรูปภาพ: ถ้ายกเลิก Active ให้หดเหลือ 85% และจางลง / ถ้า Active ให้เด้งเต็ม 100% */}
                   <div 
                     className={`w-full aspect-[16/10] rounded-3xl overflow-hidden relative bg-slate-100 border border-slate-200 origin-center transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]
-                      ${isActive ? 'scale-100 opacity-100 shadow-2xl ring-4 ring-blue-500/10' : 'scale-[0.85] opacity-40 shadow-sm'}
+                      ${isActive ? 'scale-100 opacity-100 shadow-2xl ring-4 ring-blue-500/10 blur-none' : 'scale-[0.85] opacity-30 shadow-sm blur-[3px]'}
                     `}
                   >
                     <img src={resolveImg(dept.cover_image)} alt={dept.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-1000 hover:scale-105" />
@@ -173,12 +173,12 @@ const DepartmentShowcase = () => {
       <div 
         ref={mobileContainerRef} 
         className="md:hidden relative w-full"
-        style={{ height: `${departments.length * 100}vh` }} 
+        style={{ height: `${departments.length * 100 + 100}vh` }} 
       >
         <div className="sticky top-[10vh] h-[80vh] w-full overflow-hidden flex flex-col justify-center">
           
           <div 
-            className="flex h-[60vh] items-center will-change-transform"
+            className="flex h-[62vh] items-center will-change-transform"
             style={{
               width: `${departments.length * 100}%`,
               transform: `translateX(-${mobileScrollProgress * (100 - 100 / departments.length)}%)`,
@@ -188,20 +188,48 @@ const DepartmentShowcase = () => {
               const code = `0${index + 1}`.slice(-2)
 
               return (
-                <div key={dept.id} className="w-full h-full px-6 flex flex-col justify-center">
-                  <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-100 flex flex-col h-full max-h-[500px]">
-                    <div className="h-[45%] w-full relative shrink-0 bg-slate-200">
-                      <img src={resolveImg(dept.cover_image)} alt={dept.title} className="w-full h-full object-cover" />
+                <div
+                  key={dept.id}
+                  className="h-full flex flex-col justify-center px-4"
+                  style={{ width: `${100 / departments.length}%` }}
+                >
+                  <div
+                    className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-100 flex flex-col"
+                    style={{ height: '100%', maxHeight: '480px' }}
+                  >
+                    {/* รูปภาพ */}
+                    <div className="relative shrink-0 bg-slate-200" style={{ height: '52%' }}>
+                      <img
+                        src={resolveImg(dept.cover_image)}
+                        alt={dept.title}
+                        className="w-full h-full object-cover"
+                      />
                       <div className="absolute top-4 right-4 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10">
                         กอง {code}
                       </div>
                     </div>
-                    <div className="flex-1 p-6 flex flex-col bg-slate-50">
-                      <h3 className="text-xl font-bold text-slate-800 mb-3">{dept.title}</h3>
-                      <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 break-words">
+                    {/* เนื้อหา */}
+                    <div
+                      className="p-5 flex flex-col bg-slate-50"
+                      style={{ flex: '1 1 0', minHeight: 0, overflow: 'hidden' }}
+                    >
+                      <h3 className="text-base font-bold text-slate-800 mb-2 shrink-0 truncate">
+                        {dept.title}
+                      </h3>
+                      <p
+                        className="text-slate-500 text-sm leading-relaxed"
+                        style={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                        }}
+                      >
                         {stripHtmlToText(dept.content)}
                       </p>
-                      <div className="mt-auto pt-4 flex items-center text-blue-600 font-semibold text-sm">
+                      <div className="mt-auto pt-3 flex items-center text-blue-600 font-semibold text-sm shrink-0">
                         รายละเอียด <span className="ml-1">➔</span>
                       </div>
                     </div>
@@ -211,7 +239,7 @@ const DepartmentShowcase = () => {
             })}
           </div>
 
-          <div className="mt-8 flex justify-center gap-2 px-6">
+          <div className="mt-6 flex justify-center gap-2 px-6">
             {departments.map((_, i) => {
               const isActive = Math.round(mobileScrollProgress * (departments.length - 1)) === i
               return (

@@ -9,11 +9,16 @@ import { useState } from 'react'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 // ฟังก์ชันแปลงเวลาเป็น UTC
-const formatToUTC = (dateString: string) => {
+const formatToThaiDate = (dateString: string) => {
   if (!dateString) return ''
   const date = new Date(dateString)
-  // หากแปลงไม่ได้ (เช่น รูปแบบ string ไม่ตรงตามมาตรฐาน) ให้แสดงค่าเดิม
-  return isNaN(date.getTime()) ? dateString : date.toUTCString()
+  if (isNaN(date.getTime())) return dateString
+  
+  return date.toLocaleDateString('th-TH', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 }
 
 const AdvertiseDetail = () => {
@@ -78,7 +83,7 @@ const AdvertiseDetail = () => {
             <div className='p-6 md:p-10'>
               <Breadcrumb title={advertiseData.title} />
               <p className='text-sm text-blue-600 font-bold mb-3'>
-                {formatToUTC(advertiseData.date)}
+                {formatToThaiDate(advertiseData.date)}
               </p>
               <h1 className='text-2xl md:text-4xl font-bold text-slate-800 mb-6 leading-snug'>
                 {advertiseData.title}
