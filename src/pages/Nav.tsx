@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useContext } from 'react';
 import { User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { NewsContext } from '../context/NewsContext'; 
+import { useAuthStore } from '../stores/useAuthStore'; // 🌟 ใช้ Zustand
 
 export default function Nav() {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
@@ -11,21 +12,28 @@ export default function Nav() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileExpandedMenu, setMobileExpandedMenu] = useState<string | null>(null);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(!!sessionStorage.getItem('token'));
+  
   const accountRef = useRef<HTMLDivElement>(null);
-
   const context = useContext(NewsContext);
   const departmentList = context?.departmentList || []; 
+
+  // 🌟 1. ดึง verifyUser ออกมาใช้งานด้วย
+  const { isLoggedIn, logoutUser, verifyUser } = useAuthStore();
+
+  // 🌟 2. สั่งให้ตรวจสอบ Cookie ทันทีที่โหลด Component เพื่อแก้บั๊ก Refresh แล้วหลุด
+  useEffect(() => {
+    verifyUser();
+  }, [verifyUser]);
 
   const handleCloseMobileMenu = () => {
     setIsMobileMenuOpen(false);
     setMobileExpandedMenu(null);
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('token');
-    setIsLoggedIn(false);
+  const handleLogoutClick = async () => {
     setIsAccountOpen(false);
+    handleCloseMobileMenu();
+    await logoutUser();
     navigate('/');
   };
 
@@ -70,7 +78,6 @@ export default function Nav() {
         onMouseEnter={handleMouseEnterNav}
         onMouseLeave={handleMouseLeaveNav}
       >
-        {/* 🌟 ปรับความสูงเป็น h-20 (80px) และใส่ relative เพื่อให้เมนูตรงกลางจัด Center ได้ */}
         <div className="w-full flex items-center justify-between px-4 md:px-8 h-20 relative">
           
           {/* ========================================== */}
@@ -102,7 +109,7 @@ export default function Nav() {
           </div>
 
           {/* ========================================== */}
-          {/* 2. ตรงกลาง: เมนู Nav (สำหรับจอคอมพิวเตอร์) */}
+          {/* 2. ตรงกลาง: เมนู Nav */}
           {/* ========================================== */}
           <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-10 h-full font-bold text-slate-600 text-base z-10">
             <Link to="/" className="hover:text-blue-600 transition-colors py-2 relative group">
@@ -124,7 +131,6 @@ export default function Nav() {
             </Link>
           </div>
 
-          {/* 2.1 ตรงกลาง: เมนู Nav (สำรองสำหรับหน้าจอ iPad/Tablet ที่พื้นที่ตรงกลางแคบ) */}
           <div className="hidden md:flex lg:hidden items-center gap-6 h-full font-bold text-slate-600 text-sm ml-auto mr-6 z-20">
             <Link to="/" className="hover:text-blue-600 transition-colors">หน้าหลัก</Link>
             <div 
@@ -142,18 +148,16 @@ export default function Nav() {
           <div className="flex items-center z-20">
             <div className="hidden md:flex items-center" ref={accountRef}>
               {isLoggedIn ? (
-                // --- กรณี Login แล้ว: แสดง Dropdown ---
                 <div className="relative">
                   <button
                     onClick={() => setIsAccountOpen(!isAccountOpen)}
                     aria-label="เมนูบัญชี"
-                    className="flex items-center gap-1.5 text-slate-600 hover:text-blue-600 transition-colors"
+                    className="flex items-center gap-1.5 text-slate-600 hover:text-blue-600 transition-colors cursor-pointer outline-none"
                   >
                     <User size={20} />
                     <span className={`text-[10px] transition-transform duration-200 ${isAccountOpen ? 'rotate-180' : ''}`}>▼</span>
                   </button>
 
-                  {/* Dropdown */}
                   <div
                     className={`absolute right-0 top-full mt-3 w-48 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden transition-all duration-200 ${
                       isAccountOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'
@@ -169,8 +173,8 @@ export default function Nav() {
                     </Link>
                     <div className="h-px bg-slate-100" />
                     <button
-                      onClick={handleLogout}
-                      className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
+                      onClick={handleLogoutClick}
+                      className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors cursor-pointer outline-none"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
                       ออกจากระบบ
@@ -178,14 +182,12 @@ export default function Nav() {
                   </div>
                 </div>
               ) : (
-                // --- กรณียังไม่ Login: ไปหน้า Login ---
                 <Link to="/login" aria-label="เข้าสู่ระบบ" className="text-slate-600 hover:text-blue-600 transition-colors">
                   <User size={20} />
                 </Link>
               )}
             </div>
 
-            {/* ปุ่มแฮมเบอร์เกอร์สำหรับมือถือ */}
             <div className="md:hidden flex items-center ml-4">
               <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -268,6 +270,13 @@ export default function Nav() {
                     </ul>
                   </div>
                   <div>
+                    <h3 className="text-slate-400 text-xs uppercase mb-2">ประชาสัมพันธ์/กิจกรรม</h3>
+                    <ul className="space-y-3 text-sm font-medium text-slate-600">
+                      <li><Link to="/advertise" onClick={handleCloseMobileMenu}>ประชาสัมพันธ์</Link></li>
+                      <li><Link to="/news" onClick={handleCloseMobileMenu}>กิจกรรม</Link></li>
+                    </ul>
+                  </div>
+                  <div>
                     <h3 className="text-slate-400 text-xs uppercase mb-2">โครงสร้างหน่วยงาน</h3>
                     <ul className="space-y-3 text-sm font-medium text-slate-600">
                       {departmentList.map((dept) => (
@@ -287,25 +296,47 @@ export default function Nav() {
               <Link to="/contactform" onClick={handleCloseMobileMenu}>ติดต่อ</Link>
             </li>
 
-            <li className="pt-4">
+            {/* 🌟 3. ปรับ UX มือถือ: ทำเป็น Dropdown (Accordion) ป้องกันนิ้วกดพลาด */}
+            <li className="pt-4 border-t border-slate-100">
               {isLoggedIn ? (
                 <>
-                  <Link
-                    to="/dashboard"
-                    onClick={handleCloseMobileMenu}
-                    className="block w-full py-3 mb-2 bg-blue-600 text-white text-center rounded-xl shadow-md active:scale-95 transition-transform font-bold"
+                  <button 
+                    onClick={() => toggleMobileSubmenu('account')} 
+                    className="w-full flex justify-between items-center text-left text-slate-800"
                   >
-                    หน้า Dashboard
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full py-3 bg-red-500 text-white text-center rounded-xl shadow-md active:scale-95 transition-transform font-bold"
-                  >
-                    ออกจากระบบ
+                    <div className="flex items-center gap-3">
+                      <div className="bg-blue-100 p-2 rounded-full text-blue-600">
+                        <User size={20} />
+                      </div>
+                      <span className="font-bold">จัดการบัญชีระบบ</span>
+                    </div>
+                    <span className={`transform transition-transform duration-300 text-sm ${mobileExpandedMenu === 'account' ? 'rotate-180' : ''}`}>▼</span>
                   </button>
+
+                  <div className={`overflow-hidden transition-all duration-300 ${mobileExpandedMenu === 'account' ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+                    <div className="pl-4 border-l-2 border-blue-600 space-y-3">
+                      <Link
+                        to="/dashboard"
+                        onClick={handleCloseMobileMenu}
+                        className="flex items-center justify-center w-full py-3.5 bg-blue-600 text-white rounded-xl shadow-md transition-colors font-bold text-base"
+                      >
+                        เข้าสู่หน้า Dashboard
+                      </Link>
+                      <button
+                        onClick={handleLogoutClick}
+                        className="flex items-center justify-center w-full py-3 bg-slate-100 text-red-500 hover:bg-red-50 border border-slate-200 rounded-xl transition-colors font-bold text-base outline-none"
+                      >
+                        ออกจากระบบ
+                      </button>
+                    </div>
+                  </div>
                 </>
               ) : (
-                <Link to="/login" onClick={handleCloseMobileMenu} className="block w-full py-3 bg-slate-900 text-white text-center rounded-xl shadow-md active:scale-95 transition-transform">
+                <Link 
+                  to="/login" 
+                  onClick={handleCloseMobileMenu} 
+                  className="block w-full py-3.5 bg-slate-900 text-white text-center rounded-xl shadow-md transition-colors font-bold text-lg"
+                >
                   เข้าสู่ระบบ
                 </Link>
               )}

@@ -441,7 +441,7 @@ const SideBar = ({ activeMenu, setActiveMenu, isMobileOpen }: SideBarProps) => {
     <aside
       className={`
         bg-white border-r border-slate-200 w-64 min-h-[calc(100vh-5rem)]
-        absolute md:static top-20 left-0 z-10 transition-transform duration-300 ease-in-out
+        absolute md:static top-0 left-0 z-10 transition-transform duration-300 ease-in-out
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}
     >

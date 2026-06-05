@@ -20,8 +20,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   verifyUser: async () => {
     try {
       const response = await authService.getMe()
-      if (response.success && response.data) {
-        set({ isLoggedIn: true, user: response.data as UserProfile })
+      if (response.success && response.user) {
+        set({ isLoggedIn: true, user: response.user as UserProfile })
       }
     } catch {
       set({ isLoggedIn: false, user: null })
@@ -35,7 +35,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (response.success) {
       set({
         isLoggedIn: true,
-        user: response.data ? (response.data as UserProfile) : null,
+        user: response.user ? (response.user as UserProfile) : null,
       })
       return true
     }

@@ -276,7 +276,7 @@ export default function ContactRequestManager() {
                                     </div>
                                     <div className='bg-slate-50/50 p-3 rounded-xl border border-slate-100'>
                                       <p className='text-slate-400 text-xs font-bold mb-0.5 uppercase tracking-wide'>
-                                        ช่องทางที่สะดวกรับสาย
+                                        ช่องทางที่สะดวกติดต่อกลับ
                                       </p>
                                       <p className='font-bold text-slate-800 flex items-center gap-1.5'>
                                         {item.preferredContact === 'email' ? (

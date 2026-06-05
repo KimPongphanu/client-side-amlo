@@ -7,7 +7,6 @@ import { DashboardProvider } from './context/DashboardContext'
 import ScrollToTop from './pages/ScrollToTop'
 
 const Home = lazy(() => import('./pages/homePage'))
-const About = lazy(() => import('./pages/aboutPage'))
 const MainLayout = lazy(() => import('./pages/MainLayout'))
 const NewsDetailPage = lazy(() => import('./pages/NewsDetailPage'))
 const DepartmentDetailPage = lazy(() => import('./pages/DepartDetailPage'))
@@ -66,7 +65,6 @@ function App() {
           {/* สร้าง Layout Route ขึ้นมาครอบหน้าอื่นๆ ทั้งหมด */}
           <Route element={<MainLayout />}>
             <Route path='/' element={<Home />} />
-            <Route path='/about' element={<About />} />
             <Route path='/news' element={<News />} />
             <Route path='/news/:id' element={<NewsDetailPage />} />
             <Route path='/department/:id' element={<DepartmentDetailPage />} />
