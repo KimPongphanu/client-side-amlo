@@ -1,28 +1,42 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
 import type { CommentItem, DepartmentItem, NewsItem } from '../type'
 import { api } from '../utils/api'
 
 import { NewsContext } from './NewsContextDef'
 export { NewsContext }
 
-// ==========================================
-// ลบหรือคอมเมนต์ MOCK_DB เก่าออก เพื่อให้โค้ดสะอาดขึ้น
-// ==========================================
-
 export const NewsProvider = ({ children }: { children: ReactNode }) => {
   const [prList, setPrList] = useState<NewsItem[]>([])
-  const [newsList, setNewsList] = useState<NewsItem[]>([]) // 🌟 แก้ไข: เปลี่ยนจากดึง MOCK_DB เป็นเริ่มต้นด้วย Array ว่าง
-  const [commentList, setCommentList] = useState<CommentItem[]>([]) // รอต่อ API จริงในอนาคต
-  const [departmentList, setDepartmentList] = useState<DepartmentItem[]>([]) // รอต่อ API จริงในอนาคต
+  const [newsList, setNewsList] = useState<NewsItem[]>([])
+  const [commentList, setCommentList] = useState<CommentItem[]>([])
+  const [departmentList, setDepartmentList] = useState<DepartmentItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // 🌟 รวมศูนย์ดึงข้อมูลสาธารณะจากหลังบ้านผ่าน useEffect ชุดเดียว
+  // 🌟 Fetch all comments (including hidden ones with isShow=false) for admin dashboard usage
+  const fetchComments = useCallback(async () => {
+    try {
+      const res = await api('/comments?all=true', { method: 'GET' })
+      if (res && res.data) {
+        setCommentList(res.data)
+      }
+    } catch (error) {
+      console.error('Failed to sync comments from database:', error)
+    }
+  }, [])
+
+  // ── Centralized effect hook to load initial public data ──
   useEffect(() => {
     const fetchPublicData = async () => {
       try {
         setIsLoading(true)
 
-        // 1. ดึงข้อมูลประชาสัมพันธ์ (PR)
+        // 1. Fetch Public Relations news (PR)
         const prRes = await api('/news?type=PR&limit=50', { method: 'GET' })
         if (prRes && prRes.data) {
           setPrList(prRes.data)
@@ -58,7 +72,7 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     if (commentList.length > 0) {
       try {
         localStorage.setItem('amlo_commentList', JSON.stringify(commentList))
-      } catch(error) {
+      } catch (error) {
         console.error('ไม่สามารถบันทึกคอมเมนต์ลง LocalStorage ได้:', error)
       }
     }
@@ -76,7 +90,7 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
       setCommentList,
       setDepartmentList,
     }),
-    [newsList, prList, departmentList, commentList, isLoading],
+    [newsList, prList, departmentList, commentList, isLoading, fetchComments],
   )
 
   return (

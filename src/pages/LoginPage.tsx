@@ -1,13 +1,12 @@
 // src/pages/LoginPage.tsx
-import { useContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Swal from 'sweetalert2'
-import { AuthContext } from '../context/AuthContextDef'
-import { api } from '../utils/api'
+import { useAuthStore } from '../stores/useAuthStore'
 
 const LoginPage = () => {
   const navigate = useNavigate()
-  const auth = useContext(AuthContext)
+  const loginUser = useAuthStore((state) => state.loginUser)
 
   const [phase, setPhase] = useState<'zoom-in' | 'zoom-out' | 'done'>('zoom-in')
   const [email, setemail] = useState('')
@@ -28,14 +27,12 @@ const LoginPage = () => {
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    // 🔒 Intercept default browser behavior
     e.preventDefault()
     e.stopPropagation()
 
     console.log('[Form Event] Form submission intercepted via handleSubmit()')
     setError('')
 
-    // 🛡️ Honeypot Field Check
     if (botTrap) {
       console.warn(
         '[Security Alert] Bot detected! Honeypot field has a value:',
@@ -44,7 +41,6 @@ const LoginPage = () => {
       return
     }
 
-    // 🔍 Client-side Validation
     if (!email.trim() || !password.trim()) {
       console.log(
         '[Validation Failed] Email or Password string is empty after trimming',
@@ -59,25 +55,15 @@ const LoginPage = () => {
     setIsLoading(true)
 
     try {
-      console.log('[API Request] Sending POST credentials to /api/auth/login')
-      const response = await api('/auth/login', {
-        method: 'POST',
-        body: { email, password },
-      })
+      console.log('[Store Action] Calling loginUser from useAuthStore')
+      const success = await loginUser({ email, password })
 
-      console.log('[API Response] Received payload back from server:', response)
-
-      if (response.success) {
-        console.log(
-          '[Auth Context] Triggering auth?.login() global state update',
-        )
-        auth?.login()
-
+      if (success) {
         console.log('[Modal Trigger] Displaying Swal success notification box')
         await Swal.fire({
           icon: 'success',
           title: 'เข้าสู่ระบบสำเร็จ',
-          text: response.message || 'ยินดีต้อนรับเข้าสู่ระบบจัดการภายใน',
+          text: 'ยินดีต้อนรับเข้าสู่ระบบจัดการภายใน',
           timer: 1500,
           showConfirmButton: false,
           allowOutsideClick: false,
@@ -86,11 +72,11 @@ const LoginPage = () => {
         console.log(
           '[Navigation] Swal resolved. Redirecting user to /dashboard',
         )
-        navigate('/dashboard')
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true })
+        }, 100)
       } else {
-        console.warn(
-          '[Business Error] API returned HTTP 200 but response.success is false',
-        )
+        throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง')
       }
     } catch (err: unknown) {
       console.error(
@@ -105,16 +91,12 @@ const LoginPage = () => {
       await Swal.fire({
         icon: 'error',
         title: 'เข้าสู่ระบบล้มเหลว',
-        text: errorMessage || 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง',
+        text: errorMessage,
         confirmButtonColor: '#185FA5',
         confirmButtonText: 'ลองใหม่อีกครั้ง',
         allowOutsideClick: false,
       })
 
-      console.log(
-        '[State Update] Local error string updated with:',
-        errorMessage,
-      )
       setError(errorMessage)
     } finally {
       console.log(

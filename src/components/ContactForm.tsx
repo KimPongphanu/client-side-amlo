@@ -1,26 +1,6 @@
-import React, { useState } from 'react'
-import Swal from 'sweetalert2'
-import isEmail from 'validator/lib/isEmail'
-import { api } from '../utils/api'
-
-interface ContactFormData {
-  firstName: string
-  lastName: string
-  email: string
-  telNumber: string
-  preferredContact: string
-  message: string
-  botField: string // 🌟 เพิ่ม Field สำหรับ Honeypot
-}
-
-interface FormErrors {
-  firstName?: string
-  lastName?: string
-  email?: string
-  telNumber?: string
-  preferredContact?: string
-  message?: string
-}
+import React, { useEffect, useState } from 'react'
+import { useContentStore } from '../stores/useContentStore'
+import type { ContactFormData } from '../type'
 
 const ClearIcon = () => (
   <svg
@@ -39,7 +19,15 @@ const ClearIcon = () => (
   </svg>
 )
 
-const ContactForm = () => {
+export default function ContactForm() {
+  // Bind centralized layout state parameters and triggers from content store
+  const submitContactForm = useContentStore((state) => state.submitContactForm)
+  const isSubmitting = useContentStore((state) => state.isSubmittingContact)
+  const errors = useContentStore((state) => state.contactErrors)
+  const clearContactErrors = useContentStore(
+    (state) => state.clearContactErrors,
+  )
+
   const cardStyle =
     'w-full max-w-[600px] bg-white rounded-2xl m-10 p-8 border border-gray-200 shadow-lg mx-auto mt-25'
   const requireStyle =
@@ -64,9 +52,12 @@ const ContactForm = () => {
     botField: '',
   })
 
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [isSubmitting, setIsSubmitting] = useState(false) // 🌟 State สำหรับปุ่มโหลด
   const maxLength = 500
+
+  // Flush remaining validation error styling artifacts on component destruction
+  useEffect(() => {
+    return () => clearContactErrors()
+  }, [clearContactErrors])
 
   const formatPhoneNumber = (value: string) => {
     if (!value) return value
@@ -86,166 +77,27 @@ const ContactForm = () => {
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }))
     }
-    if (errors[name as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }))
-    }
   }
 
   const handleClear = (name: keyof ContactFormData) => {
     setFormData((prev) => ({ ...prev, [name]: '' }))
-    setErrors((prev) => ({ ...prev, [name]: undefined }))
+  }
+
+  const resetForm = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      telNumber: '',
+      preferredContact: '',
+      message: '',
+      botField: '',
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // 🌟 1. ดักจับ Honeypot ถ้ามีข้อมูลแปลว่าเป็น Bot แน่นอน
-    if (formData.botField) {
-      console.warn('Bot detected via honeypot!')
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        telNumber: '',
-        preferredContact: '',
-        message: '',
-        botField: '',
-      })
-      return
-    }
-
-    const newErrors: FormErrors = {}
-    let isValid = true
-
-    const isThaiOnly = (v: string) => /^[ก-๙\s]+$/.test(v)
-    const isEngOnly = (v: string) => /^[a-zA-Z\s]+$/.test(v)
-
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'กรุณากรอกชื่อจริงของท่าน'
-      isValid = false
-    } else if (
-      !isThaiOnly(formData.firstName) &&
-      !isEngOnly(formData.firstName)
-    ) {
-      newErrors.firstName =
-        'กรุณากรอกเฉพาะตัวอักษรภาษาไทยหรือภาษาอังกฤษล้วนเท่านั้น'
-      isValid = false
-    }
-
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'กรุณากรอกนามสกุลของท่าน'
-      isValid = false
-    } else if (
-      !isThaiOnly(formData.lastName) &&
-      !isEngOnly(formData.lastName)
-    ) {
-      newErrors.lastName =
-        'กรุณากรอกเฉพาะตัวอักษรภาษาไทยหรือภาษาอังกฤษล้วนเท่านั้น'
-      isValid = false
-    }
-
-    if (isValid && formData.firstName && formData.lastName) {
-      if (isThaiOnly(formData.firstName) !== isThaiOnly(formData.lastName)) {
-        newErrors.firstName = 'ชื่อและนามสกุลต้องเป็นภาษาเดียวกันเท่านั้น'
-        newErrors.lastName = 'ชื่อและนามสกุลต้องเป็นภาษาเดียวกันเท่านั้น'
-        isValid = false
-      }
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'กรุณากรอกอีเมลครับ/ค่ะ'
-      isValid = false
-    } else if (!isEmail(formData.email)) {
-      newErrors.email = 'รูปแบบอีเมลไม่ถูกต้อง (เช่น example@mail.com)'
-      isValid = false
-    }
-
-    if (formData.telNumber && !/^0[0-9]{9}$/.test(formData.telNumber)) {
-      newErrors.telNumber = 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง (ต้องมี 10 หลัก)'
-      isValid = false
-    }
-
-    if (!formData.preferredContact) {
-      newErrors.preferredContact = 'กรุณาเลือกช่องทางการติดต่อกลับ'
-      isValid = false
-    }
-
-    if (!formData.message.trim()) {
-      newErrors.message = 'กรุณากรอกข้อความที่ต้องการสอบถาม'
-      isValid = false
-    }
-
-    setErrors(newErrors)
-
-    if (!isValid) return
-
-    setIsSubmitting(true)
-
-    Swal.fire({
-      title: 'กำลังส่งข้อความ...',
-      text: 'กรุณารอสักครู่ระบบกำลังบันทึกข้อมูล',
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading()
-      },
-    })
-
-    // ตัด botField ทิ้งก่อนส่งไปหลังบ้าน
-    // eslint-disable-next-line
-    const { botField: _, ...actualData } = formData
-    const payload = { ...actualData }
-
-    try {
-      // เรียกใช้ฟังก์ชัน api ส่วนกลางของระบบ
-      const response = await api('/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payload,
-      })
-
-      // 🌟 แก้ไขจุดนี้: เช็คความสำเร็จผ่านโครงสร้างข้อมูลที่ api คืนกลับมา (เช่น success หรือดักจับผ่าน try-catch)
-      if (response && (response.ok || response.success)) {
-        // 🌟 SWAL แจ้งเตือนสำเร็จ
-        await Swal.fire({
-          icon: 'success',
-          title: 'ส่งข้อความสำเร็จ!',
-          text: 'ขอบคุณที่ติดต่อเรา เจ้าหน้าที่จะติดต่อกลับโดยเร็วที่สุด',
-          confirmButtonColor: '#2563eb',
-        })
-
-        // รีเซ็ตฟอร์มเมื่อสำเร็จ
-        setFormData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          telNumber: '',
-          preferredContact: '',
-          message: '',
-          botField: '',
-        })
-      } else {
-        // SWAL แจ้งเตือนเมื่อข้อกำหนดหลังบ้านไม่ผ่าน (เช่น ข้อมูลไม่ครบ)
-        Swal.fire({
-          icon: 'error',
-          title: 'เกิดข้อผิดพลาด',
-          text:
-            response?.message ||
-            'ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่อีกครั้งในภายหลัง',
-          confirmButtonColor: '#dc2626',
-        })
-      }
-    } catch (error: any) {
-      console.error(error)
-      // 🌟 SWAL แจ้งเตือนเมื่อเชื่อมต่อ Server ไม่ได้
-      Swal.fire({
-        icon: 'error',
-        title: 'การเชื่อมต่อล้มเหลว',
-        text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบอินเทอร์เน็ตของคุณ',
-        confirmButtonColor: '#dc2626',
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
+    await submitContactForm(formData, resetForm)
   }
 
   return (
@@ -514,5 +366,3 @@ const ContactForm = () => {
     </article>
   )
 }
-
-export default ContactForm
