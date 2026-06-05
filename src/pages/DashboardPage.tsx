@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import Swal from 'sweetalert2'
 import ContactRequestManager from '../components/dashboard/ContactRequestManager'
 import NewsManagerDashboard from '../components/dashboard/NewsManagerDashboard'
@@ -8,7 +8,7 @@ import ReviewManager from '../components/dashboard/ReviewManager'
 import { AuthContext } from '../context/AuthContextDef'
 import { useDashboard } from '../context/DashboardContext'
 import { NewsContext } from '../context/NewsContext'
-import { api } from '../utils/api'
+import { useAuthStore } from '../stores/useAuthStore'
 
 type MenuId =
   | 'overview'
@@ -63,7 +63,7 @@ const Avatar = ({
   return (
     <div
       className={`${size} ${bgColor} rounded-full flex items-center justify-center text-white font-bold text-sm border border-slate-300 flex-shrink-0`}
-      aria-label={`รูปโปรไฟล์ของ ${name}`}
+      aria-label={`Profile picture of ${name}`}
     >
       {initials}
     </div>
@@ -109,39 +109,36 @@ const ClockDisplay = () => {
     </div>
   )
 }
+
 type NavBarProps = {
   toggleMobileMenu: () => void
+  onLogout: () => Promise<void>
 }
 
-const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
+const NavBar = ({ toggleMobileMenu, onLogout }: NavBarProps) => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotifOpen, setIsNotifOpen] = useState(false)
   const [expandedNotifView, setExpandedNotifView] = useState<
     'none' | 'contacts' | 'reviews'
   >('none')
 
-  const navigate = useNavigate()
   const userMenuRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
   const context = useContext(NewsContext)
 
-  // 🌟 ดักดึงสิทธิ์จาก Context สากลของระบบ
   const auth = useContext(AuthContext)
   const { contacts } = useDashboard()
-  // ข้อมูลผู้ใช้ปัจจุบัน
   const currentUser = {
     firstName: auth?.user?.firstname || 'Guest',
     lastName: auth?.user?.lastname || 'User',
     role: 'Admin',
   }
 
-  // นำไปใช้ร่วมกับ Avatar
   const fullName = `${currentUser.firstName} ${currentUser.lastName}`.trim()
 
   const realReviews = context?.commentList ? [...context.commentList] : []
   const latestReviews = realReviews.reverse()
 
-  // 🌟 เปลี่ยนมาใช้ข้อมูลจริงที่ดึงมาจาก Dashboard Context แทน Mockup
   const latestContacts = contacts?.data
     ? [...contacts.data].sort(
         (a, b) =>
@@ -149,7 +146,6 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
       )
     : []
 
-  // ปิด Dropdown เมื่อคลิกข้างนอก
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -160,51 +156,16 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
       }
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setIsNotifOpen(false)
-        setExpandedNotifView('none') // Reset view เมื่อปิด
+        setExpandedNotifView('none')
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // 🌟 ฟังก์ชัน Logout เคลียร์สิทธิ์ทั้งหน้าบ้านและหลังบ้านอย่างปลอดภัย
-  const handleLogout = async () => {
-    setIsUserMenuOpen(false) // สั่งปิด Dropdown เมนูก่อนทันที
-    console.log('[Logout Flow] Initiating secure logout sequence...')
-
-    try {
-      // 📡 1. ยิง API บอกหลังบ้านให้ทำการทำลายคุกกี้สิทธิ์ (res.clearCookie)
-      await api('/auth/logout', { method: 'POST' }).catch((err) => {
-        console.warn(
-          '[Logout Flow] Backend session clear skipped or network failed:',
-          err.message,
-        )
-      })
-
-      // 🛡️ 2. ล้างค่าสถานะสากลหน้าบ้าน (เคลียร์ธงระบบสเตตัสใน React)
-      auth?.logout()
-      console.log('[Logout Flow] Frontend local authentication flag cleared')
-
-      // 🟢 3. แสดงกล่อง SweetAlert2 ล็อคหน้าจอแจ้งสถานะความสำเร็จ
-      await Swal.fire({
-        icon: 'success',
-        title: 'ออกจากระบบสำเร็จ',
-        text: 'กำลังพาท่านกลับไปยังหน้าแรก',
-        timer: 1500,
-        showConfirmButton: false,
-        allowOutsideClick: false,
-      })
-
-      // 🚀 4. พาย้ายเพจกลับหน้าล็อกอินแบบล้างประวัติการกด Back
-      navigate('/login', { replace: true })
-    } catch (error) {
-      console.error(
-        '[Logout Critical Failed] System crashed during reset:',
-        error,
-      )
-      auth?.logout()
-      navigate('/login', { replace: true })
-    }
+  const handleLogoutClick = async () => {
+    setIsUserMenuOpen(false)
+    await onLogout()
   }
 
   return (
@@ -213,7 +174,7 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
         <button
           onClick={toggleMobileMenu}
           className='md:hidden p-2 border border-slate-300 bg-slate-50 active:bg-slate-200 cursor-pointer'
-          aria-label='เปิด/ปิดเมนู'
+          aria-label='Toggle menu'
         >
           <svg
             className='w-6 h-6'
@@ -233,7 +194,7 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
         <Link to='/'>
           <img
             src='https://www.amlo.go.th/amlo-intranet/images/banners/logo-m.jpg'
-            alt='โลโก้ ปปง.'
+            alt='AMLO Logo'
             className='h-12 w-auto object-contain'
           />
         </Link>
@@ -247,7 +208,7 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
         <div className='relative' ref={notifRef}>
           <button
             className='relative cursor-pointer p-1 hover:bg-slate-100 rounded-full transition-colors'
-            aria-label='การแจ้งเตือน'
+            aria-label='Notifications'
             onClick={() => setIsNotifOpen(!isNotifOpen)}
           >
             <svg
@@ -395,7 +356,7 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
           <button
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
             className='flex items-center gap-x-3 cursor-pointer hover:opacity-80 transition-opacity outline-none'
-            aria-label='เมนูบัญชีผู้ใช้'
+            aria-label='User menu'
           >
             <div className='text-right hidden sm:block'>
               <h6 className='text-sm font-bold text-slate-800'>
@@ -426,9 +387,8 @@ const NavBar = ({ toggleMobileMenu }: NavBarProps) => {
               </p>
             </div>
 
-            {/* 🌟 ผูกฟังก์ชันเข้ากับปุ่มกดตรงนี้เรียบร้อยแล้ว */}
             <button
-              onClick={handleLogout}
+              onClick={handleLogoutClick}
               className='flex items-center gap-2.5 w-full px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors cursor-pointer outline-none'
             >
               <svg
@@ -516,7 +476,7 @@ const useIdleTimeout = (
   const isIdleWarningOpen = useRef<boolean>(false)
 
   useEffect(() => {
-    const warningTimeMs = 60 * 1000 // แจ้งเตือน 60 วินาทีก่อนเตะออก
+    const warningTimeMs = 60 * 1000
 
     const resetTimer = () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
@@ -593,18 +553,39 @@ const useIdleTimeout = (
     }
   }, [onIdle, idleTimeMs])
 }
-const DashboardPage = () => {
-  const [activeMenu, setActiveMenu] = useState<MenuId>('overview')
-  const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false)
-  const navigate = useNavigate()
 
-  const handleLogout = () => {
+// ---------------------------------------------------------
+// Dashboard Main Component
+// ---------------------------------------------------------
+const DashboardPage = () => {
+  // 🌟 Initialize state safely after passing Auth Guards
+  const [activeMenu, setActiveMenu] = useState<MenuId>(() => {
+    const savedMenu = sessionStorage.getItem('activeDashboardMenu')
+    return (savedMenu as MenuId) || 'overview'
+  })
+
+  const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false)
+  const logoutUser = useAuthStore((state) => state.logoutUser)
+
+  // 🌟 Unified secure logout handler
+  const handleLogout = async () => {
+    console.log('[Logout Flow] Initiating integrated secure logout sequence...')
+    sessionStorage.removeItem('activeDashboardMenu')
     sessionStorage.removeItem('token')
-    navigate('/login', { replace: true })
+
+    await logoutUser()
+
+    // Hard refresh via window.location to completely wipe RAM structures and React states
+    window.location.href = '/login'
   }
 
-  // เรียกใช้ Hook โดยตั้งเวลา 15 นาที
+  // Handle idle automation
   useIdleTimeout(handleLogout, 15 * 60 * 1000)
+
+  // Memorize currently active view state
+  useEffect(() => {
+    sessionStorage.setItem('activeDashboardMenu', activeMenu)
+  }, [activeMenu])
 
   const renderMainContent = () => {
     switch (activeMenu) {
@@ -627,7 +608,11 @@ const DashboardPage = () => {
 
   return (
     <div className='bg-slate-100 min-h-screen text-slate-800 font-sans'>
-      <NavBar toggleMobileMenu={() => setIsMobileOpen(!isMobileOpen)} />
+      {/* Pass unified logout logic directly downstream into NavBar props */}
+      <NavBar
+        toggleMobileMenu={() => setIsMobileOpen(!isMobileOpen)}
+        onLogout={handleLogout}
+      />
 
       <div className='flex relative'>
         <SideBar
