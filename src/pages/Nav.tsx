@@ -24,7 +24,7 @@ export default function Nav() {
   // 🌟 3. ปรับให้รันรอบเดียวตอนโหลด Component ป้องกันสภาวะ Infinite Loop
   useEffect(() => {
     verifyUser()
-  }, [])
+  }, [verifyUser])
 
   // 🌟 4. เพิ่ม Cleanup ป้องกัน Memory Leak จากการตั้งค่าดีเลย์เมาส์
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function Nav() {
   return (
     <>
       <nav
-        className='fixed top-0 left-0 w-full z-[60] transition-all duration-500 backdrop-blur-[25px] bg-white/90 border-b border-gray-200 shadow-sm'
+        className='fixed top-0 left-0 w-full z-[60] transition-all duration-​1500 backdrop-blur-[25px] bg-white/90 border-b border-gray-200 shadow-sm'
         onMouseEnter={handleMouseEnterNav}
         onMouseLeave={handleMouseLeaveNav}
       >
@@ -292,9 +292,10 @@ export default function Nav() {
 
         {/* 💻 เมนู Dropdown สำหรับ Desktop (คลายคอมเมนต์และเปิดใช้งาน) */}
         <div
-          className={`hidden md:block absolute top-full left-0 w-full backdrop-blur-md bg-white/95 shadow-xl border-t border-gray-100 transition-all duration-300 ease-out ${activeMenu === 'about' ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+          className={`hidden md:grid absolute top-full left-0 w-full backdrop-blur-md bg-white/95 shadow-xl border-t border-slate-100 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeMenu === 'about' ? 'grid-rows-[1fr] opacity-100 pointer-events-auto' : 'grid-rows-[0fr] opacity-0 pointer-events-none'}`}
         >
-          <div className='max-w-7xl mx-auto p-8 grid grid-cols-3 gap-8'>
+          <div className='overflow-hidden'>
+            <div className='max-w-7xl mx-auto p-8 grid grid-cols-3 gap-8'>
             <div>
               <h3 className='text-slate-400 font-bold mb-4 text-xs tracking-wider uppercase'>
                 ประวัติของหน่วยงาน
@@ -363,7 +364,8 @@ export default function Nav() {
             </div>
           </div>
         </div>
-      </nav>
+      </div>
+    </nav>
 
       {/* 📱 เมนู Mobile แบบเต็มจอ */}
       <div
@@ -400,12 +402,12 @@ export default function Nav() {
                     </h3>
                     <ul className='space-y-3 text-sm font-medium text-slate-600'>
                       <li>
-                        <Link to='#' onClick={handleCloseMobileMenu}>
+                        <Link to='#' onClick={handleCloseMobileMenu} className='hover:text-sky-500 transition-colors'>
                           ประวัติ
                         </Link>
                       </li>
                       <li>
-                        <Link to='#' onClick={handleCloseMobileMenu}>
+                        <Link to='#' onClick={handleCloseMobileMenu} className='hover:text-sky-500 transition-colors'>
                           หน้าที่และอำนาจ
                         </Link>
                       </li>
@@ -417,12 +419,12 @@ export default function Nav() {
                     </h3>
                     <ul className='space-y-3 text-sm font-medium text-slate-600'>
                       <li>
-                        <Link to='/advertise' onClick={handleCloseMobileMenu}>
+                        <Link to='/advertise' onClick={handleCloseMobileMenu} className='hover:text-sky-500 transition-colors'>
                           ประชาสัมพันธ์
                         </Link>
                       </li>
                       <li>
-                        <Link to='/news' onClick={handleCloseMobileMenu}>
+                        <Link to='/news' onClick={handleCloseMobileMenu} className='hover:text-sky-500 transition-colors'>
                           กิจกรรม
                         </Link>
                       </li>
@@ -439,6 +441,7 @@ export default function Nav() {
                           <Link
                             to={`/department/${dept.id}`}
                             onClick={handleCloseMobileMenu}
+                            className='hover:text-sky-500 transition-colors'
                           >
                             {dept.title}
                           </Link>

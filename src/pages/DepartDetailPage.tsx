@@ -85,10 +85,12 @@ const YouTubeSlide = ({
   url,
   isActive,
   onVideoEnded,
+  isOnlySlide = false,
 }: {
   url: string
   isActive: boolean
   onVideoEnded: () => void
+  isOnlySlide?: boolean
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<YouTubePlayer | null>(null)
@@ -156,6 +158,8 @@ const YouTubeSlide = ({
           disablekb: 1,
           iv_load_policy: 3,
           cc_load_policy: 0,
+          loop: isOnlySlide ? 1 : 0,
+          playlist: isOnlySlide && videoId ? videoId : undefined,
         },
         events: {
           onReady: (e: { target: YouTubePlayer }) => {
@@ -176,6 +180,10 @@ const YouTubeSlide = ({
               clearFallback()
               playingRef.current = false
               setIsPlaying(false)
+              if (!isOnlySlide) {
+                e.target.seekTo(0, true)
+                e.target.pauseVideo()
+              }
               onEndedRef.current?.()
             } else if (e.data === S.PAUSED) {
               setIsPlaying(false)
@@ -336,6 +344,9 @@ const DepartmentDetailPage = () => {
   const department = departmentList?.find((dept) => dept.id === Number(id))
   const swiperRef = useRef<SwiperType | null>(null)
 
+  const hasMultipleSlides = (department?.gallery?.length || 0) > 1
+  const isOnlySlide = (department?.gallery?.length || 0) === 1
+
   const handleVideoEnded = useCallback(() => {
     swiperRef.current?.slideNext()
     swiperRef.current?.autoplay.start()
@@ -400,10 +411,10 @@ const DepartmentDetailPage = () => {
         <div className='w-full h-[250px] md:h-[450px] bg-black'>
           <Swiper
             modules={[Navigation, Pagination, Autoplay]}
-            navigation
+            navigation={hasMultipleSlides}
             pagination={{ clickable: true }}
-            loop={true}
-            allowTouchMove={true}
+            loop={hasMultipleSlides}
+            allowTouchMove={hasMultipleSlides}
             autoplay={{
               delay: 5000,
               disableOnInteraction: false,
@@ -424,6 +435,7 @@ const DepartmentDetailPage = () => {
                       url={item.url}
                       isActive={isActive}
                       onVideoEnded={handleVideoEnded}
+                      isOnlySlide={isOnlySlide}
                     />
                   ) : (
                     <img

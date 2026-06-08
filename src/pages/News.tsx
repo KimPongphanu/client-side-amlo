@@ -20,16 +20,14 @@ const THAI_MONTHS = [
   'ธันวาคม',
 ]
 
-const parseThaiDateToTimestamp = (dateStr: string) => {
-  if (!dateStr) return 0
-  const parts = dateStr.split(' ')
-  if (parts.length === 3) {
-    const day = parseInt(parts[0])
-    const month = THAI_MONTHS.indexOf(parts[1])
-    const year = parseInt(parts[2])
-    return new Date(year, month, day).getTime()
-  }
-  return new Date(dateStr).getTime()
+const formatThaiDate = (isoString: string) => {
+  if (!isoString) return ''
+  const date = new Date(isoString)
+  if (isNaN(date.getTime())) return isoString
+  const day = date.getDate()
+  const month = THAI_MONTHS[date.getMonth()]
+  const year = date.getFullYear() + 543
+  return `${day} ${month} ${year}`
 }
 
 const HorizontalCardSkeleton = () => (
@@ -83,7 +81,10 @@ const News = () => {
 
   const availableMonths = useMemo(() => {
     if (!prList || prList.length === 0) return []
-    const months = prList.map((item) => item.date.split(' ')[1]).filter(Boolean)
+    const months = prList.map((item) => {
+      const d = new Date(item.date)
+      return isNaN(d.getTime()) ? '' : THAI_MONTHS[d.getMonth()]
+    }).filter(Boolean)
     return Array.from(new Set(months)).sort(
       (a, b) => THAI_MONTHS.indexOf(a) - THAI_MONTHS.indexOf(b),
     )
@@ -98,12 +99,12 @@ const News = () => {
           (item.description &&
             item.description.toLowerCase().includes(searchTerm.toLowerCase()))
         const matchesMonth =
-          selectedMonth === '' || item.date.includes(selectedMonth)
+          selectedMonth === '' || 
+          (!isNaN(new Date(item.date).getTime()) && THAI_MONTHS[new Date(item.date).getMonth()] === selectedMonth)
         return matchesSearch && matchesMonth
       })
       .sort(
-        (a, b) =>
-          parseThaiDateToTimestamp(b.date) - parseThaiDateToTimestamp(a.date),
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
       )
   }, [prList, searchTerm, selectedMonth])
 
@@ -201,7 +202,7 @@ const News = () => {
                 <div className='p-6 md:p-8 flex flex-col flex-grow justify-between'>
                   <div>
                     <div className='text-sm text-slate-400 mb-2 font-medium'>
-                      {item.date}
+                      {formatThaiDate(item.date)}
                     </div>
                     <h2 className='text-xl md:text-2xl font-bold text-slate-800 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2'>
                       {item.title}
