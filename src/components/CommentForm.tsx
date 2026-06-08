@@ -31,7 +31,6 @@ const CommentForm = () => {
   const [snapVertical, setSnapVertical] = useState('bottom')
 
   const dragInfo = useRef({ startX: 0, startY: 0, isMoved: false })
-  const submitTimestamps = useRef<number[]>([])
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (isOpen) return
@@ -135,20 +134,9 @@ const CommentForm = () => {
     setFormData({ rating: 0, content: '', botField: '' })
   }
 
-  const setSubmitTimestamps = (timestamps: number[]) => {
-    submitTimestamps.current = timestamps
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await submitUserComment(
-      formData,
-      submitTimestamps.current,
-      setSubmitTimestamps,
-      resetForm,
-      setIsOpen,
-      fetchPublicData,
-    )
+    await submitUserComment(formData, resetForm, setIsOpen)
   }
 
   const getFormPlacementClass = () => {

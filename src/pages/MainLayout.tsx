@@ -55,9 +55,8 @@ const MainLayout = () => {
       </main>
       <Footer />
 
-      {/* 🌟 3. ปรับ Logic: จะเรนเดอร์ CommentForm ก็ต่อเมื่อล็อกอินแล้วเท่านั้น 
-          เพื่อไม่ให้โค้ดดักสิทธิ์ข้างในคอมโพเนนต์นี้ทำงนและเตะผู้ใช้ทั่วไปเด้งไปหน้า /login */}
-      {isLoggedIn && <CommentForm />}
+      {/* 🌟 3. แสดงปุ่ม CommentForm ตลอดเวลาสำหรับผู้ใช้งานทั่วไป (Public Feedback) */}
+      <CommentForm />
 
       <ScrollToTopButton />
       <CookieConsent />

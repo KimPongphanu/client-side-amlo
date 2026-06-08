@@ -120,7 +120,7 @@ export default function DepartmentManagerDashboard() {
   const [coverPreview, setCoverPreview] = useState<string>('')
   const [galleryUrls, setGalleryUrls] = useState<string[]>([])
   const [existingGalleryUrls, setExistingGalleryUrls] = useState<string[]>([])
-  const [newGalleryFiles, setNewGalleryFiles] = useState<File[]>([])
+  const [newGalleryFiles, setNewGalleryFiles] = useState<{ file: File; preview: string }[]>([])
   const [isGalleryUpdated, setIsGalleryUpdated] = useState<boolean>(false)
 
   const filteredDepartments = useMemo<DepartmentItem[]>(() => {
@@ -139,6 +139,7 @@ export default function DepartmentManagerDashboard() {
     if (coverPreview && coverPreview.startsWith('blob:')) {
       URL.revokeObjectURL(coverPreview)
     }
+    newGalleryFiles.forEach(({ preview }) => URL.revokeObjectURL(preview))
     setEditingId(null)
     setTitle('')
     setContent('')
@@ -232,9 +233,22 @@ export default function DepartmentManagerDashboard() {
     e: React.ChangeEvent<HTMLInputElement>,
   ): void => {
     if (e.target.files) {
-      setNewGalleryFiles(Array.from(e.target.files))
+      // ล้าง preview เก่าก่อนสร้างอันใหม่
+      newGalleryFiles.forEach(({ preview }) => URL.revokeObjectURL(preview))
+      const filesWithPreview = Array.from(e.target.files).map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+      }))
+      setNewGalleryFiles(filesWithPreview)
       setIsGalleryUpdated(true)
     }
+  }
+
+  const handleRemoveNewFile = (index: number): void => {
+    setNewGalleryFiles((prev) => {
+      URL.revokeObjectURL(prev[index].preview)
+      return prev.filter((_, i) => i !== index)
+    })
   }
 
   const handleAddOrEdit = async (e: React.FormEvent): Promise<void> => {
@@ -262,7 +276,7 @@ export default function DepartmentManagerDashboard() {
       existingGalleryUrls.forEach((url: string) =>
         formData.append('existingGalleryUrls', url),
       )
-      newGalleryFiles.forEach((file: File) => formData.append('gallery', file))
+      newGalleryFiles.forEach(({ file }) => formData.append('gallery', file))
     }
 
     Swal.fire({
@@ -642,7 +656,8 @@ export default function DepartmentManagerDashboard() {
 
                   {/* Current Active Media Assets Render */}
                   {(galleryUrls.length > 0 ||
-                    existingGalleryUrls.length > 0) && (
+                    existingGalleryUrls.length > 0 ||
+                    newGalleryFiles.length > 0) && (
                     <div className='p-4 bg-slate-50/50 border border-slate-100 rounded-2xl grid grid-cols-4 sm:grid-cols-5 gap-3 shadow-inner max-h-48 overflow-y-auto custom-scrollbar'>
                       {galleryUrls.map((url: string, index: number) => (
                         <div
@@ -691,6 +706,30 @@ export default function DepartmentManagerDashboard() {
                           </div>
                         )
                       })}
+                      {/* รูปใหม่ที่เพิ่งเลือก (ยังไม่บันทึก) */}
+                      {newGalleryFiles.map(({ preview, file }, index) => (
+                        <div
+                          key={`new-${index}`}
+                          className='relative aspect-square rounded-xl overflow-hidden bg-white border-2 border-sky-400 group shadow-sm'
+                        >
+                          <img
+                            src={preview}
+                            alt={file.name}
+                            className='w-full h-full object-cover'
+                          />
+                          {/* Badge ใหม่ */}
+                          <div className='absolute bottom-0 left-0 right-0 bg-sky-500/90 text-white text-[8px] font-bold text-center py-0.5'>
+                            ใหม่
+                          </div>
+                          <button
+                            type='button'
+                            onClick={() => handleRemoveNewFile(index)}
+                            className='absolute top-1 right-1 bg-slate-900/80 text-white rounded-md p-0.5 opacity-0 group-hover:opacity-100 transition-opacity border border-white/10 shadow-sm cursor-pointer hover:bg-rose-600'
+                          >
+                            <X className='w-3 h-3' />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
 
@@ -710,6 +749,8 @@ export default function DepartmentManagerDashboard() {
                         className='block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-50 file:text-sky-700 file:cursor-pointer hover:file:bg-sky-100'
                       />
                     </div>
+
+
                     {newGalleryFiles.length > 0 && (
                       <p className='text-xs font-black text-sky-600 px-1'>
                         ✨ มี {newGalleryFiles.length}{' '}
