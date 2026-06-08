@@ -1,10 +1,7 @@
-// src/App.tsx
-import { Suspense, lazy, useContext } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
-
-import { AuthContext } from './context/AuthContextDef'
-import { DashboardProvider } from './context/DashboardContext'
 import ScrollToTop from './pages/ScrollToTop'
+import { useAuthStore } from './stores/useAuthStore'
 
 const Home = lazy(() => import('./pages/homePage'))
 const MainLayout = lazy(() => import('./pages/MainLayout'))
@@ -15,40 +12,52 @@ const AdvertiseDetail = lazy(() => import('./pages/Advertisedetail'))
 const News = lazy(() => import('./pages/News'))
 const BookGuidePage = lazy(() => import('./pages/BookGuidePage'))
 const Login = lazy(() => import('./pages/LoginPage'))
-
 const CommentForm = lazy(() => import('./components/CommentForm'))
 const ContactForm = lazy(() => import('./components/ContactForm'))
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 
-// 🔒 ProtectedRoute: สำหรับหน้าต้องการสิทธิ์ความปลอดภัย (เข้าได้เฉพาะคนที่ Login แล้ว)
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const auth = useContext(AuthContext)
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
+  const user = useAuthStore((state) => state.user)
 
-  // 1. 🌟 ล็อกประตูไว้ก่อน: ตราบใดที่ยังโหลดไม่เสร็จ (isLoading === true) ห้ามแสดงผลหน้า Dashboard เด็ดขาด
-  if (auth?.isLoading) {
+  if (!isLoggedIn && !user) {
+    return <Navigate to='/login' replace />
+  }
+
+  return <>{children}</>
+}
+
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
+
+  return isLoggedIn ? <Navigate to='/dashboard' replace /> : <>{children}</>
+}
+
+function App() {
+  const verifyUser = useAuthStore((state) => state.verifyUser)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        await verifyUser()
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setIsCheckingAuth(false)
+      }
+    }
+    initAuth()
+  }, [verifyUser])
+
+  if (isCheckingAuth) {
     return (
-      <div className='flex items-center justify-center min-h-screen bg-slate-100'>
+      <div className='flex items-center justify-center min-h-screen bg-slate-50'>
         <div className='w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin'></div>
       </div>
     )
   }
 
-  // 2. ตรวจสอบสถานะ: โหลดเสร็จแล้ว ถ้าล็อกอินผ่านให้เข้าหน้าระบบ ถ้าไม่ผ่านให้ดีดกลับไปหน้า Login
-  return auth?.isLoggedIn ? <>{children}</> : <Navigate to='/login' replace />
-}
-
-// 🛡️ PublicRoute: สำหรับหน้าสาธารณะ (เตะผู้ใช้ที่เคยล็อกอินสำเร็จแล้วหนีไปหน้า Dashboard)
-const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const auth = useContext(AuthContext)
-  // หากตรวจพบสถานะการเข้าสู่ระบบค้างไว้ ดีดไปหน้าจัดการภายในทันที
-  return auth?.isLoggedIn ? (
-    <Navigate to='/dashboard' replace />
-  ) : (
-    <>{children}</>
-  )
-}
-
-function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
@@ -62,7 +71,6 @@ function App() {
         }
       >
         <Routes>
-          {/* สร้าง Layout Route ขึ้นมาครอบหน้าอื่นๆ ทั้งหมด */}
           <Route element={<MainLayout />}>
             <Route path='/' element={<Home />} />
             <Route path='/news' element={<News />} />
@@ -74,7 +82,6 @@ function App() {
             <Route path='/commentform' element={<CommentForm />} />
             <Route path='/contactform' element={<ContactForm />} />
 
-            {/* 🌟 ปรับปรุง: ครอบหน้า Login ด้วย PublicRoute เพื่อไม่ให้ล็อกอินซ้ำซ้อน */}
             <Route
               path='/login'
               element={
@@ -89,14 +96,11 @@ function App() {
             path='/dashboard'
             element={
               <ProtectedRoute>
-                <DashboardProvider>
-                  <DashboardPage />
-                </DashboardProvider>
+                <DashboardPage />
               </ProtectedRoute>
             }
           />
 
-          {/* หน้า 404 Not Found (ถ้าไม่มี Route ไหนตรงเลย) */}
           <Route
             path='*'
             element={

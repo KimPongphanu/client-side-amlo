@@ -3,16 +3,16 @@ import type React from 'react'
 // ---------------------------------------------------------
 // Authentication Types
 // ---------------------------------------------------------
-
-/**
- * Structure representing the authenticated user profile details
- */
 export interface UserProfile {
-  id: string
+  uuid: string
   email: string
   firstname: string
   lastname: string
-  role: 'Admin' | 'Staff' | 'User'
+  role?: string // ใส่ Optional ไว้ก่อนเพราะใน Database ยังไม่มีฟิลด์นี้
+}
+
+export interface LoginResponse extends ApiResponseBase {
+  user?: UserProfile // 🌟 เรียกใช้ UserProfile ตรงๆ เพื่อบังคับ Type ให้เหมือนกันทั้งโปรเจกต์
 }
 
 // ---------------------------------------------------------
@@ -128,16 +128,12 @@ export interface ContactRequest {
 /**
  * Standard backend response payload configuration
  */
-export interface ApiResponseBase {
+export interface ApiResponseBase<T = unknown> {
   success: boolean
   message?: string
   error?: string
-  data?: unknown
+  data?: T
 }
-
-// ---------------------------------------------------------
-// Context & State Contract Definitions
-// ---------------------------------------------------------
 
 /**
  * Layout configuration parameters for legacy news content state wrappers

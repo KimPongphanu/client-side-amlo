@@ -1,11 +1,9 @@
 import DOMPurify from 'dompurify'
-import { useContext } from 'react'
+import { useEffect } from 'react' // ✨ 1. เพิ่มการนำเข้า useEffect
 import { useNavigate, useParams } from 'react-router-dom'
 import Breadcrumb from '../components/Breadcrumb'
 import RecommendedSidebar from '../components/ReccommendedSidebar'
-import { NewsContext } from '../context/NewsContext'
-import ImageModal from '../components/ImageModal'
-import { useState } from 'react'
+import { useContentStore } from '../stores/useContentStore'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -13,7 +11,7 @@ const formatToThaiDate = (dateString: string) => {
   if (!dateString) return ''
   const date = new Date(dateString)
   if (isNaN(date.getTime())) return dateString
-  
+
   return date.toLocaleDateString('th-TH', {
     year: 'numeric',
     month: 'long',
@@ -24,16 +22,25 @@ const formatToThaiDate = (dateString: string) => {
 const NewsDetailPage = () => {
   const { id } = useParams()
   const currentId = Number(id)
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const navigate = useNavigate()
-  const context = useContext(NewsContext)
 
-  // เปลี่ยนมาดึงข้อมูลจากชุด newsList ของหน้าบ้าน
-  const newsList = context?.newsList || []
-  const isLoading = context?.isLoading
+  const newsList = useContentStore((state) => state.newsList)
+  const isLoading = useContentStore((state) => state.isLoading)
+  // ✨ 2. ดึงฟังก์ชัน fetchPublicData มาใช้งานจาก Store เพื่อใช้ดึงข้อมูลใหม่เวลา Refresh
+  const fetchPublicData = useContentStore((state) => state.fetchPublicData)
+
+  // ✨ 3. เพิ่ม useEffect เพื่อดักจับจังหวะ Refresh / กดย้อนกลับ
+  useEffect(() => {
+    // ถ้าเปิดหน้านี้ขึ้นมาแล้วข้อมูลข่าวใน Store ไม่มี (โดนล้างจากการโหลดหน้าใหม่) ให้สั่งดึงข้อมูลทันที
+    if (newsList.length === 0) {
+      fetchPublicData()
+    }
+  }, [newsList, fetchPublicData])
+
   const newsData = newsList.find((item) => item.id === currentId)
 
-  if (isLoading) {
+  // ⚠️ เปลี่ยนเงื่อนไขเล็กน้อย: ถ้ากำลังโหลดอยู่ และ ข้อมูลในคลังยังว่างเปล่าจริง ๆ ค่อยหมุนโหลด
+  if (isLoading && newsList.length === 0) {
     return (
       <div className='w-full flex justify-center items-center h-screen bg-slate-50'>
         <div className='animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600'></div>
@@ -73,7 +80,6 @@ const NewsDetailPage = () => {
                   alt={newsData.title}
                   fetchPriority='high'
                   className='w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity'
-                  onClick={() => setIsModalOpen(true)}
                 />
               ) : (
                 <span className='text-slate-400'>ไม่มีรูปภาพประกอบ</span>
@@ -110,11 +116,6 @@ const NewsDetailPage = () => {
           </div>
         </div>
       </div>
-      <ImageModal 
-        isOpen={isModalOpen} 
-        imageUrl={newsData?.image_src?.startsWith('blob:') ? newsData.image_src : `${API_URL}${newsData?.image_src}`}
-        onClose={() => setIsModalOpen(false)} 
-      />
     </div>
   )
 }

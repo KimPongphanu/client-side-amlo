@@ -1,7 +1,8 @@
-import { useContext, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import SearchFilter from '../components/SearchFilter'
-import { NewsContext } from '../context/NewsContext'
+import { useContentStore } from '../stores/useContentStore'
+
 const THAI_MONTHS = [
   'มกราคม',
   'กุมภาพันธ์',
@@ -48,11 +49,8 @@ const HorizontalCardSkeleton = () => (
 )
 
 const Advertise = () => {
-  const context = useContext(NewsContext)
-
-  // แก้ไข 1: เปลี่ยนจาก newsList → prList (ข่าวประชาสัมพันธ์ที่ถูกต้อง)
-  // newsList คือกิจกรรม, prList คือข่าวประชาสัมพันธ์
-  const { prList, isLoading } = context || {}
+  const prList = useContentStore((state) => state.prList)
+  const isLoading = useContentStore((state) => state.isLoading)
 
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMonth, setSelectedMonth] = useState('')
@@ -73,8 +71,6 @@ const Advertise = () => {
     setCurrentPage(1)
   }
 
-  // แก้ไข 2: filter isShow = true ก่อนทุกอย่าง
-  // ทำให้เมื่อ Admin กดซ่อนใน Dashboard หน้านี้จะไม่แสดงรายการนั้นทันที
   const visibleList = useMemo(() => {
     if (!prList) return []
     return prList.filter((item) => item.isShow !== false)
@@ -191,7 +187,6 @@ const Advertise = () => {
                     }
                     alt={item.title}
                     className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-                    // loading="lazy" <-- เอาออกหากนี่เป็นรูปหลักด้านบนสุดของหน้า เพื่อป้องกันเบราว์เซอร์บล็อกการโหลด
                   />
                   <div className='absolute top-4 right-4 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10'>
                     ประชาสัมพันธ์

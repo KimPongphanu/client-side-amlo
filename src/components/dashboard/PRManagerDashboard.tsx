@@ -1,33 +1,15 @@
 import { Grid, List } from 'lucide-react'
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import ReactQuill from 'react-quill-new'
 import 'react-quill-new/dist/quill.snow.css'
 import Swal from 'sweetalert2'
-import { useDashboard } from '../../context/DashboardContext'
-import { api } from '../../utils/api'
-
-// ==========================================
-// 1. Types & Interfaces
-// ==========================================
-export interface NewsItem {
-  id: number
-  title: string
-  date: string
-  image_src: string
-  description: string
-  content?: string
-  views?: number
-  isShow?: boolean
-}
+import { useDashboardStore } from '../../stores/useDashboardStore'
+import type { NewsItem } from '../../type'
 
 type StatusFilter = 'all' | 'shown' | 'hidden'
 type SortOrder = 'newest' | 'oldest'
 type ViewMode = 'card' | 'list'
 
-// ==========================================
-// 2. Quill Configuration (แถบเครื่องมือ Editor)
-// ==========================================
-// แนะนำให้วางไว้นอก Component เพื่อป้องกันไม่ให้ Editor รีเฟรชตัวเองตอนพิมพ์
 const quillModules = {
   toolbar: [
     [{ header: [1, 2, 3, 4, false] }],
@@ -38,12 +20,12 @@ const quillModules = {
     ['clean'],
   ],
 }
+
 // ==========================================
-// 4. Mini Preview Component
+// Mini Preview Component
 // ==========================================
 const MiniAdvertisePreview = ({ data }: { data: NewsItem | null }) => {
   if (!data) return null
-
   return (
     <div className='bg-white h-full overflow-y-auto custom-scrollbar border border-slate-200 rounded-xl relative shadow-sm'>
       <div className='w-full h-40 md:h-48 bg-slate-200 flex items-center justify-center text-slate-400'>
@@ -59,14 +41,12 @@ const MiniAdvertisePreview = ({ data }: { data: NewsItem | null }) => {
       </div>
       <div className='p-4 md:p-6 pb-8'>
         <p className='text-xs text-blue-600 font-bold mb-2'>
-          {data.date || 'YYYY-MM-DD'}
+          {data.date ? data.date.split('T')[0] : 'YYYY-MM-DD'}
         </p>
         <h1 className='text-base md:text-lg font-bold text-slate-800 mb-3 leading-snug'>
           {data.title || 'พิมพ์หัวข้อประกาศ...'}
         </h1>
         <hr className='border-slate-100 mb-4' />
-
-        {/* 🌟 แสดงผล HTML ที่ได้จาก React Quill อย่างปลอดภัย */}
         <div
           className='text-slate-600 text-sm leading-relaxed ql-rendered'
           dangerouslySetInnerHTML={{
@@ -82,7 +62,7 @@ const MiniAdvertisePreview = ({ data }: { data: NewsItem | null }) => {
 }
 
 // ==========================================
-// 5. Filter Bar Component
+// Filter Bar Component
 // ==========================================
 interface FilterBarProps {
   search: string
@@ -130,7 +110,7 @@ const FilterBar = ({
             type='text'
             value={search}
             onChange={(e) => onSearch(e.target.value)}
-            placeholder='ค้นหาชื่อประกาศ...'
+            placeholder='ค้นหาชื่อประกาศประชาสัมพันธ์...'
             className='w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-slate-50'
           />
           {search && (
@@ -154,7 +134,6 @@ const FilterBar = ({
             </button>
           )}
         </div>
-
         <div className='flex flex-wrap gap-2 items-center'>
           <div className='flex rounded-lg border border-slate-200 overflow-hidden text-xs font-medium'>
             {(['all', 'shown', 'hidden'] as StatusFilter[]).map((s) => {
@@ -174,38 +153,32 @@ const FilterBar = ({
               )
             })}
           </div>
-
           <div className='flex rounded-lg border border-slate-200 overflow-hidden text-xs font-medium'>
             <button
               onClick={() => onSort('newest')}
-              className={`px-3 py-2 flex items-center gap-1.5 transition-colors ${sort === 'newest' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+              className={`px-3 py-2 transition-colors ${sort === 'newest' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
             >
               ใหม่สุด
             </button>
             <button
               onClick={() => onSort('oldest')}
-              className={`px-3 py-2 flex items-center gap-1.5 transition-colors ${sort === 'oldest' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+              className={`px-3 py-2 transition-colors ${sort === 'oldest' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
             >
               เก่าสุด
             </button>
           </div>
-
           <div className='flex rounded-lg border border-slate-200 overflow-hidden'>
             <button
               onClick={() => onView('card')}
               className={`px-3 py-2 transition-colors ${view === 'card' ? 'bg-blue-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}
             >
-              <div className=''>
-                <Grid size={16} color='black' />
-              </div>
+              <Grid size={16} />
             </button>
             <button
               onClick={() => onView('list')}
               className={`px-3 py-2 transition-colors ${view === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}
             >
-              <div className=''>
-                <List size={16} color='black' />
-              </div>
+              <List size={16} />
             </button>
           </div>
         </div>
@@ -221,7 +194,7 @@ const FilterBar = ({
 }
 
 // ==========================================
-// 6. Toggle Switch
+// Toggle Switch
 // ==========================================
 interface ToggleSwitchProps {
   checked: boolean
@@ -230,7 +203,10 @@ interface ToggleSwitchProps {
 }
 
 const ToggleSwitch = ({ checked, onChange, itemId }: ToggleSwitchProps) => (
-  <label className='relative inline-flex items-center cursor-pointer gap-2'>
+  <label
+    className='relative inline-flex items-center cursor-pointer gap-2'
+    onClick={(e) => e.stopPropagation()}
+  >
     <span
       className={`text-[11px] font-bold ${checked ? 'text-emerald-600' : 'text-slate-400'}`}
     >
@@ -248,63 +224,79 @@ const ToggleSwitch = ({ checked, onChange, itemId }: ToggleSwitchProps) => (
 )
 
 // ==========================================
-// 7. Main Component
+// Main Component
 // ==========================================
 export default function PRManagerDashboard() {
-  // 1. ดึงข้อมูลจาก Dashboard Context (TypeScript จะรู้ Type ทันทีถ้าแก้ตามจุดที่ 2)
-  const { prs, fetchPRs, updatePR } = useDashboard()
-  const prList: NewsItem[] = prs || [] // 🌟 กำหนด Type ให้ชัดเจน
+  const newsList = useDashboardStore((state) => state.prs)
+  const fetchNews = useDashboardStore((state) => state.fetchPRs)
+  const createNews = useDashboardStore((state) => state.createPR)
+  const updateNews = useDashboardStore((state) => state.updatePR)
 
-  // 2. State สำหรับ Filter และ View (ลบ <any> เปลี่ยนเป็น Type เฉพาะทาง)
+  useEffect(() => {
+    fetchNews()
+  }, [fetchNews])
+
   const [search, setSearch] = useState<string>('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
   const [viewMode, setViewMode] = useState<ViewMode>('card')
 
-  // 3. State สำหรับ Modal และ Form (เปลี่ยนจาก any เป็น NewsItem)
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
   const [activePost, setActivePost] = useState<NewsItem | null>(null)
   const [formData, setFormData] = useState<NewsItem | null>(null)
   const [isDragging, setIsDragging] = useState<boolean>(false)
   const [mobileView, setMobileView] = useState<'form' | 'preview'>('form')
   const [uploadFile, setUploadFile] = useState<File | null>(null)
-
   const API_URL = import.meta.env.VITE_API_URL || ''
 
-  // คำนวณจำนวน
-  const shownCount = prList.filter((item: NewsItem) => item.isShow).length
+  const shownCount = newsList.filter((item) => item.isShow).length
 
-  // กรองและเรียงลำดับ ข้อมูลจะถูกสืบทอด Type อัตโนมัติ
   const filteredList = useMemo(() => {
-    let result = [...prList]
+    let result = [...newsList]
     if (search.trim()) {
       const query = search.trim().toLowerCase()
-      result = result.filter((item: NewsItem) =>
-        item.title.toLowerCase().includes(query),
-      )
+      result = result.filter((item) => item.title.toLowerCase().includes(query))
     }
-    if (statusFilter === 'shown')
-      result = result.filter((item: NewsItem) => item.isShow)
+    if (statusFilter === 'shown') result = result.filter((item) => item.isShow)
     else if (statusFilter === 'hidden')
-      result = result.filter((item: NewsItem) => !item.isShow)
+      result = result.filter((item) => !item.isShow)
 
-    result.sort((a: NewsItem, b: NewsItem) => {
+    result.sort((a, b) => {
       const dateA = a.date ? new Date(a.date).getTime() : 0
       const dateB = b.date ? new Date(b.date).getTime() : 0
       return sortOrder === 'newest' ? dateB - dateA : dateA - dateB
     })
     return result
-  }, [prList, search, statusFilter, sortOrder])
+  }, [newsList, search, statusFilter, sortOrder])
 
-  // การจัดการ Form
-  const handleToggleShow = async (
-    id: number,
-    e: React.MouseEvent | React.ChangeEvent,
-  ) => {
-    e.stopPropagation()
-    // [TODO] เพิ่มการยิง API Update isShow ไปที่หลังบ้านตรงนี้ (ถ้ามี Route รองรับ)
-    // await api(`/news/${id}/toggle`, { method: 'PATCH' })
-    // fetchPRs()
+  const handleToggleShow = async (id: number, currentShow: boolean) => {
+    Swal.fire({
+      title: 'กำลังเปลี่ยนสถานะการแสดงผล...',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    })
+    try {
+      const form = new FormData()
+      form.append('isShow', String(!currentShow))
+      await updateNews(id, form)
+      Swal.fire({
+        icon: 'success',
+        title: 'เปลี่ยนสถานะเรียบร้อย',
+        timer: 1000,
+        showConfirmButton: false,
+      })
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'ไม่สามารถแก้ไขสถานะการแสดงผลได้'
+
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: errorMessage,
+      })
+    }
   }
 
   const handleCreateNew = () => {
@@ -320,15 +312,15 @@ export default function PRManagerDashboard() {
       views: 0,
       isShow: true,
     })
-    setUploadFile(null) // ล้างไฟล์ที่ค้างอยู่
+    setUploadFile(null)
     setMobileView('form')
     setIsModalOpen(true)
   }
 
-  const handleOpenModal = (post: any) => {
+  const handleOpenModal = (post: NewsItem) => {
     setActivePost(post)
     setFormData({ ...post })
-    setUploadFile(null) // รีเซ็ตไฟล์เตรียมรอรับการแก้ไขใหม่
+    setUploadFile(null)
     setMobileView('form')
     setIsModalOpen(true)
   }
@@ -345,11 +337,11 @@ export default function PRManagerDashboard() {
 
   const handleRefreshData = () => {
     Swal.fire({
-      title: 'ยืนยันการคืนค่า?',
-      text: 'ข้อมูลที่คุณกำลังแก้ไขจะถูกล้างและกลับไปเป็นค่าเดิม',
+      title: 'คืนค่าข้อมูลพิมพ์?',
+      text: 'ข้อมูลในฟอร์มปัจจุบันจะถูกรีเซ็ตกลับไปเป็นค่าตั้งต้นแรกสุด',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'ใช่, คืนค่าเดิม',
+      confirmButtonText: 'ยืนยันรีเซ็ต',
       cancelButtonText: 'ยกเลิก',
       reverseButtons: true,
     }).then((result) => {
@@ -359,6 +351,7 @@ export default function PRManagerDashboard() {
             ? { ...activePost }
             : {
                 id: formData?.id || Date.now(),
+                type: 'PR',
                 title: '',
                 date: new Date().toISOString().split('T')[0],
                 image_src: '',
@@ -375,7 +368,7 @@ export default function PRManagerDashboard() {
 
   const handleClearAll = () => {
     Swal.fire({
-      title: 'ล้างข้อมูลทั้งหมด?',
+      title: 'ล้างช่องข้อความทั้งหมด?',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
@@ -388,6 +381,7 @@ export default function PRManagerDashboard() {
           title: '',
           image_src: '',
           content: '',
+          description: '',
           date: new Date().toISOString().split('T')[0],
         })
         setUploadFile(null)
@@ -395,18 +389,20 @@ export default function PRManagerDashboard() {
     })
   }
 
-  // การจัดการไฟล์อัปโหลด
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(true)
   }
+
   const handleDragLeave = () => setIsDragging(false)
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
     if (e.dataTransfer.files && e.dataTransfer.files[0])
       handleFileUpload(e.dataTransfer.files[0])
   }
+
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) handleFileUpload(e.target.files[0])
   }
@@ -416,37 +412,31 @@ export default function PRManagerDashboard() {
     if (!allowedTypes.includes(file.type)) {
       Swal.fire({
         icon: 'error',
-        title: 'ไฟล์ไม่รองรับ',
-        text: 'รองรับไฟล์ .jpg, .png, .webp เท่านั้น',
+        title: 'รูปแบบไฟล์ไม่ถูกต้อง',
+        text: 'รองรับไฟล์รูปภาพ .jpg, .png, .webp เท่านั้น',
       })
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      // เปลี่ยนเป็น 5MB ให้ตรงกับ Backend
       Swal.fire({
         icon: 'warning',
-        title: 'ไฟล์ใหญ่เกินไป',
-        text: 'กรุณาเลือกรูปขนาดไม่เกิน 5MB',
+        title: 'ไฟล์มีขนาดใหญ่เกินไป',
+        text: 'กรุณาอัปโหลดไฟล์รูปภาพขนาดไม่เกิน 5MB',
       })
       return
     }
-
-    // 🌟 เก็บ File จริงเตรียมส่งขึ้น API
     setUploadFile(file)
-
-    // สร้าง ObjectURL สำหรับ Preview (ลดภาระ Browser ไม่ต้องแปลงเป็น Base64)
     if (formData) {
       setFormData({ ...formData, image_src: URL.createObjectURL(file) })
     }
   }
 
-  // การบันทึกข้อมูล
   const handleSave = async () => {
     if (!formData || !formData.title.trim()) {
       Swal.fire({
         icon: 'error',
-        title: 'ข้อมูลไม่ครบ',
-        text: 'กรุณาระบุหัวข้อประกาศ',
+        title: 'กรอกข้อมูลไม่ครบถ้วน',
+        text: 'กรุณากรอกหัวข้อประกาศประชาสัมพันธ์ก่อนทำการบันทึก',
       })
       if (mobileView === 'preview') setMobileView('form')
       return
@@ -454,71 +444,64 @@ export default function PRManagerDashboard() {
     if (activePost === null && !uploadFile) {
       Swal.fire({
         icon: 'error',
-        title: 'ข้อมูลไม่ครบ',
-        text: 'กรุณาอัปโหลดภาพปก',
+        title: 'กรอกข้อมูลไม่ครบถ้วน',
+        text: 'กรุณาทำการเลือกอัปโหลดรูปภาพปกประชาสัมพันธ์หลักด้วยค่ะ',
       })
       return
     }
 
-    Swal.fire({
-      title: 'กำลังบันทึกข้อมูล...',
-      didOpen: () => Swal.showLoading(),
-      allowOutsideClick: false,
-    })
-
     try {
       const form = new FormData()
       form.append('type', 'PR')
-      form.append('title', formData.title)
+      form.append('title', formData.title.trim())
       form.append('description', formData.description || '')
       form.append('content', formData.content || '')
+      form.append('date', formData.date || new Date().toISOString())
 
-      // ส่งรูปภาพเฉพาะกรณีที่มีการเลือกไฟล์ใหม่
-      if (uploadFile) form.append('image', uploadFile)
-
-      if (activePost === null) {
-        await api('/news', { method: 'POST', body: form })
-        await fetchPRs()
-      } else {
-        await updatePR(formData.id, form)
+      if (uploadFile) {
+        form.append('image', uploadFile)
       }
 
+      // เรียกใช้ฟังก์ชันผ่าน Store โดยตรงตามที่คุณคิดไว้เลยครับ
+      if (activePost === null) {
+        await createNews(form) // ผูกกับ createPR ไว้แล้วด้านบน
+      } else {
+        await updateNews(formData.id, form) // ผูกกับ updatePR ไว้แล้วด้านบน
+      }
+
+      // ปิดหน้าต่าง Popup ทันทีเมื่อฝั่ง Store ทำงานผ่านฉลุยโดยไม่โยนข้อความแครช
       handleCloseModal()
-      Swal.fire({
-        icon: 'success',
-        title: 'บันทึกสำเร็จ',
-        showConfirmButton: false,
-        timer: 1500,
-      })
-    } catch (error: any) {
-      Swal.fire({
-        icon: 'error',
-        title: 'เกิดข้อผิดพลาด',
-        text: error.message || 'บันทึกข้อมูลล้มเหลว',
-      })
+    } catch {
+      // ไม่ต้องเขียนระบบแสดงผลผิดพลาดซ้ำซ้อน เพราะฝั่ง Store จัดการยิง SWAL แดงให้เสร็จเรียบร้อยแล้วครับ
+      console.log('[Component Action] Operation halted due to store error.')
     }
   }
 
   return (
-    <div className='bg-slate-100 min-h-screen p-4 md:p-8 font-sans text-slate-800'>
+    <div className='bg-slate-100 min-h-screen p-4 md:p-8 font-sans text-slate-800 antialiased'>
       {/* --- Page Header --- */}
       <div className='max-w-7xl mx-auto mb-5 flex flex-col md:flex-row justify-between items-start md:items-end gap-4'>
         <div>
-          <h1 className='text-2xl font-bold mb-2'>จัดการข่าวประชาสัมพันธ์</h1>
-          <div className='flex items-center gap-4 text-sm'>
+          <h1 className='text-2xl font-bold mb-2 tracking-tight text-slate-900'>
+            จัดการคลังประชาสัมพันธ์ (PR Manager)
+          </h1>
+          <div className='flex items-center gap-4 text-sm font-medium'>
             <span className='text-slate-600'>
-              ทั้งหมด:{' '}
-              <span className='font-bold text-slate-900'>{prList.length}</span>
+              ข้อมูลทั้งหมด:{' '}
+              <span className='font-bold text-slate-900'>
+                {newsList.length}
+              </span>{' '}
+              รายการ{' '}
             </span>
             <span className='w-px h-4 bg-slate-300'></span>
-            <span className='font-bold text-emerald-600'>
-              แสดงผลหน้าเว็บ: {shownCount}
+            <span className='text-emerald-600 font-bold'>
+              เปิดแสดงผลบนหน้าเว็บไซต์: {shownCount} รายการ
             </span>
           </div>
         </div>
         <button
           onClick={handleCreateNew}
-          className='w-full md:w-auto bg-blue-600 text-white px-5 py-2.5 rounded-lg shadow-sm hover:bg-blue-700 transition-colors font-bold flex items-center justify-center gap-2'
+          className='w-full md:w-auto bg-blue-600 text-white px-5 py-2.5 rounded-xl shadow-sm hover:bg-blue-700 transition-all font-bold flex items-center justify-center gap-2 cursor-pointer active:scale-95'
         >
           สร้างประชาสัมพันธ์ใหม่
         </button>
@@ -534,7 +517,7 @@ export default function PRManagerDashboard() {
           onSort={setSortOrder}
           view={viewMode}
           onView={setViewMode}
-          totalCount={prList.length}
+          totalCount={newsList.length}
           filteredCount={filteredList.length}
         />
       </div>
@@ -543,35 +526,34 @@ export default function PRManagerDashboard() {
       {/* CARD VIEW */}
       {/* ========================================== */}
       {viewMode === 'card' && filteredList.length > 0 && (
-        <div className='max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-20'>
+        <div className='max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-20'>
           {filteredList.map((item) => (
             <div
               key={item.id}
               onClick={() => handleOpenModal(item)}
-              className='bg-white border border-slate-200 rounded-xl hover:border-blue-400 hover:shadow-md transition-all cursor-pointer flex flex-col overflow-hidden group'
+              className='bg-white border border-slate-200 rounded-2xl hover:border-blue-400 hover:shadow-md transition-all cubic-bezier(.4,0,.2,1) duration-200 cursor-pointer flex flex-col overflow-hidden group shadow-sm'
             >
               <div className='p-4 flex gap-4 flex-1'>
-                <div className='w-20 h-20 bg-slate-100 rounded-lg border border-slate-200 shrink-0 overflow-hidden'>
+                <div className='w-20 h-20 bg-slate-100 rounded-xl border border-slate-200 shrink-0 overflow-hidden relative shadow-inner'>
                   {item.image_src ? (
                     <img
-                      /* 🌟 แก้ไข: ตรวจสอบว่าเป็นภาพ Preview (blob:) หรือภาพจริงจากหลังบ้าน (:8080) */
                       src={
                         item.image_src.startsWith('blob:')
                           ? item.image_src
                           : `${API_URL}${item.image_src}`
                       }
                       alt='cover'
-                      className='w-full h-full object-cover'
+                      className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-300'
                       loading='lazy'
                     />
                   ) : (
-                    <div className='w-full h-full flex items-center justify-center text-slate-300 text-xs'>
+                    <div className='w-full h-full flex items-center justify-center text-slate-300 text-xs font-semibold'>
                       ไม่มีรูป
                     </div>
                   )}
                 </div>
                 <div className='flex-1 min-w-0'>
-                  <p className='text-[11px] text-blue-600 font-bold mb-1'>
+                  <p className='text-[11px] text-blue-600 font-black mb-1 font-mono'>
                     {item.date ? item.date.split('T')[0] : ''}
                   </p>
                   <h3 className='text-sm font-bold text-slate-800 line-clamp-2 group-hover:text-blue-700 transition-colors leading-snug'>
@@ -580,15 +562,15 @@ export default function PRManagerDashboard() {
                 </div>
               </div>
               <div
-                className='bg-slate-50 border-t border-slate-100 px-4 py-3 flex justify-between items-center'
+                className='bg-slate-50 border-t border-slate-100 px-4 py-2.5 flex justify-between items-center'
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className='text-[11px] text-slate-500 font-medium'>
-                  เข้าชม {item.views} ครั้ง
+                <div className='text-[11px] text-slate-400 font-bold'>
+                  ยอดการเข้าชม {item.views || 0} ครั้ง
                 </div>
                 <ToggleSwitch
                   checked={!!item.isShow}
-                  onChange={(e) => handleToggleShow(item.id, e)}
+                  onChange={() => handleToggleShow(item.id, !!item.isShow)}
                   itemId={item.id}
                 />
               </div>
@@ -601,15 +583,14 @@ export default function PRManagerDashboard() {
       {/* LIST VIEW */}
       {/* ========================================== */}
       {viewMode === 'list' && filteredList.length > 0 && (
-        <div className='max-w-7xl mx-auto bg-white rounded-xl border border-slate-200 overflow-hidden'>
+        <div className='max-w-7xl mx-auto bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm divide-y divide-slate-100'>
           {filteredList.map((item) => (
             <div
               key={item.id}
               onClick={() => handleOpenModal(item)}
-              className='flex items-center gap-4 p-4 border-b hover:bg-slate-50 cursor-pointer'
+              className='flex items-center gap-4 p-4 hover:bg-slate-50/60 cursor-pointer transition-colors'
             >
-              {/* 🌟 แก้ไข: ปรับโครงสร้างส่วนแสดงรูปภาพของ List ให้รองรับ Base URL หลังบ้าน และรองรับกรณีไม่มีรูปภาพ */}
-              <div className='w-24 h-16 bg-slate-100 rounded border border-slate-200 shrink-0 overflow-hidden flex items-center justify-center'>
+              <div className='w-24 h-16 bg-slate-100 rounded-xl border border-slate-200 shrink-0 overflow-hidden flex items-center justify-center shadow-inner'>
                 {item.image_src ? (
                   <img
                     src={
@@ -621,29 +602,26 @@ export default function PRManagerDashboard() {
                     className='w-full h-full object-cover'
                   />
                 ) : (
-                  <span className='text-slate-300 text-xs'>ไม่มีรูป</span>
+                  <span className='text-slate-300 text-xs font-semibold'>
+                    ไม่มีรูป
+                  </span>
                 )}
               </div>
-
               <div className='flex-1 min-w-0'>
-                <p className='text-[11px] text-blue-600 font-bold mb-0.5'>
+                <p className='text-[11px] text-blue-600 font-bold mb-0.5 font-mono'>
                   {item.date ? item.date.split('T')[0] : ''}
                 </p>
                 <h3 className='text-sm font-bold text-slate-800 truncate'>
                   {item.title}
                 </h3>
-                <p className='text-xs text-slate-500 truncate mt-0.5'>
-                  {item.description}
+                <p className='text-xs text-slate-400 truncate mt-0.5 font-medium'>
+                  {item.description || 'ไม่มีคำอธิบายเพิ่มเติม'}
                 </p>
               </div>
-
-              <div
-                onClick={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-              >
+              <div onClick={(e) => e.stopPropagation()}>
                 <ToggleSwitch
                   checked={!!item.isShow}
-                  onChange={(e) => handleToggleShow(item.id, e)}
+                  onChange={() => handleToggleShow(item.id, !!item.isShow)}
                   itemId={item.id}
                 />
               </div>
@@ -658,143 +636,115 @@ export default function PRManagerDashboard() {
       {isModalOpen && formData && (
         <div
           onClick={handleCloseModal}
-          className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4'
+          className='fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 animate-fade-in'
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className='bg-white w-full max-w-6xl h-[95vh] md:h-[90vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden animate-fade-in-up'
+            className='bg-white w-full max-w-6xl h-[95vh] md:h-[90vh] flex flex-col rounded-3xl shadow-2xl overflow-hidden'
           >
-            <div className='px-4 md:px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0'>
-              <h2 className='text-base md:text-lg font-bold text-slate-800'>
+            <div className='px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0'>
+              <h2 className='text-base md:text-md font-bold text-slate-800'>
                 {activePost === null
-                  ? 'สร้างประกาศใหม่'
-                  : `แก้ไขข้อมูล: ID ${formData.id}`}
+                  ? '✨ สร้างประกาศประชาสัมพันธ์ใหม่'
+                  : `✏️ แก้ไขรายละเอียดประชาสัมพันธ์: ID ${formData.id}`}
               </h2>
               <div className='flex items-center gap-2 md:gap-4'>
                 <button
                   onClick={handleRefreshData}
-                  className='text-sm text-slate-600 hover:text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-50'
+                  className='text-xs text-slate-600 font-bold hover:text-blue-600 px-3 py-2 rounded-xl hover:bg-blue-50 transition-all cursor-pointer'
                 >
-                  รีเซ็ตข้อมูล
+                  รีเซ็ตฟอร์ม
                 </button>
                 <button
                   onClick={handleClearAll}
-                  className='flex items-center gap-2 text-sm text-red-500 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors'
+                  className='flex items-center gap-1.5 text-xs text-red-500 font-bold hover:text-red-600 px-3 py-2 rounded-xl hover:bg-red-50 transition-all cursor-pointer'
                 >
-                  <svg
-                    className='w-4 h-4'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth='2'
-                      d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
-                    />
-                  </svg>
-                  <span className='hidden sm:inline'>ล้างทั้งหมด</span>
+                  ล้างข้อมูลช่องกรอก
                 </button>
                 <button
                   onClick={handleCloseModal}
-                  className='p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg'
+                  className='p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer'
                 >
                   ✕
                 </button>
               </div>
             </div>
 
-            <div className='flex-1 flex flex-col lg:flex-row overflow-hidden bg-slate-100'>
+            <div className='flex-1 flex flex-col lg:flex-row overflow-hidden bg-slate-50'>
               <div
                 className={`flex-1 overflow-y-auto custom-scrollbar bg-white p-4 md:p-8 ${mobileView === 'preview' ? 'hidden lg:block' : 'block'}`}
               >
-                <div className='max-w-3xl mx-auto space-y-6 md:space-y-8 pb-4'>
+                <div className='max-w-3xl mx-auto space-y-6 pb-4 text-sm font-medium'>
                   {/* หัวข้อประกาศ */}
-                  <div className='grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-start border-b border-slate-100 pb-6 md:pb-8'>
-                    <label className='text-sm font-bold text-slate-700 md:pt-2'>
-                      หัวข้อประกาศ <span className='text-red-500'>*</span>
+                  <div className='space-y-1.5 border-b border-slate-100 pb-5'>
+                    <label className='block font-bold text-slate-700'>
+                      หัวข้อประกาศประชาสัมพันธ์{' '}
+                      <span className='text-red-500'>*</span>
                     </label>
-                    <div className='md:col-span-3'>
-                      <input
-                        type='text'
-                        value={formData.title}
-                        onChange={(e) =>
-                          setFormData({ ...formData, title: e.target.value })
-                        }
-                        placeholder='ระบุหัวข้อข่าวประชาสัมพันธ์...'
-                        className='w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500'
-                      />
-                    </div>
+                    <input
+                      type='text'
+                      value={formData.title}
+                      onChange={(e) =>
+                        setFormData({ ...formData, title: e.target.value })
+                      }
+                      placeholder='ระบุหัวข้อรายละเอียดงานประชาสัมพันธ์...'
+                      className='w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium transition-all'
+                    />
                   </div>
 
                   {/* วันที่ */}
-                  <div className='grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-center border-b border-slate-100 pb-6 md:pb-8'>
-                    <label className='text-sm font-bold text-slate-700'>
-                      วันที่ (Date)
+                  <div className='space-y-1.5 border-b border-slate-100 pb-5'>
+                    <label className='block font-bold text-slate-700'>
+                      วันที่ลงบันทึกประกาศ (Date)
                     </label>
-                    <div className='md:col-span-3'>
-                      <input
-                        type='date'
-                        /* 🌟 แก้ไข: จัดการฟอร์แมตวันที่ให้อยู่ในรูป yyyy-MM-dd เสมอเพื่อไม่ให้ input พัง */
-                        value={formData.date ? formData.date.split('T')[0] : ''}
-                        onChange={(e) =>
-                          setFormData({ ...formData, date: e.target.value })
-                        }
-                        className='border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500'
-                      />
-                    </div>
+                    <input
+                      type='date'
+                      value={formData.date ? formData.date.split('T')[0] : ''}
+                      onChange={(e) =>
+                        setFormData({ ...formData, date: e.target.value })
+                      }
+                      className='border border-slate-200 bg-slate-50 font-mono rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20'
+                    />
                   </div>
 
                   {/* คำอธิบายสั้น */}
-                  <div className='grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-start border-b border-slate-100 pb-6 md:pb-8'>
-                    <div>
-                      <label className='text-sm font-bold text-slate-700 block mb-1'>
-                        คำอธิบายสั้น
+                  <div className='space-y-1.5 border-b border-slate-100 pb-5'>
+                    <div className='flex justify-between items-baseline'>
+                      <label className='block font-bold text-slate-700'>
+                        คำอธิบายสั้นประจำข่าวการ์ดหน้าแรก
                       </label>
-                      <span className='text-[10px] text-slate-400'>
-                        แสดงบนการ์ดข่าว (ไม่เกิน 200 ตัวอักษร)
+                      <span className='text-[10px] font-mono text-slate-400'>
+                        {(formData.description || '').length}/200
                       </span>
                     </div>
-                    <div className='md:col-span-3'>
-                      <textarea
-                        value={formData.description || ''}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            description: e.target.value,
-                          })
-                        }
-                        placeholder='ระบุคำอธิบายสั้นๆ เพื่อแสดงบนการ์ดข่าวประชาสัมพันธ์...'
-                        maxLength={200}
-                        rows={3}
-                        className='w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 resize-none'
-                      />
-                      <p className='text-[11px] text-slate-400 mt-1 text-right'>
-                        {(formData.description || '').length}/200
-                      </p>
-                    </div>
+                    <textarea
+                      value={formData.description || ''}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          description: e.target.value,
+                        })
+                      }
+                      placeholder='สรุปคำอธิบายย่อใจความสำคัญสั้นๆ ไม่เกิน 200 ตัวอักษร...'
+                      maxLength={200}
+                      rows={3}
+                      className='w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none font-medium transition-all'
+                    />
                   </div>
 
                   {/* ภาพปก */}
-                  <div className='grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-start border-b border-slate-100 pb-6 md:pb-8'>
-                    <div>
-                      <label className='text-sm font-bold text-slate-700 block mb-1'>
-                        ภาพปก (Cover)
-                      </label>
-                      <span className='text-[10px] text-slate-400'>
-                        แนะนำ 800x400px
-                      </span>
-                    </div>
-                    <div className='md:col-span-3 flex flex-col sm:flex-row gap-4 items-center'>
+                  <div className='space-y-1.5 border-b border-slate-100 pb-5'>
+                    <label className='block font-bold text-slate-700'>
+                      รูปภาพหน้าปกประชาสัมพันธ์ (Cover Image)
+                    </label>
+                    <div className='flex flex-col sm:flex-row gap-4 items-center bg-slate-50 p-4 rounded-2xl border border-slate-200/60'>
                       {formData.image_src && (
-                        <div className='relative w-full sm:w-32 h-40 rounded-lg border border-slate-200 overflow-hidden shrink-0'>
+                        <div className='relative w-full sm:w-32 h-24 rounded-xl border border-slate-200 overflow-hidden shrink-0 shadow-sm'>
                           <img
-                            /* 🌟 แก้ไข: ตรวจสอบรูปภาพพรีวิว (blob:) หรือดึงรูปจริงจากเซิร์ฟเวอร์หลังบ้าน (:8080) */
                             src={
                               formData.image_src.startsWith('blob:')
                                 ? formData.image_src
-                                : `http://localhost:8080${formData.image_src}`
+                                : `${API_URL}${formData.image_src}`
                             }
                             alt='cover'
                             className='w-full h-full object-cover'
@@ -804,22 +754,9 @@ export default function PRManagerDashboard() {
                             onClick={() =>
                               setFormData({ ...formData, image_src: '' })
                             }
-                            className='absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow transition-colors'
-                            title='ลบรูปภาพ'
+                            className='absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow transition-all cursor-pointer hover:bg-red-600 active:scale-90'
                           >
-                            <svg
-                              className='w-3 h-3'
-                              fill='none'
-                              stroke='currentColor'
-                              viewBox='0 0 24 24'
-                            >
-                              <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth='2.5'
-                                d='M6 18L18 6M6 6l12 12'
-                              />
-                            </svg>
+                            ✕
                           </button>
                         </div>
                       )}
@@ -827,68 +764,64 @@ export default function PRManagerDashboard() {
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
-                        className={`flex-1 w-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-6 text-center transition-colors cursor-pointer relative ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-slate-50'}`}
+                        className={`flex-1 w-full h-24 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center text-center transition-colors cursor-pointer relative ${isDragging ? 'border-blue-500 bg-blue-100/50' : 'border-slate-300 bg-white'}`}
                       >
                         <input
                           type='file'
-                          accept='image/*'
+                          accept='image/jpeg,image/png,image/webp'
                           onChange={handleFileInput}
                           className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
                         />
-                        <p className='text-sm font-medium text-blue-600 mb-1'>
-                          คลิกอัปโหลด{' '}
-                          <span className='text-slate-500'>
-                            หรือลากไฟล์มาวาง
+                        <p className='text-xs font-bold text-blue-600'>
+                          คลิกเพื่ออัปโหลดไฟล์ภาพปก{' '}
+                          <span className='text-slate-400 font-medium'>
+                            หรือลากรูปมาวาง
                           </span>
+                        </p>
+                        <p className='text-[10px] text-slate-400 font-mono mt-0.5'>
+                          PNG, JPG, WEBP (MAX 5MB)
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* เนื้อหา (React Quill Editor) */}
-                  <div className='grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-start'>
-                    <div>
-                      <label className='text-sm font-bold text-slate-700 block mb-1'>
-                        เนื้อหา (Content)
-                      </label>
-                      <span className='text-[10px] text-slate-400'>
-                        รองรับรูปภาพและข้อความจัดรูปแบบ
-                      </span>
-                    </div>
-                    <div className='md:col-span-3'>
-                      <div className='bg-white rounded-lg border border-slate-300'>
-                        <ReactQuill
-                          theme='snow'
-                          value={formData.content || ''}
-                          onChange={(value) =>
-                            setFormData({ ...formData, content: value })
-                          }
-                          modules={quillModules}
-                          className='flex flex-col h-[350px]'
-                        />
-                      </div>
+                  {/* เนื้อหาหลัก */}
+                  <div className='space-y-1.5'>
+                    <label className='block font-bold text-slate-700'>
+                      เนื้อหารายละเอียดประชาสัมพันธ์ฉบับเต็ม (Content Details)
+                    </label>
+                    <div className='bg-white rounded-xl border border-slate-200 overflow-hidden shadow-inner'>
+                      <ReactQuill
+                        theme='snow'
+                        value={formData.content || ''}
+                        onChange={(val) =>
+                          setFormData({ ...formData, content: val })
+                        }
+                        modules={quillModules}
+                        className='flex flex-col h-[320px] pb-10'
+                        placeholder='เขียนข้อความ ลิงก์ หรือจัดรูปแบบตามต้องการในคอลัมน์นี้...'
+                      />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Right: Preview */}
+              {/* Right Side Column Dashboard Preview */}
               <div
-                className={`w-full lg:w-[400px] xl:w-[450px] bg-slate-100 border-t lg:border-t-0 lg:border-l border-slate-200 p-4 lg:p-6 overflow-y-auto custom-scrollbar flex flex-col shrink-0 ${mobileView === 'form' ? 'hidden lg:flex' : 'flex'}`}
+                className={`w-full lg:w-[400px] xl:w-[420px] bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-200 p-4 lg:p-6 overflow-y-auto custom-scrollbar flex flex-col shrink-0 ${mobileView === 'form' ? 'hidden lg:flex' : 'flex'}`}
               >
-                <h3 className='text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2 shrink-0'>
-                  <span className='w-2 h-2 rounded-full bg-emerald-500 animate-pulse'></span>
-                  หน้าตัวอย่าง (Preview)
+                <h3 className='text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2 shrink-0'>
+                  <span className='w-2 h-2 rounded-full bg-emerald-500 animate-pulse'></span>{' '}
+                  ห้องตรวจสอบหน้าตัวอย่าง (Live Content Preview)
                 </h3>
                 <div className='flex-1 min-h-0 pb-4'>
-                  {/* 🌟 แก้ไข: ทำการแมปแปลงค่า image_src ให้สมบูรณ์ก่อนส่งเข้า Component Preview เพื่อให้ข้างในดึงรูปได้พอร์ตเดียวกับเรา */}
                   <MiniAdvertisePreview
                     data={{
                       ...formData,
                       image_src:
                         formData.image_src &&
                         !formData.image_src.startsWith('blob:')
-                          ? `http://localhost:8080${formData.image_src}`
+                          ? `${API_URL}${formData.image_src}`
                           : formData.image_src,
                     }}
                   />
@@ -896,23 +829,32 @@ export default function PRManagerDashboard() {
               </div>
             </div>
 
-            <div className='px-4 md:px-6 py-4 border-t border-slate-200 bg-white flex justify-between md:justify-end gap-3 shrink-0'>
+            <div className='px-6 py-4 border-t border-slate-100 bg-white flex justify-end gap-2.5 shrink-0'>
               <button
                 onClick={handleCloseModal}
-                className='px-5 py-2.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50'
+                className='px-5 py-2.5 border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs rounded-xl transition-all cursor-pointer active:scale-95'
               >
-                ยกเลิก
+                ยกเลิกรายการ
               </button>
               <button
                 onClick={handleSave}
-                className='px-6 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm'
+                className='px-6 py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-blue-500/10 cursor-pointer active:scale-95'
               >
-                บันทึกประกาศ
+                บันทึกประกาศประชาสัมพันธ์
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .animate-fade-in { animation: modalFadeIn 0.2s ease-out; }
+        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+      `}</style>
     </div>
   )
 }

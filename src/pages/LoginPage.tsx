@@ -26,40 +26,25 @@ const LoginPage = () => {
     }
   }, [])
 
+  const setLoggedIn = useAuthStore((state) => state.setLoggedIn)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
-
-    console.log('[Form Event] Form submission intercepted via handleSubmit()')
     setError('')
 
-    if (botTrap) {
-      console.warn(
-        '[Security Alert] Bot detected! Honeypot field has a value:',
-        botTrap,
-      )
-      return
-    }
-
     if (!email.trim() || !password.trim()) {
-      console.log(
-        '[Validation Failed] Email or Password string is empty after trimming',
-      )
       setError('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน')
       return
     }
 
-    console.log('[Validation Passed] Initiating login sequence with payload:', {
-      email,
-    })
     setIsLoading(true)
 
     try {
-      console.log('[Store Action] Calling loginUser from useAuthStore')
       const success = await loginUser({ email, password })
 
       if (success) {
-        console.log('[Modal Trigger] Displaying Swal success notification box')
+        // 🌟 1. แสดงความสำเร็จให้เรียบร้อยในขณะที่หน้าจอ LoginPage ยังทำงานอยู่ 100%
         await Swal.fire({
           icon: 'success',
           title: 'เข้าสู่ระบบสำเร็จ',
@@ -69,25 +54,19 @@ const LoginPage = () => {
           allowOutsideClick: false,
         })
 
-        console.log(
-          '[Navigation] Swal resolved. Redirecting user to /dashboard',
-        )
-        setTimeout(() => {
-          navigate('/dashboard', { replace: true })
-        }, 100)
+        // 🌟 2. เมื่อ Swal ทำงานและปิดตัวลงเสร็จแล้ว ค่อยสั่งเปิดประตูผ่าน Zustand
+        setLoggedIn(true)
+
+        // 🌟 3. เดินหน้าเปลี่ยนเส้นทางไปหน้า Dashboard ทันที
+        navigate('/dashboard', { replace: true })
       } else {
-        throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง')
+        const storeError = useAuthStore.getState().error
+        throw new Error(storeError || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง')
       }
     } catch (err: unknown) {
-      console.error(
-        '[Runtime Error] Form submission crashed inside catch block:',
-        err,
-      )
-
       const errorMessage =
         err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ'
 
-      console.log('[Modal Trigger] Displaying Swal error notification box')
       await Swal.fire({
         icon: 'error',
         title: 'เข้าสู่ระบบล้มเหลว',
@@ -96,13 +75,8 @@ const LoginPage = () => {
         confirmButtonText: 'ลองใหม่อีกครั้ง',
         allowOutsideClick: false,
       })
-
       setError(errorMessage)
-    } finally {
-      console.log(
-        '[Execution Ended] Resetting isLoading trigger state back to false',
-      )
-      setIsLoading(false)
+      setIsLoading(false) // คืนค่าปุ่มเฉพาะตอนล็อกอินพลาด
     }
   }
 

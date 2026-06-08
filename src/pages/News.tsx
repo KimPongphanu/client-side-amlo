@@ -1,7 +1,8 @@
-import { useContext, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import SearchFilter from '../components/SearchFilter'
-import { NewsContext } from '../context/NewsContext'
+import { useContentStore } from '../stores/useContentStore'
+
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 const THAI_MONTHS = [
@@ -48,8 +49,9 @@ const HorizontalCardSkeleton = () => (
 )
 
 const News = () => {
-  const context = useContext(NewsContext)
-  const { newsList, isLoading } = context || {}
+  const newsList = useContentStore((state) => state.newsList)
+  const isLoading = useContentStore((state) => state.isLoading)
+
   const prList = useMemo(() => {
     return newsList?.filter((item) => item.isShow !== false) ?? []
   }, [newsList])
@@ -64,11 +66,11 @@ const News = () => {
   useEffect(() => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth', // เพิ่มความ smooth ให้ตาไม่ลายเวลาเปลี่ยนหน้า
+      behavior: 'smooth',
     })
   }, [currentPage])
 
-  // 🌟 Event Handlers เพื่อแก้ปัญหา Cascading Renders
+  // 🌟 Event Handlers
   const handleSearchChange = (value: string) => {
     setSearchTerm(value)
     setCurrentPage(1)
@@ -190,7 +192,6 @@ const News = () => {
                     }
                     alt={item.title}
                     className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-                    // loading="lazy" <-- เอาออกหากนี่เป็นรูปหลักด้านบนสุดของหน้า เพื่อป้องกันเบราว์เซอร์บล็อกการโหลด
                   />
                   <div className='absolute top-4 right-4 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10'>
                     กิจกรรม
