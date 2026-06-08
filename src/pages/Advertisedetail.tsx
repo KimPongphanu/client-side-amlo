@@ -1,31 +1,41 @@
 import DOMPurify from 'dompurify'
-import { useContext } from 'react'
+import { useEffect } from 'react' // ✨ เพิ่มการนำเข้า useEffect
 import { useNavigate, useParams } from 'react-router-dom'
 import Breadcrumb from '../components/Breadcrumb'
 import RecommendedSidebar from '../components/ReccommendedSidebar'
-import { NewsContext } from '../context/NewsContext'
+import { useContentStore } from '../stores/useContentStore'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
+
 // ฟังก์ชันแปลงเวลาเป็น UTC
 const formatToUTC = (dateString: string) => {
   if (!dateString) return ''
   const date = new Date(dateString)
-  // หากแปลงไม่ได้ (เช่น รูปแบบ string ไม่ตรงตามมาตรฐาน) ให้แสดงค่าเดิม
   return isNaN(date.getTime()) ? dateString : date.toUTCString()
 }
 
 const AdvertiseDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const context = useContext(NewsContext)
+
+  // เปลี่ยนมาดึงข้อมูล prList, isLoading และ fetchPublicData จาก Zustand Store
+  const prList = useContentStore((state) => state.prList)
+  const isLoading = useContentStore((state) => state.isLoading)
+  const fetchPublicData = useContentStore((state) => state.fetchPublicData) // ✨ ดึงฟังก์ชันมาเรียกสัญญานข้อมูลใหม่
 
   const currentId = Number(id)
 
-  const prList = context?.prList || []
-  const isLoading = context?.isLoading
+  // ✨ ตรวจสอบกรณีเกิดการ Refresh หน้ารายละเอียดแล้วชุดข้อมูลใน Store โดนล้างเป็นค่าว่างเปล่า
+  useEffect(() => {
+    if (prList.length === 0) {
+      fetchPublicData()
+    }
+  }, [prList, fetchPublicData])
+
   const advertiseData = prList.find((pr) => pr.id === currentId)
 
-  if (isLoading) {
+  // ⚠️ ปรับปรุงเงื่อนไข: จะหมุนโหลดเฉพาะตอนที่กำลัง Fetch และ อาเรย์ข้อมูลหลักในระบบยังไม่มาถึงเท่านั้น
+  if (isLoading && prList.length === 0) {
     return (
       <div className='w-full flex justify-center items-center h-screen bg-slate-50'>
         <div className='animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600'></div>
@@ -63,7 +73,7 @@ const AdvertiseDetail = () => {
                       : `${API_URL}${advertiseData.image_src}`
                   }
                   alt={advertiseData.title}
-                  fetchPriority='high' // ช่วยให้โหลดภาพหลักได้ไวขึ้น
+                  fetchPriority='high'
                   className='w-full h-full object-cover'
                 />
               ) : (

@@ -1,7 +1,7 @@
-import { useContext, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import DepartmentShowcase from '../components/DepartmentShowcase'
-import { NewsContext } from '../context/NewsContext'
+import { useContentStore } from '../stores/useContentStore'
 import type { NewsItem } from '../type'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
@@ -74,7 +74,6 @@ const ArticleCard = ({
     <div className='shrink-0 w-[280px] md:w-[350px] bg-white border rounded-xl md:rounded-2xl overflow-hidden shadow-md flex flex-col hover:shadow-xl transition-shadow h-full'>
       <div className='h-[180px] md:h-[200px] w-full overflow-hidden bg-slate-100 shrink-0'>
         <img
-          /* 🌟 แก้ไข: ตรวจสอบและเชื่อมต่อพอร์ตหลังบ้านให้ถูกต้องสำหรับรูปภาพ */
           src={
             item.image_src?.startsWith('http')
               ? item.image_src
@@ -106,16 +105,21 @@ const ArticleCard = ({
 // =========================================
 // HOME PAGE
 // =========================================
-const CARD_HEIGHT = 168 // card height (160px) + gap (8px)
+const CARD_HEIGHT = 168
 
 const HomePage = () => {
-  const context = useContext(NewsContext)
+  // 🌟 แก้ไข: ย้ายมาเรียกใช้ State และฟังก์ชันจาก Zustand Store ตัวเดียวจบ
+  const { prList, newsList, commentList, isLoading, fetchPublicData } =
+    useContentStore()
 
-  // ── Hooks ทั้งหมดต้องอยู่ก่อน early return เสมอ ──
-  const [commentOffset, setCommentOffset] = useState(1) // เริ่มต้นที่ index 1 (ข้ามตำแหน่ง clone ตัวสุดท้ายที่อยู่หัวสุด)
+  const [commentOffset, setCommentOffset] = useState(1)
   const [isTransitioning, setIsTransitioning] = useState(true)
 
-  // re-enable transition หลังจาก reset position โดยไม่มี animation
+  // 🌟 เพิ่มเติม: สั่งยิง API ดึงข้อมูลเมื่อ Component โหลดขึ้นมาครั้งแรก (ป้องกันสภาวะไม่มีข้อมูลพ่นขึ้นหน้าจอ)
+  useEffect(() => {
+    fetchPublicData()
+  }, [fetchPublicData])
+
   useEffect(() => {
     if (!isTransitioning) {
       requestAnimationFrame(() => {
@@ -124,15 +128,11 @@ const HomePage = () => {
     }
   }, [isTransitioning])
 
-  // จัดการการวน Loop ของ Slider ความคิดเห็นแบบ Smooth (Infinite loop)
   useEffect(() => {
-    if (!context) return
-    const commentsCount =
-      context.commentList?.filter((c) => c.isShow).length || 0
+    const commentsCount = commentList?.filter((c) => c.isShow).length || 0
     if (commentsCount <= 1) return
 
     if (commentOffset === commentsCount + 1) {
-      // เมื่อสไลด์ถึง clone ตัวแรกสุด (ที่ต่อไว้ท้าย) -> ย้ายกลับไปอันจริงแรกแบบเงียบๆ
       const timer = setTimeout(() => {
         setIsTransitioning(false)
         setCommentOffset(1)
@@ -141,16 +141,14 @@ const HomePage = () => {
     }
 
     if (commentOffset === 0) {
-      // เมื่อสไลด์ถึง clone ตัวสุดท้าย (ที่ต่อไว้บนสุด) -> ย้ายกลับไปอันจริงสุดท้ายแบบเงียบๆ
       const timer = setTimeout(() => {
         setIsTransitioning(false)
         setCommentOffset(commentsCount)
       }, 700)
       return () => clearTimeout(timer)
     }
-  }, [commentOffset, context])
+  }, [commentOffset, commentList])
 
-  const prList = context?.prList
   const sortedAdvertiseList = useMemo(() => {
     return prList
       ? [...prList]
@@ -163,7 +161,6 @@ const HomePage = () => {
       : []
   }, [prList])
 
-  const newsList = context?.newsList
   const sortedNewsList = useMemo(() => {
     return newsList
       ? [...newsList]
@@ -176,32 +173,20 @@ const HomePage = () => {
       : []
   }, [newsList])
 
-  if (!context) {
-    return (
-      <div className='p-8 text-red-500 text-2xl font-bold'>
-        Error : ไม่พบ Context
-      </div>
-    )
-  }
+  const publishedComments = useMemo(() => {
+    return commentList?.filter((c) => c.isShow) || []
+  }, [commentList])
 
-  const { commentList, isLoading } = context
-
-  const publishedComments = commentList?.filter((c) => c.isShow) || []
-
-  // เลื่อนลง — สไลด์สมูทต่อเนื่อง
   const handleNext = () => {
     if (publishedComments.length <= 1) return
-    // ป้องกันการกดซ้ำระหว่างระบบกำลังกระโดดตำแหน่ง clone
     if (commentOffset > publishedComments.length || commentOffset === 0) return
 
     setIsTransitioning(true)
     setCommentOffset((prev) => prev + 1)
   }
 
-  // เลื่อนขึ้น — สไลด์สมูทต่อเนื่อง
   const handlePrev = () => {
     if (publishedComments.length <= 1) return
-    // ป้องกันการกดซ้ำระหว่างระบบกำลังกระโดดตำแหน่ง clone
     if (commentOffset <= 0 || commentOffset > publishedComments.length) return
 
     setIsTransitioning(true)
@@ -211,7 +196,6 @@ const HomePage = () => {
   return (
     <div className='bg-slate-50 min-h-screen pt-0 w-full'>
       {isLoading ? (
-        // ── Skeleton state ──
         <div className='px-4 md:px-8 pb-10'>
           <div className='pt-8'>
             <div className='flex justify-between items-end mb-6 md:mb-8'>
@@ -245,7 +229,6 @@ const HomePage = () => {
           </div>
         </div>
       ) : (
-        // ── Loaded state ──
         <>
           <div className='px-4 md:px-8 pb-10'>
             {/* ข่าวประชาสัมพันธ์ */}
@@ -332,7 +315,6 @@ const HomePage = () => {
                           : 'none',
                       }}
                     >
-                      {/* clone อันสุดท้ายไว้หัวสุด + items จริง + clone อันแรกไว้ท้ายสุด เพื่อ loop ไม่สะดุดทั้งสองทาง */}
                       {[
                         publishedComments[publishedComments.length - 1],
                         ...publishedComments,

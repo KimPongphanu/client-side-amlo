@@ -1,18 +1,18 @@
-import { useContext, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Swal from 'sweetalert2'
-import { NewsContext } from '../../context/NewsContext'
-import { api } from '../../utils/api'
+import { useDashboardStore } from '../../stores/useDashboardStore'
 
-interface FilterState {
-  startDate: string
-  endDate: string
-}
+// interface FilterState {
+//   startDate: string
+//   endDate: string
+// }
 
 interface ToggleSwitchProps {
   checked: boolean
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   itemId: string
 }
+
 const ToggleSwitch = ({ checked, onChange, itemId }: ToggleSwitchProps) => (
   <label className='relative inline-flex items-center cursor-pointer gap-2'>
     <span
@@ -32,25 +32,29 @@ const ToggleSwitch = ({ checked, onChange, itemId }: ToggleSwitchProps) => (
 )
 
 export default function ReviewManager() {
-  const context = useContext(NewsContext)
-  const commentList = useMemo(
-    () => context?.commentList || [],
-    [context?.commentList],
+  const commentList = useDashboardStore((state) => state.commentList)
+  const fetchComments = useDashboardStore((state) => state.fetchComments)
+  const toggleCommentShow = useDashboardStore(
+    (state) => state.toggleCommentShow,
   )
-  const setCommentList = context?.setCommentList || (() => {})
+  const bulkToggleCommentShow = useDashboardStore(
+    (state) => state.bulkToggleCommentShow,
+  )
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [filter] = useState<FilterState>({ startDate: '', endDate: '' })
+  // const [filter] = useState<FilterState>({ startDate: '', endDate: '' })
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState<'all' | 'published'>('all')
 
   const itemsPerPage = 12
 
-  // ฟังก์ชันช่วยหน่วงเวลาขั้นต่ำ (Minimum Delay) 1.5 วินาที เพื่อล็อกหน้าจอให้เห็นการทำสถานะการยิงส่งข้อมูล
+  useEffect(() => {
+    fetchComments()
+  }, [fetchComments])
+
   const sleep = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms))
 
-  // 🌟 ปรับปรุงการเชื่อมต่อระดับสากล: สลับแสดง/ซ่อน รายเดียว ยิง API PUT และมีตัวล็อกด้วยหน้าต่างสไตล์หรูชัดเจน
   const handleToggleShow = async (
     id: string,
     currentShow: boolean,
@@ -58,18 +62,12 @@ export default function ReviewManager() {
   ) => {
     e.stopPropagation()
 
-    // 1. เรียกใช้งานหน้าต่างโหลดข้อมูลสไตล์กระจกฝ้า มินิมอลเรียบหรู คมชัดสูง
     Swal.fire({
       title: 'กำลังบันทึกสถานะ',
       html: 'ระบบกำลังดำเนินการสื่อสารกับฐานข้อมูลส่วนกลาง',
       allowOutsideClick: false,
       showConfirmButton: false,
-      backdrop: `
-        rgba(15, 23, 42, 0.15)
-        url("")
-        left top
-        no-repeat
-      `,
+      backdrop: 'rgba(15, 23, 42, 0.15)',
       customClass: {
         popup:
           'rounded-3xl border-2 border-stone-900 bg-white p-6 shadow-2xl backdrop-blur-md',
@@ -83,50 +81,32 @@ export default function ReviewManager() {
     })
 
     try {
-      const nextShow = !currentShow
+      await Promise.all([toggleCommentShow(id, currentShow), sleep(500)])
 
-      // 2. ยิง API บันทึกข้อมูลไปยังหลังบ้าน พร้อมจำลองตัวแปรหน่วงเวลา 0.5 วินาทีขั้นต่ำพร้อมกันเพื่อป้องกันจอกระพริบ
-      const [res] = await Promise.all([
-        api('/comments/update', {
-          method: 'PUT',
-          body: { id, isShow: nextShow },
-        }),
-        sleep(500),
-      ])
-
-      if (res && res.success) {
-        // 3. ปรับสเตตัสอัปเดตอาเรย์หน้าบ้านทันทีโดยไม่มีการ Refresh หน้าจอให้เสียจังหวะ
-        setCommentList((prev) =>
-          prev.map((c) => (c.id === id ? { ...c, isShow: nextShow } : c)),
-        )
-
-        // 4. แสดงหน้าต่างสั้นๆ ยืนยันกระบวนการอัปเดตเรียบร้อยแบบ Auto-close
-        Swal.fire({
-          title: 'บันทึกสถานะเรียบร้อย',
-          icon: 'success',
-          timer: 500,
-          timerProgressBar: true,
-          showConfirmButton: false,
-          buttonsStyling: false,
-          customClass: {
-            popup:
-              'rounded-3xl border-2 border-stone-900 bg-white p-6 shadow-2xl',
-            title: 'text-sm font-bold text-stone-950 font-sans tracking-tight',
-            timerProgressBar: 'bg-stone-900',
-          },
-        })
-      } else {
-        throw new Error(res?.message || 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์ส่วนกลาง')
-      }
-    } catch (err: any) {
-      // 5. แสดงหน้าต่าง Error ทันทีแบบเข้มข้นชัดเจนกรณีเกิดปัญหาการขนส่งข้อมูลผิดพลาด
+      Swal.fire({
+        title: 'บันทึกสถานะเรียบร้อย',
+        icon: 'success',
+        timer: 500,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        buttonsStyling: false,
+        customClass: {
+          popup:
+            'rounded-3xl border-2 border-stone-900 bg-white p-6 shadow-2xl',
+          title: 'text-sm font-bold text-stone-950 font-sans tracking-tight',
+          timerProgressBar: 'bg-stone-900',
+        },
+      })
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error
+          ? err.message
+          : 'เกิดข้อผิดพลาดภายในระบบเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง'
       Swal.fire({
         icon: 'error',
         iconColor: '#DC2626',
         title: 'อัปเดตสถานะล้มเหลว',
-        text:
-          err.message ||
-          'เกิดข้อผิดพลาดภายในระบบเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง',
+        text: errorMsg,
         buttonsStyling: false,
         confirmButtonText: 'รับทราบและลองใหม่',
         customClass: {
@@ -143,17 +123,15 @@ export default function ReviewManager() {
     }
   }
 
-  // 🌟 Bulk Action: แสดง/ซ่อน ทุกรายการที่เลือกพร้อมกัน (Multitask Parallel คุมระบบด้วย Swal ชุดเดียว)
   const handleBulkSetShow = async (show: boolean) => {
     if (selectedIds.size === 0) return
 
-    // 1. เรียกใช้งานหน้าต่างโหลดข้อมูลสไตล์กระจกฝ้า มินิมอล สำหรับกรณีอัปเดตกลุ่ม
     Swal.fire({
       title: `กำลังอัปเดตสถานะ ${selectedIds.size} รายการ`,
       html: 'ระบบกำลังดำเนินการส่งชุดข้อมูลแบบ Multitask ไปยังเซิร์ฟเวอร์ส่วนกลาง',
       allowOutsideClick: false,
       showConfirmButton: false,
-      backdrop: `rgba(15, 23, 42, 0.15)`,
+      backdrop: 'rgba(15, 23, 42, 0.15)',
       customClass: {
         popup:
           'rounded-3xl border-2 border-stone-900 bg-white p-6 shadow-2xl backdrop-blur-md',
@@ -167,27 +145,13 @@ export default function ReviewManager() {
     })
 
     try {
-      // 2. แปลงกลุ่มไอดีเป็นอาร์เรย์แล้วแตกตัวสั่งงานยิงพร้อมกันแบบขนาน (Parallel Multi-threading)
-      // ช่วยประหยัดเวลา ไม่ต้องรอทำทีละตัวจนคิวค้าง และหน้าต่างโหลดจะเปิดค้างแค่บานเดียว
       await Promise.all([
-        ...Array.from(selectedIds).map((id) =>
-          api('/comments/update', {
-            method: 'PUT',
-            body: { id, isShow: show },
-          }),
-        ),
-        sleep(800), // หน่วงเวลากันหน้าจอกระพริบขั้นต่ำสั้นๆ
+        bulkToggleCommentShow(Array.from(selectedIds), show),
+        sleep(800),
       ])
 
-      // 3. เมื่อสัญญาทุกข้อสำเร็จ ทำการแมปข้อมูลอัปเดตสเตทหน้าบ้านทันทีโดยไม่มีการ Refresh หน้าจอ
-      setCommentList((prev) =>
-        prev.map((c) => (selectedIds.has(c.id) ? { ...c, isShow: show } : c)),
-      )
-
-      // ล้างข้อมูลไอดีที่เลือกทิ้ง
       setSelectedIds(new Set())
 
-      // 4. แจ้งเตือนกระบวนการทั้งหมดเสร็จสิ้น
       Swal.fire({
         title: 'อัปเดตกลุ่มสำเร็จเรียบร้อย',
         icon: 'success',
@@ -202,13 +166,16 @@ export default function ReviewManager() {
           timerProgressBar: 'bg-stone-900',
         },
       })
-    } catch (err: any) {
-      // 5. หากตัวใดตัวหนึ่งในคิวล้มเหลว แสดง Error บานหลักทันที
+    } catch (err: unknown) {
+      const errorMsg =
+        err instanceof Error
+          ? err.message
+          : 'กระบวนการส่งสัญญาณล้มเหลว กรุณาลองใหม่อีกครั้ง'
       Swal.fire({
         icon: 'error',
         iconColor: '#DC2626',
         title: 'เกิดข้อผิดพลาดในการอัปเดตกลุ่ม',
-        text: err.message || 'กระบวนการส่งสัญญาณล้มเหลว กรุณาลองใหม่อีกครั้ง',
+        text: errorMsg,
         buttonsStyling: false,
         confirmButtonText: 'รับทราบ',
         customClass: {
@@ -321,7 +288,7 @@ export default function ReviewManager() {
           </button>
         </div>
 
-        {/* 🌟 Bulk Action Bar */}
+        {/* Bulk Action Bar */}
         <div
           className={`transition-all duration-300 overflow-hidden ${selectedIds.size > 0 ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}
         >
@@ -437,12 +404,10 @@ export default function ReviewManager() {
                     ))}
                   </div>
 
-                  {/* ปรับปรุงเนื้อหาข้อความให้อ่านง่าย คมชัดยิ่งขึ้น */}
                   <p className='text-slate-900 text-sm font-medium flex-1 mb-5 leading-relaxed bg-slate-50/60 p-3 rounded-xl border border-slate-100/70'>
                     {item.msg}
                   </p>
 
-                  {/* 🌟 แก้ไข: ปิดรหัส ID ส่วนตัวและแสดงเฉพาะฟอร์แมตวันเวลาอย่างคลีนตา */}
                   <div className='text-xs text-slate-400 font-semibold font-mono flex justify-end items-center border-t border-slate-100 pt-3 mt-auto mb-4'>
                     <span>
                       {new Date(item.createdAt).toLocaleDateString('th-TH')} •{' '}

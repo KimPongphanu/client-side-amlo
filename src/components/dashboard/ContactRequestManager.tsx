@@ -1,4 +1,4 @@
-// src/components/dashboard/ContactRequestManager.tsx[cite: 1]
+// src/components/dashboard/ContactRequestManager.tsx
 import {
   AlertCircle,
   Calendar,
@@ -9,26 +9,37 @@ import {
   RefreshCw,
   Search,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { useDashboard } from '../../context/DashboardContext'
+import { useEffect, useMemo, useState } from 'react'
+import { useDashboardStore } from '../../stores/useDashboardStore'
+import type { ContactRequest } from '../../type'
+
+interface GroupedContacts {
+  key: string
+  items: ContactRequest[]
+}
 
 export default function ContactRequestManager() {
-  const { contacts } = useDashboard()
+  // Bind and fetch state reactive properties directly from the unified dashboard store
+  const contacts = useDashboardStore((state) => state.contacts)
+  const fetchAllContacts = useDashboardStore((state) => state.contacts.fetchAll)
+  useEffect(() => {
+    fetchAllContacts()
+  }, [fetchAllContacts])
 
-  // States สำหรับระเบียบการจัดแสดงผล
-  const [searchTerm, setSearchTerm] = useState('')
+  // Local component states for layout presentation management
+  const [searchTerm, setSearchTerm] = useState<string>('')
   const [statusFilter, setStatusFilter] = useState<
     'ทั้งหมด' | 'ยังไม่ตอบกลับ' | 'ตอบกลับแล้ว'
   >('ทั้งหมด')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set())
 
-  // --- Logic: กรองข้อมูลและจัดกลุ่มข้อความตาม Email (รวมคำขอจากคนเดียวกัน) ---
-  const groupedData = useMemo(() => {
-    const groups: { [key: string]: any[] } = {}
+  // --- Logic: Filter and group submissions by email address ---
+  const groupedData = useMemo<GroupedContacts[]>(() => {
+    const groups: Record<string, ContactRequest[]> = {}
 
-    // คัดกรองผ่านช่องค้นหาก่อนจัดกลุ่ม
-    const filtered = contacts.data.filter((item) => {
+    // First layer: Filter records matching search queries and status filters
+    const filtered = contacts.data.filter((item: ContactRequest) => {
       const fullName = `${item.firstName} ${item.lastName}`.toLowerCase()
       const matchesSearch =
         fullName.includes(searchTerm.toLowerCase()) ||
@@ -41,37 +52,41 @@ export default function ContactRequestManager() {
       return matchesSearch && matchesStatus
     })
 
-    filtered.forEach((item) => {
+    // Second layer: Group items by email into an associative dictionary array
+    filtered.forEach((item: ContactRequest) => {
       const key = item.email.toLowerCase()
       if (!groups[key]) groups[key] = []
       groups[key].push(item)
     })
 
+    // Map into sorted arrays arranged by the most recent submission timestamp entries
     return Object.entries(groups)
-      .map(([key, items]) => ({
-        key,
-        items: items.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        ),
-      }))
+      .map(
+        ([key, items]): GroupedContacts => ({
+          key,
+          items: items.sort(
+            (a: ContactRequest, b: ContactRequest) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          ),
+        }),
+      )
       .sort(
-        (a, b) =>
+        (a: GroupedContacts, b: GroupedContacts) =>
           new Date(b.items[0].createdAt).getTime() -
           new Date(a.items[0].createdAt).getTime(),
       )
   }, [contacts.data, searchTerm, statusFilter])
 
-  // --- Handlers ในการเปิด/ปิดแถบยุบขยาย ---
-  const toggleGroup = (key: string) => {
-    const newSet = new Set(expandedGroups)
+  // --- Handlers: Management for collapsing/expanding content sections ---
+  const toggleGroup = (key: string): void => {
+    const newSet = new Set<string>(expandedGroups)
     if (newSet.has(key)) newSet.delete(key)
     else newSet.add(key)
     setExpandedGroups(newSet)
   }
 
-  const toggleDetail = (id: string) => {
-    const newSet = new Set(expandedDetails)
+  const toggleDetail = (id: string): void => {
+    const newSet = new Set<string>(expandedDetails)
     if (newSet.has(id)) newSet.delete(id)
     else newSet.add(id)
     setExpandedDetails(newSet)
@@ -225,7 +240,7 @@ export default function ContactRequestManager() {
                     {/* --- EXPANDED GROUP LIST --- */}
                     {isGroupExpanded && (
                       <div className='bg-slate-50/40 border-t border-slate-100 divide-y divide-slate-100/70 shadow-inner'>
-                        {group.items.map((item: any) => {
+                        {group.items.map((item: ContactRequest) => {
                           const isDetailExpanded = expandedDetails.has(item.id)
                           return (
                             <div

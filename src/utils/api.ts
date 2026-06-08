@@ -1,27 +1,33 @@
 // src/utils/api.ts
 
 // Clean the slash from .env URL and attach the /api prefix automatically
-const ENV_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
-const BASE_URL = `${ENV_URL.replace(/\/$/, '')}/api`
+const ENV_URL: string = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const BASE_URL: string = `${ENV_URL.replace(/\/$/, '')}/api`
 
-interface FetchOptions extends RequestInit {
-  body?: any
+// 🔒 บังคับใช้ unknown แทน any เพื่อความปลอดภัยสูงสุดตามกฎห้ามใช้ any
+interface FetchOptions extends Omit<RequestInit, 'body'> {
+  body?: BodyInit | Record<string, unknown> | null
 }
 
-export const api = async (endpoint: string, options: FetchOptions = {}) => {
+/**
+ * ฟังก์ชันยิง API ส่วนกลาง รองรับระบบ Generic Type <T> ปลอดภัยจาก any 100%
+ */
+export const api = async <T = unknown>(
+  endpoint: string,
+  options: FetchOptions = {},
+): Promise<T> => {
   // Prevent URL duplication by removing leading slash if present (e.g., /api//auth/login)
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint
-  const url = `${BASE_URL}/${cleanEndpoint}`
+  const cleanEndpoint: string = endpoint.startsWith('/')
+    ? endpoint.slice(1)
+    : endpoint
+  const url: string = `${BASE_URL}/${cleanEndpoint}`
 
-  const headers = new Headers(options.headers)
+  const headers: Headers = new Headers(options.headers)
 
   // Automatically set Content-Type if the body is not FormData
   if (options.body && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json')
   }
-
-  // ❌ REMOVED: sessionStorage.getItem('token') and Authorization header.
-  // The browser will now automatically manage and attach the HTTP-Only cookie.
 
   const config: RequestInit = {
     ...options,
@@ -33,33 +39,37 @@ export const api = async (endpoint: string, options: FetchOptions = {}) => {
         : JSON.stringify(options.body),
   }
 
-  const response = await fetch(url, config)
+  const response: Response = await fetch(url, config)
 
   // 🌟 ปรับปรุงการจัดการสถานะ 401 / 403 ใหม่
   if (response.status === 401 || response.status === 403) {
-    // ดึงข้อความ Error (เช่น 'อีเมลหรือรหัสผ่านไม่ถูกต้อง') จากหลังบ้านออกมาก่อน
-    const errorData = await response.json().catch(() => ({}))
-    const message = errorData.message || 'Unauthorized'
+    const errorData = (await response.json().catch(() => ({}))) as {
+      message?: string
+    }
+    const message: string = errorData.message || 'Unauthorized'
 
-    // 🛡️ เช็คเงื่อนไข: ถ้าปัจจุบันเราอยู่ที่หน้า /login อยู่แล้ว ห้ามสั่ง window.location.href เด็ดขาด
     if (
       window.location.pathname === '/login' ||
-      endpoint.includes('/auth/login')
+      endpoint.includes('/auth/login') ||
+      endpoint.includes('/auth/me') // ✨ เพิ่มบรรทัดนี้ เพื่อไม่ให้เด้งตอนโหลดหน้าแอปครั้งแรก
     ) {
-      throw new Error(message) // โยนข้อความส่งต่อไปให้ LoginPage เอาไปขึ้น SWAL สีแดงเอง
+      throw new Error(message)
     }
 
-    // แต่ถ้าเราอยู่หน้าอื่น (เช่นหน้า Dashboard แล้ว Token หมดอายุ) ค่อยดีดกลับหน้า Login
+    // ดีดกลับหน้า Login อัตโนมัติถ้าเกิด 401/403 ในจังหวะอื่น (เช่น Token หมดอายุกลางคัน)
     window.location.href = '/login'
     throw new Error(message)
   }
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
+    const errorData = (await response.json().catch(() => ({}))) as {
+      message?: string
+    }
     throw new Error(
       errorData.message || `HTTP error! status: ${response.status}`,
     )
   }
 
-  return response.json()
+  // 🔒 สั่งเปลี่ยนโครงสร้างข้อมูลส่งกลับผ่าน as T เพื่อให้ตรงตามที่เรียกใช้งานจากฝั่ง Service
+  return response.json() as Promise<T>
 }

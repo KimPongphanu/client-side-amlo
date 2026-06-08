@@ -1,9 +1,11 @@
-import { Outlet, useLocation } from 'react-router-dom' // 1. Import useLocation เพิ่มเข้ามา
+// src/pages/MainLayout.tsx
+import { Outlet, useLocation } from 'react-router-dom'
 import CommentForm from '../components/CommentForm'
 import CookieConsent from '../components/CookieConsent'
 import ScrollToTopButton from '../components/ScrollToTopButton'
 import Nav from '../pages/Nav'
 import Slider from '../pages/Slider'
+import { useAuthStore } from '../stores/useAuthStore' // 🌟 1. ดึง useAuthStore มาตรวจสอบสถานะการล็อกอิน
 import Footer from './Footer'
 
 const slides = [
@@ -17,8 +19,9 @@ const slides = [
 
 const MainLayout = () => {
   const location = useLocation()
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn) // 🌟 2. เรียกใช้งานสถานะ isLoggedIn จาก Store
 
-  // แนะนำให้พิมพ์ตัวเล็กทั้งหมดใน Array นี้เลยครับ
+  // รายชื่อ Path ที่ต้องการซ่อน Slider
   const hideOnPaths = [
     '/newsdetailepage',
     '/agency1',
@@ -37,10 +40,8 @@ const MainLayout = () => {
   )
   const showSlider = !shouldHideSlider
 
-  // console.log("ตอนนี้อยู่หน้า:", currentPath, " | ต้องโชว์ Slider ไหม?:", showSlider);
-
   return (
-    <div className='min-h-screen ​w-full relative flex flex-col'>
+    <div className='min-h-screen w-full relative flex flex-col'>
       <Nav />
 
       {showSlider && (
@@ -54,7 +55,10 @@ const MainLayout = () => {
       </main>
       <Footer />
 
-      <CommentForm />
+      {/* 🌟 3. ปรับ Logic: จะเรนเดอร์ CommentForm ก็ต่อเมื่อล็อกอินแล้วเท่านั้น 
+          เพื่อไม่ให้โค้ดดักสิทธิ์ข้างในคอมโพเนนต์นี้ทำงนและเตะผู้ใช้ทั่วไปเด้งไปหน้า /login */}
+      {isLoggedIn && <CommentForm />}
+
       <ScrollToTopButton />
       <CookieConsent />
     </div>
