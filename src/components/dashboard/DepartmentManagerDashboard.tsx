@@ -5,7 +5,7 @@ import {
   Folder,
   Grid,
   HelpCircle,
-  Image as ImageIcon,
+  ImageIcon,
   List,
   Plus,
   Trash2,
@@ -32,10 +32,20 @@ const quillModules = {
   ],
 }
 
+// 🌟 ดึง CSS ออกมาเป็นสแตติกด้านนอก เพื่อลดภาระเบราว์เซอร์ไม่ต้องคอมไพล์สไตล์ใหม่ทุกรอบรีเรนเดอร์
+const SCROLLBAR_STYLES = `
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  .animate-fade-in { animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes modalFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+`
+
 // ==========================================
 // Gallery Preview Strip Component
 // ==========================================
-const GalleryStrip = ({ gallery }: { gallery: GalleryItem[] }) => {
+const GalleryStrip = React.memo(({ gallery }: { gallery: GalleryItem[] }) => {
   if (!gallery || gallery.length === 0) {
     return (
       <span className='text-xs text-slate-400 font-medium'>
@@ -59,6 +69,7 @@ const GalleryStrip = ({ gallery }: { gallery: GalleryItem[] }) => {
               }
               alt={`gallery-preview-${i}`}
               className='w-full h-full object-cover'
+              loading='lazy'
             />
           ) : (
             <Video className='w-4 h-4 text-rose-500' />
@@ -72,7 +83,9 @@ const GalleryStrip = ({ gallery }: { gallery: GalleryItem[] }) => {
       )}
     </div>
   )
-}
+})
+
+GalleryStrip.displayName = 'GalleryStrip'
 
 // ==========================================
 // Main Dashboard Manager Component
@@ -84,50 +97,48 @@ export default function DepartmentManagerDashboard() {
     (state) => state.departmentLoading,
   )
 
-  // Bind network mutable workflow actions from store
   const createDepartment = useDashboardStore((state) => state.createDepartment)
   const updateDepartment = useDashboardStore((state) => state.updateDepartment)
   const deleteDepartment = useDashboardStore((state) => state.deleteDepartment)
 
-  // Fetch record entities initially over component mounting stage
   useEffect(() => {
     fetchDepartments()
   }, [fetchDepartments])
 
-  // Component configuration state controls
   const [viewMode, setViewMode] = useState<ViewMode>('card')
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
   const [editingId, setEditingId] = useState<number | null>(null)
 
-  // Core dynamic textual record fields properties
   const [title, setTitle] = useState<string>('')
   const [content, setContent] = useState<string>('')
   const [youtubeInput, setYoutubeInput] = useState<string>('')
 
-  // Traditional elements input storage references
   const coverImageInputRef = useRef<HTMLInputElement | null>(null)
   const galleryInputRef = useRef<HTMLInputElement | null>(null)
 
-  // Asset previews and tracking array blocks
   const [coverPreview, setCoverPreview] = useState<string>('')
   const [galleryUrls, setGalleryUrls] = useState<string[]>([])
   const [existingGalleryUrls, setExistingGalleryUrls] = useState<string[]>([])
   const [newGalleryFiles, setNewGalleryFiles] = useState<File[]>([])
   const [isGalleryUpdated, setIsGalleryUpdated] = useState<boolean>(false)
 
-  // Filter records collection matching criteria search tokens
   const filteredDepartments = useMemo<DepartmentItem[]>(() => {
+    const cleanSearch = searchTerm.toLowerCase().trim()
+    if (!cleanSearch) return departmentList
+
     return departmentList.filter(
       (item: DepartmentItem) =>
-        item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.content &&
-          item.content.toLowerCase().includes(searchTerm.toLowerCase())),
+        item.title.toLowerCase().includes(cleanSearch) ||
+        (item.content && item.content.toLowerCase().includes(cleanSearch)),
     )
   }, [departmentList, searchTerm])
 
-  // --- Handlers: Input form components values wipeout ---
   const resetForm = (): void => {
+    // 🌟 ล้าง Memory ของ Object URL เก่าเพื่อป้องกันหน่วยความจำรั่วไหล
+    if (coverPreview && coverPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(coverPreview)
+    }
     setEditingId(null)
     setTitle('')
     setContent('')
@@ -141,7 +152,6 @@ export default function DepartmentManagerDashboard() {
     if (galleryInputRef.current) galleryInputRef.current.value = ''
   }
 
-  // --- Handlers: Modal popups triggers ---
   const openAddModal = (): void => {
     resetForm()
     setIsModalOpen(true)
@@ -163,7 +173,6 @@ export default function DepartmentManagerDashboard() {
     const ytUrls = dept.gallery
       .filter((g: GalleryItem) => g.type === 'video')
       .map((g: GalleryItem) => g.url)
-
     const imgUrls = dept.gallery
       .filter((g: GalleryItem) => g.type === 'image')
       .map((g: GalleryItem) => g.url)
@@ -173,10 +182,14 @@ export default function DepartmentManagerDashboard() {
     setIsModalOpen(true)
   }
 
-  // --- Handlers: Live adjustments inside layout media arrays ---
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    // เคลียร์ Object URL เดิมก่อนสร้างอันใหม่
+    if (coverPreview && coverPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(coverPreview)
+    }
     setCoverPreview(URL.createObjectURL(file))
   }
 
@@ -224,7 +237,6 @@ export default function DepartmentManagerDashboard() {
     }
   }
 
-  // --- Transactions: Operational creation/updation procedures ---
   const handleAddOrEdit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
     if (!title.trim()) {
@@ -292,7 +304,6 @@ export default function DepartmentManagerDashboard() {
     }
   }
 
-  // --- Transactions: Operational termination procedures ---
   const handleDeleteClick = async (id: number): Promise<void> => {
     const result = await Swal.fire({
       title: 'ยืนยันการลบหน่วยงาน?',
@@ -353,8 +364,7 @@ export default function DepartmentManagerDashboard() {
           onClick={openAddModal}
           className='w-full sm:w-auto bg-[#185FA5] hover:bg-[#134b82] text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm shadow-blue-500/10 flex items-center justify-center gap-2 cursor-pointer active:scale-95'
         >
-          <Plus className='w-4 h-4' />
-          เพิ่มหน่วยงานใหม่
+          <Plus className='w-4 h-4' /> เพิ่มหน่วยงานใหม่
         </button>
       </div>
 
@@ -448,15 +458,14 @@ export default function DepartmentManagerDashboard() {
                       onClick={() => openEditModal(dept)}
                       className='w-full py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 border border-slate-200/60 active:scale-95 cursor-pointer'
                     >
-                      <Edit2 className='w-3.5 h-3.5 text-slate-500' />
+                      <Edit2 className='w-3.5 h-3.5 text-slate-500' />{' '}
                       แก้ไขหน่วยงาน
                     </button>
                     <button
                       onClick={() => handleDeleteClick(dept.id)}
                       className='w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 border border-rose-100/60 active:scale-95 cursor-pointer'
                     >
-                      <Trash2 className='w-3.5 h-3.5 text-rose-500' />
-                      ลบออก
+                      <Trash2 className='w-3.5 h-3.5 text-rose-500' /> ลบออก
                     </button>
                   </div>
                 </div>
@@ -465,6 +474,7 @@ export default function DepartmentManagerDashboard() {
           })}
         </div>
       ) : (
+        /* 🌟 ส่วนแก้ไข: เพิ่ม Logic ลูปแสดงผลในโหมด List ให้ทำงานถูกต้องสมบูรณ์ */
         <div className='bg-white border border-slate-100 shadow-sm rounded-2xl divide-y divide-slate-100 overflow-hidden'>
           {filteredDepartments.map((dept: DepartmentItem) => {
             const API_URL =
@@ -603,7 +613,7 @@ export default function DepartmentManagerDashboard() {
                 <div className='border-t border-slate-100 pt-4 space-y-4'>
                   <div>
                     <h4 className='font-bold text-slate-800 flex items-center gap-1.5'>
-                      <ImageIcon className='w-4 h-4 text-slate-500' />
+                      <ImageIcon className='w-4 h-4 text-slate-500' />{' '}
                       ระบบจัดการคลังสื่อ (Gallery)
                     </h4>
                     <p className='text-[11px] text-slate-400 mt-0.5'>
@@ -669,6 +679,7 @@ export default function DepartmentManagerDashboard() {
                               }
                               alt='Gallery asset'
                               className='w-full h-full object-cover'
+                              loading='lazy'
                             />
                             <button
                               type='button'
@@ -686,7 +697,7 @@ export default function DepartmentManagerDashboard() {
                   {/* New Gallery Upload Button */}
                   <div className='space-y-1.5'>
                     <label className='block text-xs font-bold text-slate-600 flex items-center gap-1'>
-                      <ImageIcon className='w-3.5 h-3.5 text-sky-500' />
+                      <ImageIcon className='w-3.5 h-3.5 text-sky-500' />{' '}
                       อัปโหลดภาพชุดใหม่เพิ่มเติม
                     </label>
                     <div className='bg-slate-50 p-3 rounded-xl border border-slate-200/80'>
@@ -730,15 +741,7 @@ export default function DepartmentManagerDashboard() {
         </div>
       )}
 
-      {/* Styled overrides sheet block tags */}
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .animate-fade-in { animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes modalFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-      `}</style>
+      <style>{SCROLLBAR_STYLES}</style>
     </div>
   )
 }

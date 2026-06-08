@@ -23,11 +23,15 @@ const THAI_MONTHS = [
 
 const parseThaiDateToTimestamp = (dateStr: string) => {
   if (!dateStr) return 0
+  if (dateStr.includes('T')) return new Date(dateStr).getTime() // ถ้าเป็น ISO สตริง แปลงตรงๆ ได้เลย
+
   const parts = dateStr.split(' ')
   if (parts.length === 3) {
     const day = parseInt(parts[0])
     const month = THAI_MONTHS.indexOf(parts[1])
-    const year = parseInt(parts[2])
+    let year = parseInt(parts[2])
+
+    if (year > 2400) year -= 543 // รองรับการแปลง พ.ศ. ให้กลับเป็น ค.ศ. ก่อนแปลงโครงสร้างระบบเวลา
     return new Date(year, month, day).getTime()
   }
   return new Date(dateStr).getTime()
@@ -70,7 +74,10 @@ const ArticleCard = ({
   item: NewsItem
   basePath: string
 }) => (
-  <Link to={`/${basePath}/${item.id}`} className='shrink-0 w-[260px] md:w-[320px] h-full block'>
+  <Link
+    to={`/${basePath}/${item.id}`}
+    className='shrink-0 w-[260px] md:w-[320px] h-full block'
+  >
     <div className='bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-md flex flex-col hover:shadow-xl transition-shadow h-full'>
       <div className='h-[180px] md:h-[200px] w-full overflow-hidden bg-slate-100 shrink-0'>
         <img
@@ -135,12 +142,20 @@ const HomePage = () => {
     if (commentOffset === commentsCount + 1) {
       const timer = setTimeout(() => {
         setIsTransitioning(false)
+        setCommentOffset(1) // สลับกลับไปตัวแรก
+      }, 700)
+      return () => clearTimeout(timer)
+    }
+
+    if (commentOffset >= commentsCount + 1) {
+      const timer = setTimeout(() => {
+        setIsTransitioning(false)
         setCommentOffset(1)
       }, 700)
       return () => clearTimeout(timer)
     }
 
-    if (commentOffset === 0) {
+    if (commentOffset <= 0) {
       const timer = setTimeout(() => {
         setIsTransitioning(false)
         setCommentOffset(commentsCount)

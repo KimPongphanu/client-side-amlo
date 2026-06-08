@@ -335,10 +335,12 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   fetchDepartments: async () => {
     set({ departmentLoading: true })
     try {
-      const response: ApiResponseBase<DepartmentItem[]> =
-        await dashboardService.getDepartments()
-      if (response?.success) {
-        set({ departmentList: response.data || [] })
+      // 🌟 รับค่ากลับมาในรูปแบบ Array ของแผนกงานตรงๆ จาก Service
+      const response: DepartmentItem[] = await dashboardService.getDepartments()
+
+      // 🌟 เช็คว่าเป็น Array ไหม ถ้าใช่ก็อัปเดตลง Store ได้เลยโดยไม่ต้องผ่าน .success หรือ .data
+      if (Array.isArray(response)) {
+        set({ departmentList: response })
       }
     } catch (error) {
       console.error('Failed to fetch departments:', error)
@@ -355,10 +357,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   createDepartment: async (form: FormData) => {
     try {
       const res = await dashboardService.createDepartment(form)
-      if (res.success && res.data) {
-        set((state) => ({
-          departmentList: [...state.departmentList, res.data as DepartmentItem],
-        }))
+
+      // 🌟 เปลี่ยนมาตรวจสอบว่ามีค่า res หรือระบุสำเร็จกลับมาจริง (ไม่พึ่งพาคีย์ id โดดๆ)
+      if (res) {
+        // ทำการโหลดชุดข้อมูลแผนกใหม่ยกแผงเพื่อให้ข้อมูล Sync กับ DB ล่าสุด
+        await get().fetchDepartments()
         return true
       }
       return false
@@ -370,12 +373,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   updateDepartment: async (id: number, form: FormData) => {
     try {
       const res = await dashboardService.updateDepartment(id, form)
-      if (res.success && res.data) {
-        set((state) => ({
-          departmentList: state.departmentList.map((item) =>
-            item.id === id ? (res.data as DepartmentItem) : item,
-          ),
-        }))
+
+      // 🌟 ปรับปรุงการตรวจสอบให้ยืดหยุ่นในลักษณะเดียวกัน
+      if (res) {
+        await get().fetchDepartments()
         return true
       }
       return false
@@ -386,14 +387,12 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   },
   deleteDepartment: async (id: number) => {
     try {
-      const res = await dashboardService.deleteDepartment(id)
-      if (res.success) {
-        set((state) => ({
-          departmentList: state.departmentList.filter((item) => item.id !== id),
-        }))
-        return true
-      }
-      return false
+      // 🌟 สำหรับ Method DELETE ถ้าไม่มี Error โยนขึ้นมา (HTTP 200) ถือว่าผ่าน
+      await dashboardService.deleteDepartment(id)
+      set((state) => ({
+        departmentList: state.departmentList.filter((item) => item.id !== id),
+      }))
+      return true
     } catch (error) {
       console.error(error)
       return false

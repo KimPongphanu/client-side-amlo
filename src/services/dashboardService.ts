@@ -3,6 +3,7 @@ import type {
   CommentItem,
   ContactRequest,
   DepartmentItem,
+  DepartmentMutationResponse,
   NewsItem,
 } from '../type'
 import { api } from '../utils/api'
@@ -58,16 +59,16 @@ export const dashboardService = {
   /**
    * ระบบจัดการภาควิชา/หน่วยงาน (Departments)
    */
-  getDepartments: async (): Promise<ApiResponseBase<DepartmentItem[]>> => {
-    return api<ApiResponseBase<DepartmentItem[]>>('/departments', {
+  getDepartments: async (): Promise<DepartmentItem[]> => {
+    return api<DepartmentItem[]>('/departments', {
       method: 'GET',
     })
   },
 
   createDepartment: async (
     form: FormData,
-  ): Promise<ApiResponseBase<DepartmentItem>> => {
-    return api<ApiResponseBase<DepartmentItem>>('/departments', {
+  ): Promise<DepartmentMutationResponse> => {
+    return api<DepartmentMutationResponse>('/departments', {
       method: 'POST',
       body: form,
     })
@@ -76,15 +77,15 @@ export const dashboardService = {
   updateDepartment: async (
     id: number,
     form: FormData,
-  ): Promise<ApiResponseBase<DepartmentItem>> => {
-    return api<ApiResponseBase<DepartmentItem>>(`/departments/${id}`, {
+  ): Promise<DepartmentMutationResponse> => {
+    return api<DepartmentMutationResponse>(`/departments/${id}`, {
       method: 'PUT',
       body: form,
     })
   },
 
-  deleteDepartment: async (id: number): Promise<ApiResponseBase<unknown>> => {
-    return api<ApiResponseBase<unknown>>(`/departments/${id}`, {
+  deleteDepartment: async (id: number): Promise<ApiResponseBase> => {
+    return api<ApiResponseBase>(`/departments/${id}`, {
       method: 'DELETE',
     })
   },

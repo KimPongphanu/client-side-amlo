@@ -1,26 +1,34 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useContentStore } from '../stores/useContentStore' // ✨ เปลี่ยนมานำเข้า Zustand Store แทน
+import { useContentStore } from '../stores/useContentStore'
+
+// 🌟 ดึง DOMParser ออกมาด้านนอก เพื่อไม่ให้สร้างใหม่ทุกรอบใน Loop
+const parser = new DOMParser()
+const stripHtmlToText = (html?: string) => {
+  if (!html) return 'ไม่มีข้อมูลรายละเอียด'
+  const doc = parser.parseFromString(html, 'text/html')
+  return doc.body.textContent || ''
+}
 
 const DepartmentShowcase = () => {
-  // 🌟 State สำหรับ Desktop
   const [activeIndex, setActiveIndex] = useState(0)
   const imageRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  // 🌟 State สำหรับ Mobile (Horizontal Scroll-jacking)
   const [mobileScrollProgress, setMobileScrollProgress] = useState(0)
   const mobileContainerRef = useRef<HTMLDivElement>(null)
 
   const departmentList = useContentStore((state) => state.departmentList)
   const departments = useMemo(() => departmentList || [], [departmentList])
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+  const API_URL = import.meta.env.VITE_API_URL
   const resolveImg = (url: string) =>
     url?.startsWith('/') ? `${API_URL}${url}` : url
 
   // ==========================================
-  // 💻 Logic สำหรับ Desktop
+  // 💻 Logic สำหรับ Desktop (แก้ Memory Leak)
   // ==========================================
   useEffect(() => {
+    if (departments.length === 0) return
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -33,11 +41,10 @@ const DepartmentShowcase = () => {
       { rootMargin: '-50% 0px -50% 0px' },
     )
 
-    setTimeout(() => {
-      imageRefs.current.forEach((ref) => {
-        if (ref) observer.observe(ref)
-      })
-    }, 100)
+    // ใช้กวาดสแกน Ref ที่พร้อมใช้งานทันที ปลอดภัยกว่า setTimeout
+    imageRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref)
+    })
 
     return () => observer.disconnect()
   }, [departments])
@@ -51,9 +58,13 @@ const DepartmentShowcase = () => {
   }
 
   // ==========================================
-  // 📱 Logic สำหรับ Mobile
+  // 📱 Logic สำหรับ Mobile (แก้ Scroll Lag ด้วย rAF)
   // ==========================================
   useEffect(() => {
+    if (departments.length === 0) return
+
+    let ticking = false
+
     const handleMobileScroll = () => {
       if (!mobileContainerRef.current) return
 
@@ -61,26 +72,31 @@ const DepartmentShowcase = () => {
       const scrollStart = rect.top
       const scrollDistance = rect.height - window.innerHeight
 
-      if (scrollStart > 0) {
-        setMobileScrollProgress(0)
-      } else if (-scrollStart > scrollDistance) {
-        setMobileScrollProgress(1)
-      } else {
-        setMobileScrollProgress(-scrollStart / scrollDistance)
+      let progress = 0
+      if (scrollStart <= 0) {
+        if (-scrollStart > scrollDistance) {
+          progress = 1
+        } else {
+          progress = -scrollStart / scrollDistance
+        }
+      }
+
+      setMobileScrollProgress(progress)
+      ticking = false
+    }
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(handleMobileScroll)
+        ticking = true
       }
     }
 
-    window.addEventListener('scroll', handleMobileScroll, { passive: true })
-    handleMobileScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    handleMobileScroll() // รันครั้งแรกตอนโหลดหน้าเว็บ
 
-    return () => window.removeEventListener('scroll', handleMobileScroll)
-  }, [])
-
-  const stripHtmlToText = (html?: string) => {
-    if (!html) return 'ไม่มีข้อมูลรายละเอียด'
-    const doc = new DOMParser().parseFromString(html, 'text/html')
-    return doc.body.textContent || ''
-  }
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [departments.length])
 
   if (departments.length === 0) return null
 
@@ -102,11 +118,9 @@ const DepartmentShowcase = () => {
           </p>
         </div>
 
-        {/* ========================================== */}
-        {/* 💻 ส่วนแสดงผลสำหรับ DESKTOP */}
-        {/* ========================================== */}
+        {/* ส่วนแสดงผลสำหรับ DESKTOP */}
         <div className='hidden md:flex flex-row gap-10 md:gap-20 relative'>
-          {/* 👈 ฝั่งซ้าย: ตัวหนังสือ (Sticky) */}
+          {/* ฝั่งซ้าย: ตัวหนังสือ */}
           <div className='w-5/12'>
             <div className='sticky top-[20vh] flex flex-col gap-6'>
               {departments.map((dept, index) => {
@@ -127,12 +141,18 @@ const DepartmentShowcase = () => {
                       กอง {code}
                     </p>
                     <h3
-                      className={`text-2xl font-bold transition-colors duration-500 ${isActive ? 'text-slate-800' : 'text-slate-400'}`}
+                      className={`text-2xl font-bold transition-colors duration-500 ${
+                        isActive ? 'text-slate-800' : 'text-slate-400'
+                      }`}
                     >
                       {dept.title}
                     </h3>
                     <div
-                      className={`grid transition-all duration-500 ease-in-out ${isActive ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
+                      className={`grid transition-all duration-500 ease-in-out ${
+                        isActive
+                          ? 'grid-rows-[1fr] opacity-100'
+                          : 'grid-rows-[0fr] opacity-0'
+                      }`}
                     >
                       <div className='overflow-hidden pt-3 pb-2'>
                         <div className='text-slate-500 leading-relaxed text-sm line-clamp-3 break-words'>
@@ -146,10 +166,9 @@ const DepartmentShowcase = () => {
             </div>
           </div>
 
-          {/* 👉 ฝั่งขวา: รูปภาพ (อัปเกรด Focus Scale Effect) */}
+          {/* ฝั่งขวา: รูปภาพ */}
           <div className='w-7/12 flex flex-col pb-[30vh]'>
             {departments.map((dept, index) => {
-              // 🌟 เช็คว่ารูปนี้กำลัง Active อยู่ไหม
               const isActive = activeIndex === index
 
               return (
@@ -159,13 +178,15 @@ const DepartmentShowcase = () => {
                   ref={(el) => {
                     imageRefs.current[index] = el
                   }}
-                  // 🌟 ลดระยะห่างเหลือ mb-[25vh] ให้รูปชิดกันมากขึ้นแต่ยังมีสเปซ
                   className='mb-[25vh] last:mb-0 w-full flex items-center justify-center'
                 >
-                  {/* 🌟 กล่องรูปภาพ: ถ้ายกเลิก Active ให้หดเหลือ 85% และจางลง / ถ้า Active ให้เด้งเต็ม 100% */}
                   <div
                     className={`w-full aspect-[16/10] rounded-3xl overflow-hidden relative bg-slate-100 border border-slate-200 origin-center transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]
-                      ${isActive ? 'scale-100 opacity-100 shadow-2xl ring-4 ring-blue-500/10 blur-none' : 'scale-[0.85] opacity-30 shadow-sm blur-[3px]'}
+                      ${
+                        isActive
+                          ? 'scale-100 opacity-100 shadow-2xl ring-4 ring-blue-500/10 blur-none'
+                          : 'scale-[0.85] opacity-30 shadow-sm blur-[3px]'
+                      }
                     `}
                   >
                     <img
@@ -183,9 +204,7 @@ const DepartmentShowcase = () => {
         </div>
       </div>
 
-      {/* ========================================== */}
-      {/* 📱 ส่วนแสดงผลสำหรับ MOBILE (Sticky Horizontal Slide คงเดิม) */}
-      {/* ========================================== */}
+      {/* ส่วนแสดงผลสำหรับ MOBILE */}
       <div
         ref={mobileContainerRef}
         className='md:hidden relative w-full'
@@ -212,7 +231,6 @@ const DepartmentShowcase = () => {
                     className='bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-100 flex flex-col'
                     style={{ height: '100%', maxHeight: '480px' }}
                   >
-                    {/* รูปภาพ */}
                     <div
                       className='relative shrink-0 bg-slate-200'
                       style={{ height: '52%' }}
@@ -226,7 +244,6 @@ const DepartmentShowcase = () => {
                         กอง {code}
                       </div>
                     </div>
-                    {/* เนื้อหา */}
                     <div
                       className='p-5 flex flex-col bg-slate-50'
                       style={{
@@ -261,15 +278,24 @@ const DepartmentShowcase = () => {
             })}
           </div>
 
+          {/* Indicator (ล็อกขอบเขตไม่ให้ Index หลุดขอบลำดับ Array) */}
           <div className='mt-6 flex justify-center gap-2 px-6'>
             {departments.map((_, i) => {
-              const isActive =
-                Math.round(mobileScrollProgress * (departments.length - 1)) ===
-                i
+              const calculatedIndex = Math.round(
+                mobileScrollProgress * (departments.length - 1),
+              )
+              const safeIndex = Math.max(
+                0,
+                Math.min(calculatedIndex, departments.length - 1),
+              )
+              const isActive = safeIndex === i
+
               return (
                 <div
                   key={i}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${isActive ? 'w-8 bg-blue-600' : 'w-2 bg-slate-300'}`}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    isActive ? 'w-8 bg-blue-600' : 'w-2 bg-slate-300'
+                  }`}
                 />
               )
             })}
@@ -286,7 +312,7 @@ const DepartmentShowcase = () => {
                 strokeLinejoin='round'
                 strokeWidth='2'
                 d='M19 14l-7 7m0 0l-7-7m7 7V3'
-              ></path>
+              />
             </svg>
             เลื่อนลงเพื่อดูเพิ่มเติม
           </div>

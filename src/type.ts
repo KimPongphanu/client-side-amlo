@@ -174,3 +174,9 @@ export interface CommentFormData {
   content: string
   botField: string
 }
+
+export interface DepartmentMutationResponse {
+  success: boolean
+  data?: DepartmentItem // กำหนดระบุโครงสร้าง DepartmentItem แทนการใช้ any
+  message?: string
+}

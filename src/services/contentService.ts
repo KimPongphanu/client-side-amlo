@@ -12,9 +12,13 @@ export const contentService = {
    * Fetch content items by type ('PR' or 'NEWS')
    */
   getNews: async (type: 'PR' | 'NEWS', limit = 50): Promise<NewsItem[]> => {
-    const res = await api(`/news?type=${type}&limit=${limit}`, {
-      method: 'GET',
-    })
+    // 🌟 ส่ง Generic Type เข้าไปที่ api เพื่อบอกว่า Response นี้จะมีโครงสร้างอย่างไร
+    const res = await api<{ data?: NewsItem[] }>(
+      `/news?type=${type}&limit=${limit}`,
+      {
+        method: 'GET',
+      },
+    )
     return res?.data || []
   },
 
@@ -48,9 +52,10 @@ export const contentService = {
   /**
    * Fetch all comments from database
    */
-  getComments: async (all = true): Promise<CommentItem[]> => {
+  getComments: async (all = false): Promise<CommentItem[]> => {
     const url = all ? '/comments?all=true' : '/comments'
-    const res = await api(url, { method: 'GET' })
+    // 🌟 ปรับใส่ Generic Type ป้องกัน Error แบบเดียวกัน
+    const res = await api<{ data?: CommentItem[] }>(url, { method: 'GET' })
     return res?.data || []
   },
 
@@ -81,7 +86,10 @@ export const contentService = {
    * Fetch contact inquiries list
    */
   getContacts: async (): Promise<ContactRequest[]> => {
-    const res = await api('/contact', { method: 'GET' })
+    // 🌟 ปรับใส่ Generic Type ป้องกัน Error แบบเดียวกัน
+    const res = await api<{ data?: ContactRequest[] }>('/contact', {
+      method: 'GET',
+    })
     return res?.data || []
   },
 
@@ -111,7 +119,12 @@ export const contentService = {
    * Fetch organizational departments list
    */
   getDepartments: async (): Promise<DepartmentItem[]> => {
-    const res = await api('/departments', { method: 'GET' }).catch(() => null)
-    return res?.data || []
+    // 🌟 ปรับ Generic Type ให้รับค่าเป็น Array ของ DepartmentItem ตรงๆ
+    const res = await api<DepartmentItem[]>('/departments', {
+      method: 'GET',
+    })
+
+    // 🌟 คืนค่า res กลับไปตรงๆ (หาก res ไม่มีค่าให้ fallback เป็น Array ว่าง)
+    return res || []
   },
 }

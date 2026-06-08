@@ -1,7 +1,8 @@
 import { User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../stores/useAuthStore' // 🌟 ใช้ Zustand
+import { useAuthStore } from '../stores/useAuthStore'
+import { useContentStore } from '../stores/useContentStore' // 🌟 1. นำเข้า Content Store
 
 export default function Nav() {
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
@@ -15,13 +16,22 @@ export default function Nav() {
   const [isAccountOpen, setIsAccountOpen] = useState(false)
   const accountRef = useRef<HTMLDivElement>(null)
 
-  // 🌟 1. ดึง verifyUser ออกมาใช้งานด้วย
   const { isLoggedIn, logoutUser, verifyUser } = useAuthStore()
 
-  // 🌟 2. สั่งให้ตรวจสอบ Cookie ทันทีที่โหลด Component เพื่อแก้บั๊ก Refresh แล้วหลุด
+  // 🌟 2. ดึง departmentList ออกมาจาก Store เพื่อไปใช้งานด้านล่าง
+  const departmentList = useContentStore((state) => state.departmentList)
+
+  // 🌟 3. ปรับให้รันรอบเดียวตอนโหลด Component ป้องกันสภาวะ Infinite Loop
   useEffect(() => {
     verifyUser()
-  }, [verifyUser])
+  }, [])
+
+  // 🌟 4. เพิ่ม Cleanup ป้องกัน Memory Leak จากการตั้งค่าดีเลย์เมาส์
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [])
 
   const handleCloseMobileMenu = () => {
     setIsMobileMenuOpen(false)
@@ -35,7 +45,6 @@ export default function Nav() {
     navigate('/')
   }
 
-  // ปิด Dropdown เมื่อคลิกข้างนอก
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -50,11 +59,7 @@ export default function Nav() {
   }, [])
 
   useEffect(() => {
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'unset'
-    }
+    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : 'unset'
     return () => {
       document.body.style.overflow = 'unset'
     }
@@ -82,9 +87,7 @@ export default function Nav() {
         onMouseLeave={handleMouseLeaveNav}
       >
         <div className='w-full flex items-center justify-between px-4 md:px-8 h-20 relative'>
-          {/* ========================================== */}
           {/* 1. ฝั่งซ้าย: โลโก้ + ชื่อหน่วยงาน */}
-          {/* ========================================== */}
           <div className='h-full py-3 flex-shrink-0 flex items-center z-20'>
             <button
               onClick={() => {
@@ -114,9 +117,7 @@ export default function Nav() {
             </button>
           </div>
 
-          {/* ========================================== */}
           {/* 2. ตรงกลาง: เมนู Nav */}
-          {/* ========================================== */}
           <div className='hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center gap-10 h-full font-bold text-slate-600 text-base z-10'>
             <Link
               to='/'
@@ -169,9 +170,7 @@ export default function Nav() {
             </Link>
           </div>
 
-          {/* ========================================== */}
           {/* 3. ฝั่งขวา: ปุ่มเข้าสู่ระบบ + เมนูมือถือ */}
-          {/* ========================================== */}
           <div className='flex items-center z-20'>
             <div className='hidden md:flex items-center' ref={accountRef}>
               {isLoggedIn ? (
@@ -291,7 +290,7 @@ export default function Nav() {
           </div>
         </div>
 
-        {/* 💻 เมนู Dropdown สำหรับ Desktop */}
+        {/* 💻 เมนู Dropdown สำหรับ Desktop (คลายคอมเมนต์และเปิดใช้งาน) */}
         <div
           className={`hidden md:block absolute top-full left-0 w-full backdrop-blur-md bg-white/95 shadow-xl border-t border-gray-100 transition-all duration-300 ease-out ${activeMenu === 'about' ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
         >
@@ -348,15 +347,19 @@ export default function Nav() {
               <h3 className='text-slate-400 font-bold mb-4 text-xs tracking-wider uppercase'>
                 โครงสร้างหน่วยงาน
               </h3>
-              {/* <ul className="space-y-3 text-sm text-slate-700 font-medium">
+              <ul className='space-y-3 text-sm text-slate-700 font-medium'>
                 {departmentList.map((dept) => (
                   <li key={dept.id}>
-                    <Link to={`/department/${dept.id}`} className="hover:text-blue-600 transition-colors">
+                    {/* ตรงนี้ลิงก์พาไปหน้าดีเทลของแผนก หรือจะใส่แฮชเลื่อนหน้าแรกก็ได้ครับ */}
+                    <Link
+                      to={`/department/${dept.id}`}
+                      className='hover:text-blue-600 transition-colors'
+                    >
                       {dept.title}
                     </Link>
                   </li>
                 ))}
-              </ul> */}
+              </ul>
             </div>
           </div>
         </div>
@@ -429,14 +432,18 @@ export default function Nav() {
                     <h3 className='text-slate-400 text-xs uppercase mb-2'>
                       โครงสร้างหน่วยงาน
                     </h3>
+                    {/* 🌟 คลายคอมเมนต์และเปิดใช้งานฝั่ง Mobile */}
                     <ul className='space-y-3 text-sm font-medium text-slate-600'>
-                      {/* {departmentList.map((dept) => (
+                      {departmentList.map((dept) => (
                         <li key={dept.id}>
-                          <Link to={`/department/${dept.id}`} onClick={handleCloseMobileMenu}>
+                          <Link
+                            to={`/department/${dept.id}`}
+                            onClick={handleCloseMobileMenu}
+                          >
                             {dept.title}
                           </Link>
                         </li>
-                      ))} */}
+                      ))}
                     </ul>
                   </div>
                 </div>
@@ -449,7 +456,6 @@ export default function Nav() {
               </Link>
             </li>
 
-            {/* 🌟 3. ปรับ UX มือถือ: ทำเป็น Dropdown (Accordion) ป้องกันนิ้วกดพลาด */}
             <li className='pt-4 border-t border-slate-100'>
               {isLoggedIn ? (
                 <>

@@ -14,14 +14,12 @@ import type {
 } from '../type'
 
 interface ContentState {
-  // Public Client & Dashboard State Arrays
   newsList: NewsItem[]
   prList: NewsItem[]
   commentList: CommentItem[]
   departmentList: DepartmentItem[]
   contactList: ContactRequest[]
 
-  // Async Loading States
   isLoading: boolean
   isContactLoading: boolean
   isSubmittingContact: boolean
@@ -29,20 +27,20 @@ interface ContentState {
   isSubmittingComment: boolean
   commentError: string
 
-  // Form Management Variables
   formData: NewsFormData | null
   activePost: NewsItem | null
   uploadFile: File | null
   mobileView: 'form' | 'preview'
 
-  // Actions for State Manipulation
+  // 🌟 ย้ายมาเก็บใน Store เพื่อทำ Rate Limit แบบไม่ต้องส่งพารามิเตอร์รุงรัง
+  commentTimestamps: number[]
+
   setMobileView: (view: 'form' | 'preview') => void
   setUploadFile: (file: File | null) => void
   setFormData: (data: NewsFormData | null) => void
   setActivePost: (post: NewsItem | null) => void
   setCommentError: (error: string) => void
 
-  // Centralized API Integration Methods
   fetchPublicData: () => Promise<void>
   fetchContacts: () => Promise<void>
   saveNewsEntry: (type: 'PR' | 'NEWS', closeModal: () => void) => Promise<void>
@@ -57,11 +55,8 @@ interface ContentState {
   clearContactErrors: () => void
   submitUserComment: (
     formData: CommentFormData,
-    submitTimestamps: number[],
-    setSubmitTimestamps: (timestamps: number[]) => void,
     resetForm: () => void,
     setIsOpen: (open: boolean) => void,
-    fetchPublicData: () => Promise<void>,
   ) => Promise<void>
 }
 
@@ -81,6 +76,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
   contactErrors: {},
   isSubmittingComment: false,
   commentError: '',
+  commentTimestamps: [],
 
   setMobileView: (view) => set({ mobileView: view }),
   setUploadFile: (file) => set({ uploadFile: file }),
@@ -91,17 +87,21 @@ export const useContentStore = create<ContentState>((set, get) => ({
   fetchPublicData: async () => {
     try {
       set({ isLoading: true })
-      const [prData, newsData, commentsData, deptData] = await Promise.all([
+
+      // 🌟 ใช้ Promise.allSettled เพื่อป้องกันกรณี API ตัวใดตัวหนึ่งล่ม แล้วทำให้ตัวอื่นไม่ยอมโหลดข้อมูล
+      const results = await Promise.allSettled([
         contentService.getNews('PR'),
         contentService.getNews('NEWS'),
-        contentService.getComments(true),
+        contentService.getComments(false),
         contentService.getDepartments(),
       ])
+
       set({
-        prList: prData,
-        newsList: newsData,
-        commentList: commentsData,
-        departmentList: deptData || [],
+        prList: results[0].status === 'fulfilled' ? results[0].value : [],
+        newsList: results[1].status === 'fulfilled' ? results[1].value : [],
+        commentList: results[2].status === 'fulfilled' ? results[2].value : [],
+        departmentList:
+          results[3].status === 'fulfilled' ? results[3].value || [] : [],
       })
     } catch (err: unknown) {
       console.error('[Content Store] Loading master data failed:', err)
@@ -125,7 +125,6 @@ export const useContentStore = create<ContentState>((set, get) => ({
   clearContactErrors: () => set({ contactErrors: {} }),
 
   submitContactForm: async (formData, resetForm) => {
-    // Intercept automated bot interactions using hidden honeypot validation
     if (formData.botField) {
       console.warn(
         '[Contact Store] Bot submission intercepted via honeypot field.',
@@ -137,8 +136,9 @@ export const useContentStore = create<ContentState>((set, get) => ({
     const newErrors: ContactFormErrors = {}
     let isValid = true
 
-    const isThaiOnly = (v: string) => /^[ก-๙\s]+$/.test(v)
-    const isEngOnly = (v: string) => /^[a-zA-Z\s]+$/.test(v)
+    // ปรับปรุง Regex ขยายขอบเขตภาษาไทยให้ครอบคลุมสระ/วรรณยุกต์พิเศษทั้งหมด
+    const isThaiOnly = (v: string) => /^[ก-๙\sหนึ่-์]+$/.test(v)
+    const isEngOnly = (v: string) => /^[a-zA-Z\s\-.]+$/.test(v)
 
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'กรุณากรอกชื่อจริงของท่าน'
@@ -196,7 +196,6 @@ export const useContentStore = create<ContentState>((set, get) => ({
     }
 
     set({ contactErrors: newErrors })
-
     if (!isValid) return
 
     set({ isSubmittingContact: true })
@@ -208,8 +207,6 @@ export const useContentStore = create<ContentState>((set, get) => ({
       didOpen: () => Swal.showLoading(),
     })
 
-    // Remove client honeypot properties prior to server data delivery
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { botField: _, ...actualData } = formData
 
     try {
@@ -222,7 +219,6 @@ export const useContentStore = create<ContentState>((set, get) => ({
           text: 'ขอบคุณที่ติดต่อเรา เจ้าหน้าที่จะติดต่อกลับโดยเร็วที่สุด',
           confirmButtonColor: '#2563eb',
         })
-
         resetForm()
         await get().fetchContacts()
       } else {
@@ -427,19 +423,12 @@ export const useContentStore = create<ContentState>((set, get) => ({
     }
   },
 
-  submitUserComment: async (
-    formData,
-    submitTimestamps,
-    setSubmitTimestamps,
-    resetForm,
-    setIsOpen,
-    fetchPublicData,
-  ) => {
+  // 🌟 ปรับปรุงลดการส่ง Arguments ซ้ำซ้อนลงอย่างชัดเจน
+  submitUserComment: async (formData, resetForm, setIsOpen) => {
     const MIN_COMMENT_LENGTH = 10
     const RATE_LIMIT_WINDOW_MS = 60000
     const RATE_LIMIT_COUNT = 3
 
-    // 🌟 1. Intercept automated spambot entries via stealth honeypot validation
     if (formData.botField) {
       Swal.fire({
         title: 'ส่งความคิดเห็นสำเร็จ',
@@ -459,7 +448,6 @@ export const useContentStore = create<ContentState>((set, get) => ({
       return
     }
 
-    // 🌟 2. Verify rating stars boundary configurations
     if (formData.rating === 0) {
       Swal.fire({
         icon: 'warning',
@@ -482,13 +470,11 @@ export const useContentStore = create<ContentState>((set, get) => ({
       return
     }
 
-    // Enforce message layout character minimum validation gates
     if (formData.content.trim().length < MIN_COMMENT_LENGTH) {
       set({ commentError: `กรุณากรอกอย่างน้อย ${MIN_COMMENT_LENGTH} ตัวอักษร` })
       return
     }
 
-    // 🌟 3. Filter out dangerous hyperlink injections or gambling advertisements
     const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/i
     if (urlRegex.test(formData.content)) {
       Swal.fire({
@@ -513,11 +499,10 @@ export const useContentStore = create<ContentState>((set, get) => ({
     }
 
     const now = Date.now()
-    const filteredTimestamps = submitTimestamps.filter(
+    const filteredTimestamps = get().commentTimestamps.filter(
       (t) => now - t < RATE_LIMIT_WINDOW_MS,
     )
 
-    // 🌟 4. Enforce client-side rate limiting windows to block rapid requests
     if (filteredTimestamps.length >= RATE_LIMIT_COUNT) {
       Swal.fire({
         icon: 'warning',
@@ -537,13 +522,14 @@ export const useContentStore = create<ContentState>((set, get) => ({
             'bg-stone-900 hover:bg-black text-white text-xs font-bold px-6 py-2 rounded-xl transition-all duration-200 cursor-pointer shadow-sm active:scale-95 mt-3 outline-none',
         },
       })
-      setSubmitTimestamps(filteredTimestamps)
+      set({ commentTimestamps: filteredTimestamps })
       return
     }
 
-    set({ isSubmittingComment: true })
-    const updatedTimestamps = [...filteredTimestamps, now]
-    setSubmitTimestamps(updatedTimestamps)
+    set({
+      isSubmittingComment: true,
+      commentTimestamps: [...filteredTimestamps, now],
+    })
 
     try {
       const response = await contentService.createComment({
@@ -552,7 +538,6 @@ export const useContentStore = create<ContentState>((set, get) => ({
       })
 
       if (response && response.success) {
-        // 🌟 5. Display sleek layout minimalist notification upon database commit success
         Swal.fire({
           title: 'ส่งความคิดเห็นสำเร็จ',
           html: 'ขอบพระคุณสำหรับข้อเสนอแนะและคำติชมของท่าน',
@@ -571,12 +556,11 @@ export const useContentStore = create<ContentState>((set, get) => ({
         resetForm()
         set({ commentError: '' })
         setIsOpen(false)
-        await fetchPublicData() // Synchronize lists dynamically
+        await get().fetchPublicData() // ดึงข้อมูลใหม่ผ่าน get() โดยตรง
       } else {
         throw new Error(response?.message || 'ไม่สามารถส่งข้อมูลได้')
       }
     } catch (err: unknown) {
-      // 🌟 6. Gracefully map pipeline network issues using standardized error popups
       const msg =
         err instanceof Error
           ? err.message
