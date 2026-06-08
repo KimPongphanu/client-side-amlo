@@ -4,6 +4,7 @@ import type {
   ContactRequest,
   DepartmentItem,
   NewsItem,
+  SliderImage,
 } from '../type'
 import { api } from '../utils/api'
 
@@ -126,5 +127,13 @@ export const contentService = {
 
     // 🌟 คืนค่า res กลับไปตรงๆ (หาก res ไม่มีค่าให้ fallback เป็น Array ว่าง)
     return res || []
+  },
+
+  /**
+   * Fetch home page slider images
+   */
+  getSlider: async (): Promise<SliderImage[]> => {
+    const res = await api<{ success: boolean; data: SliderImage[] }>('/slider', { method: 'GET' })
+    return res?.data || []
   },
 }

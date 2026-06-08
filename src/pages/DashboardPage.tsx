@@ -6,6 +6,7 @@ import NavBar from '../components/dashboard/NavBarComponent'
 import NewsManagerDashboard from '../components/dashboard/NewsManagerDashboard'
 import PRManagerDashboard from '../components/dashboard/PRManagerDashboard'
 import ReviewManager from '../components/dashboard/ReviewManager'
+import SliderManagerDashboard from '../components/dashboard/SliderManagerDashboard'
 import { useAuthStore } from '../stores/useAuthStore'
 
 type MenuId =
@@ -17,6 +18,7 @@ type MenuId =
   | 'advertises'
   | 'news'
   | 'departments'
+  | 'slider'
 
 // ---------------------------------------------------------
 // Mockup Components
@@ -54,6 +56,7 @@ const SideBar = ({ activeMenu, setActiveMenu, isMobileOpen }: SideBarProps) => {
     { id: 'advertises', label: 'ประชาสัมพันธ์' },
     { id: 'news', label: 'กิจกรรมและประกาศ' },
     { id: 'departments', label: 'จัดการหน่วยงาน' },
+    { id: 'slider', label: '🖼 Slider หน้าหลัก' },
   ]
 
   return (
@@ -149,6 +152,8 @@ const DashboardPage = () => {
         return <NewsManagerDashboard />
       case 'departments':
         return <DepartmentManagerDashboard />
+      case 'slider':
+        return <SliderManagerDashboard />
       default:
         return <div className='p-6'>อยู่ระหว่างการพัฒนา...</div>
     }

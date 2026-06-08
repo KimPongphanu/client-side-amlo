@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import DepartmentShowcase from '../components/DepartmentShowcase'
 import { useContentStore } from '../stores/useContentStore'
-import type { NewsItem } from '../type'
+import { contentService } from '../services/contentService'
+import Slider from './Slider'
+import type { NewsItem, SliderImage } from '../type'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -119,12 +121,16 @@ const HomePage = () => {
   const { prList, newsList, commentList, isLoading, fetchPublicData } =
     useContentStore()
 
+  // 🌟 Slider state
+  const [sliderImages, setSliderImages] = useState<SliderImage[]>([])
+
   const [commentOffset, setCommentOffset] = useState(1)
   const [isTransitioning, setIsTransitioning] = useState(true)
 
   // 🌟 เพิ่มเติม: สั่งยิง API ดึงข้อมูลเมื่อ Component โหลดขึ้นมาครั้งแรก (ป้องกันสภาวะไม่มีข้อมูลพ่นขึ้นหน้าจอ)
   useEffect(() => {
     fetchPublicData()
+    contentService.getSlider().then((data) => setSliderImages(data))
   }, [fetchPublicData])
 
   useEffect(() => {
@@ -210,6 +216,20 @@ const HomePage = () => {
 
   return (
     <div className='bg-slate-50 min-h-screen pt-0 w-full'>
+      {/* 🌟 Slider หน้าหลัก (ดึงข้อมูลจากฐานข้อมูล) */}
+      {sliderImages.length > 0 && (
+        <div className='pt-16 lg:pt-0 pb-10 bg-slate-50'>
+          <Slider
+            slides={sliderImages.map((img) => ({
+              id: img.id,
+              image: img.image_url.startsWith('http')
+                ? img.image_url
+                : `${API_URL}${img.image_url}`,
+            }))}
+          />
+        </div>
+      )}
+
       {isLoading ? (
         <div className='px-4 md:px-8 pb-10'>
           <div className='pt-8'>

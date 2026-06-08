@@ -180,3 +180,10 @@ export interface DepartmentMutationResponse {
   data?: DepartmentItem // กำหนดระบุโครงสร้าง DepartmentItem แทนการใช้ any
   message?: string
 }
+
+export interface SliderImage {
+  id: number
+  image_url: string
+  order: number
+  createdAt: string
+}
