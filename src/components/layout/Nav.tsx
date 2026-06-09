@@ -1,8 +1,8 @@
 import { User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../stores/useAuthStore'
-import { useContentStore } from '../stores/useContentStore' // 🌟 1. นำเข้า Content Store
+import { useAuthStore } from '../../stores/useAuthStore'
+import { useContentStore } from '../../stores/useContentStore' // 🌟 1. นำเข้า Content Store
 
 export default function Nav() {
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
@@ -296,76 +296,76 @@ export default function Nav() {
         >
           <div className='overflow-hidden'>
             <div className='max-w-7xl mx-auto p-8 grid grid-cols-3 gap-8'>
-            <div>
-              <h3 className='text-slate-400 font-bold mb-4 text-xs tracking-wider uppercase'>
-                ประวัติของหน่วยงาน
-              </h3>
-              <ul className='space-y-3 text-sm text-slate-700 font-medium'>
-                <li>
-                  <Link
-                    to='#'
-                    className='hover:text-blue-600 transition-colors'
-                  >
-                    ประวัติ
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to='#'
-                    className='hover:text-blue-600 transition-colors'
-                  >
-                    หน้าที่และอำนาจ
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div className='border-l border-slate-100 pl-8'>
-              <h3 className='text-slate-400 font-bold mb-4 text-xs tracking-wider uppercase'>
-                ประชาสัมพันธ์/กิจกรรม
-              </h3>
-              <ul className='space-y-3 text-sm text-slate-700 font-medium'>
-                <li>
-                  <Link
-                    to='/advertise'
-                    className='hover:text-blue-600 transition-colors'
-                  >
-                    ประชาสัมพันธ์
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to='/news'
-                    className='hover:text-blue-600 transition-colors'
-                  >
-                    กิจกรรม
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div className='border-l border-slate-100 pl-8'>
-              <h3 className='text-slate-400 font-bold mb-4 text-xs tracking-wider uppercase'>
-                โครงสร้างหน่วยงาน
-              </h3>
-              <ul className='space-y-3 text-sm text-slate-700 font-medium'>
-                {departmentList.map((dept) => (
-                  <li key={dept.id}>
-                    {/* ตรงนี้ลิงก์พาไปหน้าดีเทลของแผนก หรือจะใส่แฮชเลื่อนหน้าแรกก็ได้ครับ */}
+              <div>
+                <h3 className='text-slate-400 font-bold mb-4 text-xs tracking-wider uppercase'>
+                  ประวัติของหน่วยงาน
+                </h3>
+                <ul className='space-y-3 text-sm text-slate-700 font-medium'>
+                  <li>
                     <Link
-                      to={`/department/${dept.id}`}
+                      to='#'
                       className='hover:text-blue-600 transition-colors'
                     >
-                      {dept.title}
+                      ประวัติ
                     </Link>
                   </li>
-                ))}
-              </ul>
+                  <li>
+                    <Link
+                      to='#'
+                      className='hover:text-blue-600 transition-colors'
+                    >
+                      หน้าที่และอำนาจ
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+
+              <div className='border-l border-slate-100 pl-8'>
+                <h3 className='text-slate-400 font-bold mb-4 text-xs tracking-wider uppercase'>
+                  ประชาสัมพันธ์/กิจกรรม
+                </h3>
+                <ul className='space-y-3 text-sm text-slate-700 font-medium'>
+                  <li>
+                    <Link
+                      to='/advertise'
+                      className='hover:text-blue-600 transition-colors'
+                    >
+                      ประชาสัมพันธ์
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to='/news'
+                      className='hover:text-blue-600 transition-colors'
+                    >
+                      กิจกรรม
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+
+              <div className='border-l border-slate-100 pl-8'>
+                <h3 className='text-slate-400 font-bold mb-4 text-xs tracking-wider uppercase'>
+                  โครงสร้างหน่วยงาน
+                </h3>
+                <ul className='space-y-3 text-sm text-slate-700 font-medium'>
+                  {departmentList.map((dept) => (
+                    <li key={dept.id}>
+                      {/* ตรงนี้ลิงก์พาไปหน้าดีเทลของแผนก หรือจะใส่แฮชเลื่อนหน้าแรกก็ได้ครับ */}
+                      <Link
+                        to={`/department/${dept.id}`}
+                        className='hover:text-blue-600 transition-colors'
+                      >
+                        {dept.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
 
       {/* 📱 เมนู Mobile แบบเต็มจอ */}
       <div
@@ -402,12 +402,20 @@ export default function Nav() {
                     </h3>
                     <ul className='space-y-3 text-sm font-medium text-slate-600'>
                       <li>
-                        <Link to='#' onClick={handleCloseMobileMenu} className='hover:text-sky-500 transition-colors'>
+                        <Link
+                          to='#'
+                          onClick={handleCloseMobileMenu}
+                          className='hover:text-sky-500 transition-colors'
+                        >
                           ประวัติ
                         </Link>
                       </li>
                       <li>
-                        <Link to='#' onClick={handleCloseMobileMenu} className='hover:text-sky-500 transition-colors'>
+                        <Link
+                          to='#'
+                          onClick={handleCloseMobileMenu}
+                          className='hover:text-sky-500 transition-colors'
+                        >
                           หน้าที่และอำนาจ
                         </Link>
                       </li>
@@ -419,12 +427,20 @@ export default function Nav() {
                     </h3>
                     <ul className='space-y-3 text-sm font-medium text-slate-600'>
                       <li>
-                        <Link to='/advertise' onClick={handleCloseMobileMenu} className='hover:text-sky-500 transition-colors'>
+                        <Link
+                          to='/advertise'
+                          onClick={handleCloseMobileMenu}
+                          className='hover:text-sky-500 transition-colors'
+                        >
                           ประชาสัมพันธ์
                         </Link>
                       </li>
                       <li>
-                        <Link to='/news' onClick={handleCloseMobileMenu} className='hover:text-sky-500 transition-colors'>
+                        <Link
+                          to='/news'
+                          onClick={handleCloseMobileMenu}
+                          className='hover:text-sky-500 transition-colors'
+                        >
                           กิจกรรม
                         </Link>
                       </li>

@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Swal from 'sweetalert2'
+import { API_URL } from '../../config/constants'
 import type { SliderImage } from '../../type'
 import { api } from '../../utils/api'
-
-const API_URL = import.meta.env.VITE_API_URL || ''
 
 // ─── Unified item type ────────────────────────────────────────────────────────
 // รวมทั้ง saved slides และ pending files ไว้ใน array เดียวกัน
@@ -89,8 +88,18 @@ const UnifiedSlideCard = ({
 
         {/* Drag hint */}
         <div className='opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-xl px-3 py-2 flex items-center gap-2 text-slate-700 text-sm font-medium pointer-events-none'>
-          <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 8h16M4 16h16' />
+          <svg
+            className='w-4 h-4'
+            fill='none'
+            stroke='currentColor'
+            viewBox='0 0 24 24'
+          >
+            <path
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              strokeWidth={2}
+              d='M4 8h16M4 16h16'
+            />
           </svg>
           ลากเพื่อเรียงลำดับ
         </div>
@@ -104,8 +113,18 @@ const UnifiedSlideCard = ({
           className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg'
           title='ลบรูปนี้'
         >
-          <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+          <svg
+            className='w-4 h-4'
+            fill='none'
+            stroke='currentColor'
+            viewBox='0 0 24 24'
+          >
+            <path
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              strokeWidth={2}
+              d='M6 18L18 6M6 6l12 12'
+            />
           </svg>
         </button>
       </div>
@@ -127,7 +146,10 @@ export default function SliderManagerDashboard() {
   const fetchSlides = useCallback(async () => {
     setIsLoading(true)
     try {
-      const res = await api<{ success: boolean; data: SliderImage[] }>('/slider', { method: 'GET' })
+      const res = await api<{ success: boolean; data: SliderImage[] }>(
+        '/slider',
+        { method: 'GET' },
+      )
       if (res?.success) {
         const items: OrderedItem[] = (res.data || []).map((slide) => ({
           kind: 'saved',
@@ -195,9 +217,18 @@ export default function SliderManagerDashboard() {
     try {
       await api(`/slider/${item.slide.id}`, { method: 'DELETE' })
       setOrderedItems((prev) => prev.filter((i) => i.tempId !== tempId))
-      Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1200, showConfirmButton: false })
+      Swal.fire({
+        icon: 'success',
+        title: 'ลบสำเร็จ',
+        timer: 1200,
+        showConfirmButton: false,
+      })
     } catch {
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถลบรูปภาพได้' })
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: 'ไม่สามารถลบรูปภาพได้',
+      })
     }
   }
 
@@ -244,10 +275,13 @@ export default function SliderManagerDashboard() {
         if (item.kind === 'pending') {
           const formData = new FormData()
           formData.append('image', item.file)
-          const res = await api<{ success: boolean; data: SliderImage }>('/slider', {
-            method: 'POST',
-            body: formData,
-          })
+          const res = await api<{ success: boolean; data: SliderImage }>(
+            '/slider',
+            {
+              method: 'POST',
+              body: formData,
+            },
+          )
           if (res?.data?.id) {
             uploadedIdMap.set(item.tempId, res.data.id)
           }
@@ -268,7 +302,10 @@ export default function SliderManagerDashboard() {
       }
 
       // 4. โหลดข้อมูลใหม่
-      const res = await api<{ success: boolean; data: SliderImage[] }>('/slider', { method: 'GET' })
+      const res = await api<{ success: boolean; data: SliderImage[] }>(
+        '/slider',
+        { method: 'GET' },
+      )
       if (res?.success) {
         const items: OrderedItem[] = (res.data || []).map((slide) => ({
           kind: 'saved',
@@ -287,7 +324,11 @@ export default function SliderManagerDashboard() {
         showConfirmButton: false,
       })
     } catch {
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถบันทึกข้อมูลได้' })
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: 'ไม่สามารถบันทึกข้อมูลได้',
+      })
     } finally {
       setIsSaving(false)
     }
@@ -300,7 +341,9 @@ export default function SliderManagerDashboard() {
       {/* Header */}
       <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
         <div>
-          <h2 className='text-2xl font-bold text-slate-800'>จัดการ Slider หน้าหลัก</h2>
+          <h2 className='text-2xl font-bold text-slate-800'>
+            จัดการ Slider หน้าหลัก
+          </h2>
           <p className='text-slate-500 text-sm mt-1'>
             เพิ่ม/ลบรูปภาพ และลากเพื่อจัดลำดับการแสดงผล
           </p>
@@ -311,8 +354,18 @@ export default function SliderManagerDashboard() {
             onClick={() => fileInputRef.current?.click()}
             className='flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border-2 border-slate-200 text-slate-700 font-semibold hover:border-blue-400 hover:text-blue-600 transition-all text-sm'
           >
-            <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 4v16m8-8H4' />
+            <svg
+              className='w-4 h-4'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M12 4v16m8-8H4'
+              />
             </svg>
             เพิ่มรูปภาพ
           </button>
@@ -336,16 +389,41 @@ export default function SliderManagerDashboard() {
           >
             {isSaving ? (
               <>
-                <svg className='w-4 h-4 animate-spin' fill='none' viewBox='0 0 24 24'>
-                  <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4' />
-                  <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8v8H4z' />
+                <svg
+                  className='w-4 h-4 animate-spin'
+                  fill='none'
+                  viewBox='0 0 24 24'
+                >
+                  <circle
+                    className='opacity-25'
+                    cx='12'
+                    cy='12'
+                    r='10'
+                    stroke='currentColor'
+                    strokeWidth='4'
+                  />
+                  <path
+                    className='opacity-75'
+                    fill='currentColor'
+                    d='M4 12a8 8 0 018-8v8H4z'
+                  />
                 </svg>
                 กำลังบันทึก...
               </>
             ) : (
               <>
-                <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M5 13l4 4L19 7' />
+                <svg
+                  className='w-4 h-4'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M5 13l4 4L19 7'
+                  />
                 </svg>
                 บันทึกการเปลี่ยนแปลง
               </>
@@ -357,12 +435,22 @@ export default function SliderManagerDashboard() {
       {/* Pending change indicator */}
       {hasChanges && (
         <div className='flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-amber-700 text-sm font-medium'>
-          <svg className='w-4 h-4 shrink-0' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' />
+          <svg
+            className='w-4 h-4 shrink-0'
+            fill='none'
+            stroke='currentColor'
+            viewBox='0 0 24 24'
+          >
+            <path
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              strokeWidth={2}
+              d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
+            />
           </svg>
           มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก
-          {hasPending && ' (มีรูปใหม่รออัปโหลด)'}
-          {' '} — กด "บันทึกการเปลี่ยนแปลง" เพื่อบันทึก
+          {hasPending && ' (มีรูปใหม่รออัปโหลด)'} — กด "บันทึกการเปลี่ยนแปลง"
+          เพื่อบันทึก
         </div>
       )}
 
@@ -370,7 +458,11 @@ export default function SliderManagerDashboard() {
       {isLoading ? (
         <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
           {[1, 2, 3].map((i) => (
-            <div key={i} className='rounded-2xl bg-slate-200 animate-pulse' style={{ aspectRatio: '16/9' }} />
+            <div
+              key={i}
+              className='rounded-2xl bg-slate-200 animate-pulse'
+              style={{ aspectRatio: '16/9' }}
+            />
           ))}
         </div>
       ) : orderedItems.length === 0 ? (
@@ -379,8 +471,18 @@ export default function SliderManagerDashboard() {
           onClick={() => fileInputRef.current?.click()}
           className='flex flex-col items-center justify-center gap-4 border-2 border-dashed border-slate-300 rounded-2xl p-16 text-slate-400 cursor-pointer hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50 transition-all'
         >
-          <svg className='w-12 h-12' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={1.5} d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' />
+          <svg
+            className='w-12 h-12'
+            fill='none'
+            stroke='currentColor'
+            viewBox='0 0 24 24'
+          >
+            <path
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              strokeWidth={1.5}
+              d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'
+            />
           </svg>
           <div className='text-center'>
             <p className='font-semibold text-base'>ยังไม่มีรูปภาพใน Slider</p>
@@ -420,8 +522,18 @@ export default function SliderManagerDashboard() {
       {orderedItems.length > 0 && (
         <div className='mt-8 bg-slate-900 rounded-2xl p-4'>
           <h3 className='text-white text-sm font-semibold mb-3 flex items-center gap-2'>
-            <svg className='w-4 h-4 text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z' />
+            <svg
+              className='w-4 h-4 text-blue-400'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z'
+              />
             </svg>
             ตัวอย่างลำดับการแสดงผล (Slider Preview)
           </h3>
@@ -440,10 +552,17 @@ export default function SliderManagerDashboard() {
                   className={`shrink-0 relative rounded-xl overflow-hidden ${isPending ? 'border-2 border-amber-400' : ''}`}
                   style={{ width: 120, height: 68 }}
                 >
-                  <img src={src} alt={`Preview ${i + 1}`} className='w-full h-full object-cover' />
+                  <img
+                    src={src}
+                    alt={`Preview ${i + 1}`}
+                    className='w-full h-full object-cover'
+                  />
                   <div className='absolute inset-0 bg-black/20 flex items-end justify-start p-1'>
-                    <span className={`text-xs font-bold bg-black/50 rounded px-1 ${isPending ? 'text-amber-300' : 'text-white'}`}>
-                      #{i + 1}{isPending ? ' รอ' : ''}
+                    <span
+                      className={`text-xs font-bold bg-black/50 rounded px-1 ${isPending ? 'text-amber-300' : 'text-white'}`}
+                    >
+                      #{i + 1}
+                      {isPending ? ' รอ' : ''}
                     </span>
                   </div>
                 </div>

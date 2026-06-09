@@ -133,7 +133,10 @@ export const contentService = {
    * Fetch home page slider images
    */
   getSlider: async (): Promise<SliderImage[]> => {
-    const res = await api<{ success: boolean; data: SliderImage[] }>('/slider', { method: 'GET' })
+    const res = await api<{ success: boolean; data: SliderImage[] }>(
+      '/slider',
+      { method: 'GET' },
+    )
     return res?.data || []
   },
 }

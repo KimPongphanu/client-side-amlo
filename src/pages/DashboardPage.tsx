@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import ContactRequestManager from '../components/dashboard/ContactRequestManager'
-import DepartmentManagerDashboard from '../components/dashboard/DepartmentManagerDashboard'
+import DepartmentManagerDashboard from '../components/dashboard/department/DepartmentManagerDashboard'
 import NavBar from '../components/dashboard/NavBarComponent'
 import NewsManagerDashboard from '../components/dashboard/NewsManagerDashboard'
 import PRManagerDashboard from '../components/dashboard/PRManagerDashboard'

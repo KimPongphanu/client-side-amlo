@@ -1,10 +1,11 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
-import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import ScrollToTop from './pages/ScrollToTop'
 import { useAuthStore } from './stores/useAuthStore'
+import { initGA, logPageView } from './utils/analytics'
 
 const Home = lazy(() => import('./pages/homePage'))
-const MainLayout = lazy(() => import('./pages/MainLayout'))
+const MainLayout = lazy(() => import('./components/layout/MainLayout'))
 const NewsDetailPage = lazy(() => import('./pages/NewsDetailPage'))
 const DepartmentDetailPage = lazy(() => import('./pages/DepartDetailPage'))
 const Advertise = lazy(() => import('./pages/Advertise'))
@@ -34,8 +35,19 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 }
 
 function App() {
+  const location = useLocation()
   const verifyUser = useAuthStore((state) => state.verifyUser)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+
+  // 1. รันระบบ GA4 ครั้งแรกครั้งเดียวตอนเปิดเว็บ
+  useEffect(() => {
+    initGA()
+  }, [])
+
+  // 2. ส่งสถิติ Pageview ไปหา Google ทุกครั้งที่ URL (pathname) เปลี่ยนแปลง
+  useEffect(() => {
+    logPageView(location.pathname)
+  }, [location.pathname])
 
   useEffect(() => {
     const initAuth = async () => {
@@ -59,7 +71,7 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
+    <>
       <ScrollToTop />
       <Suspense
         fallback={
@@ -116,7 +128,7 @@ function App() {
           />
         </Routes>
       </Suspense>
-    </BrowserRouter>
+    </>
   )
 }
 
