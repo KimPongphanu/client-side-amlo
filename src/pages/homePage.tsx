@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import DepartmentShowcase from '../components/DepartmentShowcase'
 import { useContentStore } from '../stores/useContentStore'
@@ -80,7 +80,7 @@ const ArticleCard = ({
     to={`/${basePath}/${item.id}`}
     className='shrink-0 w-[260px] md:w-[320px] h-full block'
   >
-    <div className='bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-md flex flex-col hover:shadow-xl transition-shadow h-full'>
+    <div className='group bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-md flex flex-col hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 ease-out h-full'>
       <div className='h-[180px] md:h-[200px] w-full overflow-hidden bg-slate-100 shrink-0'>
         <img
           src={
@@ -89,7 +89,7 @@ const ArticleCard = ({
               : `${API_URL}${item.image_src}`
           }
           alt={item.title}
-          className='w-full h-full object-cover hover:scale-105 transition-transform duration-500'
+          className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
           loading='lazy'
         />
       </div>
@@ -97,14 +97,14 @@ const ArticleCard = ({
         <p className='text-xs md:text-sm text-blue-600 font-medium mb-1'>
           {item.date?.includes('T') ? item.date.split('T')[0] : item.date}
         </p>
-        <h3 className='text-base md:text-lg font-bold text-gray-800 line-clamp-2 mb-2'>
+        <h3 className='text-base md:text-lg font-bold text-gray-800 line-clamp-2 mb-2 group-hover:text-blue-700 transition-colors'>
           {item.title}
         </h3>
         <p className='text-xs md:text-sm text-gray-500 line-clamp-3 mb-4'>
           {item.description}
         </p>
-        <span className='mt-auto text-left text-sm md:text-base text-blue-500 font-medium hover:text-blue-700 w-fit'>
-          อ่านเพิ่มเติม ➔
+        <span className='mt-auto text-left text-sm md:text-base text-blue-500 font-medium group-hover:text-blue-700 group-hover:translate-x-1 transition-all duration-300 w-fit flex items-center gap-1'>
+          อ่านเพิ่มเติม <span className='group-hover:translate-x-1 transition-transform'>➔</span>
         </span>
       </div>
     </div>
@@ -127,11 +127,37 @@ const HomePage = () => {
   const [commentOffset, setCommentOffset] = useState(1)
   const [isTransitioning, setIsTransitioning] = useState(true)
 
+  // 🌟 Scroll animation refs & state
+  const prSectionRef = useRef<HTMLDivElement>(null)
+  const newsSectionRef = useRef<HTMLDivElement>(null)
+  const [prVisible, setPrVisible] = useState(false)
+  const [newsVisible, setNewsVisible] = useState(false)
+
   // 🌟 เพิ่มเติม: สั่งยิง API ดึงข้อมูลเมื่อ Component โหลดขึ้นมาครั้งแรก (ป้องกันสภาวะไม่มีข้อมูลพ่นขึ้นหน้าจอ)
   useEffect(() => {
     fetchPublicData()
     contentService.getSlider().then((data) => setSliderImages(data))
   }, [fetchPublicData])
+
+  // 🌟 IntersectionObserver: trigger animation
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            if (entry.target === prSectionRef.current) setPrVisible(true)
+            if (entry.target === newsSectionRef.current) setNewsVisible(true)
+          }
+        })
+      },
+      { threshold: 0.1 },
+    )
+
+    if (prSectionRef.current) observer.observe(prSectionRef.current)
+    if (newsSectionRef.current) observer.observe(newsSectionRef.current)
+
+    return () => observer.disconnect()
+  }, [isLoading])
 
   useEffect(() => {
     if (!isTransitioning) {
@@ -267,7 +293,7 @@ const HomePage = () => {
         <>
           <div className='px-4 md:px-8 pb-10'>
             {/* ข่าวประชาสัมพันธ์ */}
-            <div className='pt-8'>
+            <div className='pt-8' ref={prSectionRef}>
               <div className='flex justify-between items-end mb-6 md:mb-8'>
                 <h1 className='text-3xl md:text-4xl font-bold text-slate-800'>
                   ข่าวประชาสัมพันธ์
@@ -279,16 +305,18 @@ const HomePage = () => {
                   ดูทั้งหมด <span className='ml-1 text-lg leading-none'>›</span>
                 </Link>
               </div>
-              <div className='w-full p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm hide-scrollbar items-stretch'>
-                {sortedAdvertiseList.slice(0, 5).map((news) => (
-                  <ArticleCard key={news.id} item={news} basePath='advertise' />
+              <div className={`w-full p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm hide-scrollbar items-stretch transition-all duration-3000 ease-out ${prVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+                {sortedAdvertiseList.slice(0, 5).map((news, index) => (
+                  <div key={news.id} style={{ transitionDelay: `${index * 200}ms` }} className='shrink-0 h-full'>
+                    <ArticleCard item={news} basePath='advertise' />
+                  </div>
                 ))}
               </div>
             </div>
 
             {/* กิจกรรมและประกาศ */}
             {sortedNewsList.length > 0 && (
-              <div className='mt-12 md:mt-16'>
+              <div className='mt-12 md:mt-16' ref={newsSectionRef}>
                 <div className='flex justify-between items-end mb-6 md:mb-8'>
                   <h1 className='text-3xl md:text-4xl font-bold text-slate-800'>
                     กิจกรรมและประกาศ
@@ -301,9 +329,11 @@ const HomePage = () => {
                     <span className='ml-1 text-lg leading-none'>›</span>
                   </Link>
                 </div>
-                <div className='w-full border-2 border-gray-200 p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm hide-scrollbar items-stretch'>
-                  {sortedNewsList.slice(0, 5).map((pr) => (
-                    <ArticleCard key={pr.id} item={pr} basePath='news' />
+                <div className={`w-full border-2 border-gray-200 p-4 md:p-8 rounded-2xl md:rounded-3xl flex gap-4 md:gap-6 overflow-x-auto bg-white shadow-sm hide-scrollbar items-stretch transition-all duration-3000 ease-out ${newsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+                  {sortedNewsList.slice(0, 5).map((pr, index) => (
+                    <div key={pr.id} style={{ transitionDelay: `${index * 200}ms` }} className='shrink-0 h-full'>
+                      <ArticleCard item={pr} basePath='news' />
+                    </div>
                   ))}
                 </div>
               </div>
