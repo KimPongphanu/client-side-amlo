@@ -82,7 +82,7 @@ export default function Nav() {
   return (
     <>
       <nav
-        className='fixed top-0 left-0 w-full z-[60] transition-all duration-​1500 backdrop-blur-[25px] bg-white/90 border-b border-gray-200 shadow-sm'
+        className='fixed top-0 left-0 w-full z-[60] transition-all duration-​1500 backdrop-blur-[25px] bg-white/80 border-b border-gray-200 shadow-sm'
         onMouseEnter={handleMouseEnterNav}
         onMouseLeave={handleMouseLeaveNav}
       >

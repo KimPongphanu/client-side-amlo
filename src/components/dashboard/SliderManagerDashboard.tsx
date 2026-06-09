@@ -5,91 +5,136 @@ import { api } from '../../utils/api'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-// ── Slide card with Dropdown reorder ──
-const SlideCard = ({
-  slide,
+// ─── Unified item type ────────────────────────────────────────────────────────
+// รวมทั้ง saved slides และ pending files ไว้ใน array เดียวกัน
+type OrderedItem =
+  | { kind: 'saved'; slide: SliderImage; tempId: string }
+  | { kind: 'pending'; file: File; preview: string; tempId: string }
+
+// ─── UnifiedSlideCard ─────────────────────────────────────────────────────────
+const UnifiedSlideCard = ({
+  item,
   index,
-  totalSlides,
-  onOrderChange,
+  dragOverIndex,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
   onDelete,
 }: {
-  slide: SliderImage
+  item: OrderedItem
   index: number
-  totalSlides: number
-  onOrderChange: (oldIndex: number, newIndex: number) => void
-  onDelete: (id: number) => void
+  dragOverIndex: number | null
+  onDragStart: (e: React.DragEvent, index: number) => void
+  onDragOver: (e: React.DragEvent, index: number) => void
+  onDrop: (e: React.DragEvent, index: number) => void
+  onDragEnd: () => void
+  onDelete: (tempId: string) => void
 }) => {
-  const imgSrc = slide.image_url.startsWith('http')
-    ? slide.image_url
-    : `${API_URL}${slide.image_url}`
+  const imgSrc =
+    item.kind === 'pending'
+      ? item.preview
+      : item.slide.image_url.startsWith('http')
+        ? item.slide.image_url
+        : `${API_URL}${item.slide.image_url}`
+
+  const isPending = item.kind === 'pending'
+  const isDragTarget = dragOverIndex === index
 
   return (
-    <div className='flex flex-col gap-2'>
-      <div
-        className='group relative rounded-2xl overflow-hidden border-2 border-slate-200 hover:border-blue-400 hover:shadow-lg transition-all duration-200'
-        style={{ aspectRatio: '16/9' }}
-      >
-        <img
-          src={imgSrc}
-          alt={`Slide ${index + 1}`}
-          className='w-full h-full object-cover'
-        />
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, index)}
+      onDragOver={(e) => onDragOver(e, index)}
+      onDrop={(e) => onDrop(e, index)}
+      onDragEnd={onDragEnd}
+      className={`group relative rounded-2xl overflow-hidden border-2 transition-all duration-200 cursor-grab active:cursor-grabbing select-none ${
+        isDragTarget
+          ? 'border-blue-500 ring-2 ring-blue-300 scale-[1.02] shadow-xl'
+          : isPending
+            ? 'border-dashed border-amber-400 hover:border-amber-500 hover:shadow-lg'
+            : 'border-slate-200 hover:border-blue-400 hover:shadow-lg'
+      }`}
+      style={{ aspectRatio: '16/9' }}
+    >
+      <img
+        src={imgSrc}
+        alt={`Slide ${index + 1}`}
+        className='w-full h-full object-cover pointer-events-none'
+        draggable={false}
+      />
 
-        {/* Overlay on hover */}
-        <div className='absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center'>
-          {/* Order badge */}
-          <div className='absolute top-2 left-2 bg-black/50 text-white text-xs font-bold px-2 py-1 rounded-lg'>
-            #{index + 1}
+      {/* Drop target highlight */}
+      {isDragTarget && (
+        <div className='absolute inset-0 bg-blue-500/20 flex items-center justify-center pointer-events-none'>
+          <div className='bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow'>
+            วางที่นี่
           </div>
-
-          {/* Delete button */}
-          <button
-            onClick={() => onDelete(slide.id)}
-            className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg'
-            title='ลบรูปนี้'
-          >
-            <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
-            </svg>
-          </button>
         </div>
-      </div>
-      
-      {/* Dropdown for ordering */}
-      <div className='flex items-center gap-2 px-1'>
-        <span className='text-sm text-slate-500 font-medium'>ลำดับที่:</span>
-        <select
-          value={index}
-          onChange={(e) => onOrderChange(index, parseInt(e.target.value))}
-          className='text-sm border border-slate-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 outline-none text-slate-700 bg-white cursor-pointer hover:border-blue-400'
+      )}
+
+      {/* Overlay on hover */}
+      <div className='absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center gap-3'>
+        {/* Order badge */}
+        <div className='absolute top-2 left-2 bg-black/50 text-white text-xs font-bold px-2 py-1 rounded-lg'>
+          #{index + 1}
+        </div>
+
+        {/* Pending badge */}
+        {isPending && (
+          <div className='absolute bottom-2 left-2 bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-lg'>
+            รอบันทึก
+          </div>
+        )}
+
+        {/* Drag hint */}
+        <div className='opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 rounded-xl px-3 py-2 flex items-center gap-2 text-slate-700 text-sm font-medium pointer-events-none'>
+          <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 8h16M4 16h16' />
+          </svg>
+          ลากเพื่อเรียงลำดับ
+        </div>
+
+        {/* Delete button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete(item.tempId)
+          }}
+          className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg'
+          title='ลบรูปนี้'
         >
-          {Array.from({ length: totalSlides }).map((_, i) => (
-            <option key={i} value={i}>
-              {i + 1}
-            </option>
-          ))}
-        </select>
+          <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+          </svg>
+        </button>
       </div>
     </div>
   )
 }
 
-// ── Main Dashboard Component ──
+// ─── Main Dashboard Component ─────────────────────────────────────────────────
 export default function SliderManagerDashboard() {
-  const [slides, setSlides] = useState<SliderImage[]>([])
+  // รวมทุก item ไว้ใน array เดียว: ทั้ง saved และ pending
+  const [orderedItems, setOrderedItems] = useState<OrderedItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [pendingFiles, setPendingFiles] = useState<File[]>([])
-  const [pendingPreviews, setPendingPreviews] = useState<string[]>([])
-  const [hasOrderChanged, setHasOrderChanged] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // ── Fetch saved slides ──
   const fetchSlides = useCallback(async () => {
     setIsLoading(true)
     try {
       const res = await api<{ success: boolean; data: SliderImage[] }>('/slider', { method: 'GET' })
       if (res?.success) {
-        setSlides(res.data || [])
+        const items: OrderedItem[] = (res.data || []).map((slide) => ({
+          kind: 'saved',
+          slide,
+          tempId: `saved-${slide.id}`,
+        }))
+        setOrderedItems(items)
       }
     } catch (err) {
       console.error('Failed to fetch slides', err)
@@ -108,23 +153,33 @@ export default function SliderManagerDashboard() {
     const imageFiles = files.filter((f) => f.type.startsWith('image/'))
     if (imageFiles.length === 0) return
 
-    const newPreviews = imageFiles.map((f) => URL.createObjectURL(f))
-    setPendingFiles((prev) => [...prev, ...imageFiles])
-    setPendingPreviews((prev) => [...prev, ...newPreviews])
+    const newItems: OrderedItem[] = imageFiles.map((file) => ({
+      kind: 'pending',
+      file,
+      preview: URL.createObjectURL(file),
+      tempId: `pending-${Date.now()}-${Math.random()}`,
+    }))
 
-    // reset input so the same file can be selected again
+    setOrderedItems((prev) => [...prev, ...newItems])
+    setHasChanges(true)
+
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  // ── Remove pending (not-yet-uploaded) image ──
-  const handleRemovePending = (index: number) => {
-    URL.revokeObjectURL(pendingPreviews[index])
-    setPendingFiles((prev) => prev.filter((_, i) => i !== index))
-    setPendingPreviews((prev) => prev.filter((_, i) => i !== index))
-  }
+  // ── Delete item (ทั้ง saved และ pending) ──
+  const handleDelete = async (tempId: string) => {
+    const item = orderedItems.find((i) => i.tempId === tempId)
+    if (!item) return
 
-  // ── Delete saved slide ──
-  const handleDeleteSlide = async (id: number) => {
+    if (item.kind === 'pending') {
+      // pending: แค่ลบออกจาก list
+      URL.revokeObjectURL(item.preview)
+      setOrderedItems((prev) => prev.filter((i) => i.tempId !== tempId))
+      setHasChanges(orderedItems.length > 1)
+      return
+    }
+
+    // saved: ยืนยันก่อนลบ
     const confirm = await Swal.fire({
       title: 'ลบรูปภาพนี้?',
       text: 'รูปภาพจะถูกลบออกจาก Slider หน้าหลักทันที',
@@ -138,54 +193,92 @@ export default function SliderManagerDashboard() {
     if (!confirm.isConfirmed) return
 
     try {
-      await api(`/slider/${id}`, { method: 'DELETE' })
-      setSlides((prev) => prev.filter((s) => s.id !== id))
+      await api(`/slider/${item.slide.id}`, { method: 'DELETE' })
+      setOrderedItems((prev) => prev.filter((i) => i.tempId !== tempId))
       Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1200, showConfirmButton: false })
     } catch {
       Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถลบรูปภาพได้' })
     }
   }
 
-  // ── Dropdown reorder ──
-  const handleOrderChange = (oldIndex: number, newIndex: number) => {
-    if (oldIndex === newIndex) return
-    setSlides((prev) => {
-      const updated = [...prev]
-      const [moved] = updated.splice(oldIndex, 1)
-      updated.splice(newIndex, 0, moved)
-      return updated
-    })
-    setHasOrderChanged(true)
+  // ── Drag handlers ──
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(index))
   }
 
-  // ── Save: upload new files + save order ──
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverIndex(index)
+  }
+
+  const handleDrop = (e: React.DragEvent, toIndex: number) => {
+    e.preventDefault()
+    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'))
+    setDragOverIndex(null)
+    if (isNaN(fromIndex) || fromIndex === toIndex) return
+
+    setOrderedItems((prev) => {
+      const updated = [...prev]
+      const [moved] = updated.splice(fromIndex, 1)
+      updated.splice(toIndex, 0, moved)
+      return updated
+    })
+    setHasChanges(true)
+  }
+
+  const handleDragEnd = () => {
+    setDragOverIndex(null)
+  }
+
+  // ── Save ──
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      // 1. อัปโหลดรูปใหม่ทีละรูป
-      if (pendingFiles.length > 0) {
-        for (const file of pendingFiles) {
+      // Map tempId → จะถูกแทนที่ด้วย real ID หลังอัปโหลด
+      const uploadedIdMap = new Map<string, number>()
+
+      // 1. อัปโหลด pending files ตามลำดับ
+      for (const item of orderedItems) {
+        if (item.kind === 'pending') {
           const formData = new FormData()
-          formData.append('image', file)
-          await api('/slider', { method: 'POST', body: formData })
+          formData.append('image', item.file)
+          const res = await api<{ success: boolean; data: SliderImage }>('/slider', {
+            method: 'POST',
+            body: formData,
+          })
+          if (res?.data?.id) {
+            uploadedIdMap.set(item.tempId, res.data.id)
+          }
         }
-        setPendingFiles([])
-        setPendingPreviews([])
       }
 
-      // 2. โหลดข้อมูลใหม่หลังอัปโหลด
-      const res = await api<{ success: boolean; data: SliderImage[] }>('/slider', { method: 'GET' })
-      const latestSlides = res?.data || []
+      // 2. สร้าง orderedIds ตามลำดับปัจจุบัน (รวม saved + newly uploaded)
+      const orderedIds: number[] = orderedItems
+        .map((item) => {
+          if (item.kind === 'saved') return item.slide.id
+          return uploadedIdMap.get(item.tempId) ?? null
+        })
+        .filter((id): id is number => id !== null)
 
-      // 3. ถ้ามีการเปลี่ยนลำดับ ให้บันทึกลำดับ
-      if (hasOrderChanged) {
-        const orderedIds = slides.map((s) => s.id)
+      // 3. บันทึกลำดับ
+      if (orderedIds.length > 0) {
         await api('/slider/reorder', { method: 'PUT', body: { orderedIds } })
-        setHasOrderChanged(false)
       }
 
-      setSlides(latestSlides)
+      // 4. โหลดข้อมูลใหม่
+      const res = await api<{ success: boolean; data: SliderImage[] }>('/slider', { method: 'GET' })
+      if (res?.success) {
+        const items: OrderedItem[] = (res.data || []).map((slide) => ({
+          kind: 'saved',
+          slide,
+          tempId: `saved-${slide.id}`,
+        }))
+        setOrderedItems(items)
+      }
 
+      setHasChanges(false)
       Swal.fire({
         icon: 'success',
         title: 'บันทึกสำเร็จ!',
@@ -200,7 +293,7 @@ export default function SliderManagerDashboard() {
     }
   }
 
-  const hasPendingChanges = pendingFiles.length > 0 || hasOrderChanged
+  const hasPending = orderedItems.some((i) => i.kind === 'pending')
 
   return (
     <div className='space-y-6'>
@@ -209,7 +302,7 @@ export default function SliderManagerDashboard() {
         <div>
           <h2 className='text-2xl font-bold text-slate-800'>จัดการ Slider หน้าหลัก</h2>
           <p className='text-slate-500 text-sm mt-1'>
-            เพิ่ม/ลบรูปภาพ และเลือก Dropdown ด้านล่างภาพเพื่อจัดลำดับการแสดงผล
+            เพิ่ม/ลบรูปภาพ และลากเพื่อจัดลำดับการแสดงผล
           </p>
         </div>
 
@@ -234,9 +327,9 @@ export default function SliderManagerDashboard() {
 
           <button
             onClick={handleSave}
-            disabled={!hasPendingChanges || isSaving}
+            disabled={!hasChanges || isSaving}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
-              hasPendingChanges && !isSaving
+              hasChanges && !isSaving
                 ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
                 : 'bg-slate-200 text-slate-400 cursor-not-allowed'
             }`}
@@ -262,101 +355,69 @@ export default function SliderManagerDashboard() {
       </div>
 
       {/* Pending change indicator */}
-      {hasPendingChanges && (
+      {hasChanges && (
         <div className='flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-amber-700 text-sm font-medium'>
           <svg className='w-4 h-4 shrink-0' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
             <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' />
           </svg>
-          มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก — กด "บันทึกการเปลี่ยนแปลง" เพื่อบันทึก
+          มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก
+          {hasPending && ' (มีรูปใหม่รออัปโหลด)'}
+          {' '} — กด "บันทึกการเปลี่ยนแปลง" เพื่อบันทึก
         </div>
       )}
 
-      {/* Slides Grid */}
+      {/* Unified Slides Grid */}
       {isLoading ? (
         <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
           {[1, 2, 3].map((i) => (
             <div key={i} className='rounded-2xl bg-slate-200 animate-pulse' style={{ aspectRatio: '16/9' }} />
           ))}
         </div>
+      ) : orderedItems.length === 0 ? (
+        /* Empty state */
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          className='flex flex-col items-center justify-center gap-4 border-2 border-dashed border-slate-300 rounded-2xl p-16 text-slate-400 cursor-pointer hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50 transition-all'
+        >
+          <svg className='w-12 h-12' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={1.5} d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' />
+          </svg>
+          <div className='text-center'>
+            <p className='font-semibold text-base'>ยังไม่มีรูปภาพใน Slider</p>
+            <p className='text-sm mt-1'>คลิกที่นี่เพื่อเพิ่มรูปภาพแรก</p>
+          </div>
+        </div>
       ) : (
-        <>
-          {/* Saved Slides */}
-          {slides.length > 0 && (
-            <div>
-              <h3 className='text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3'>
-                รูปภาพที่บันทึกแล้ว ({slides.length} รูป) — เลือก Dropdown เพื่อเปลี่ยนลำดับ
-              </h3>
-              <div className='grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4'>
-                {slides.map((slide, index) => (
-                  <SlideCard
-                    key={slide.id}
-                    slide={slide}
-                    index={index}
-                    totalSlides={slides.length}
-                    onOrderChange={handleOrderChange}
-                    onDelete={handleDeleteSlide}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Pending (Not yet uploaded) Slides */}
-          {pendingPreviews.length > 0 && (
-            <div>
-              <h3 className='text-sm font-semibold text-amber-600 uppercase tracking-wider mb-3 flex items-center gap-2'>
-                <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' />
-                </svg>
-                รอการบันทึก ({pendingPreviews.length} รูป)
-              </h3>
-              <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
-                {pendingPreviews.map((src, i) => (
-                  <div
-                    key={i}
-                    className='group relative rounded-2xl overflow-hidden border-2 border-dashed border-amber-400 bg-amber-50'
-                    style={{ aspectRatio: '16/9' }}
-                  >
-                    <img src={src} alt={`Pending ${i + 1}`} className='w-full h-full object-cover' />
-                    <div className='absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center'>
-                      <button
-                        onClick={() => handleRemovePending(i)}
-                        className='absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg'
-                      >
-                        <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                          <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
-                        </svg>
-                      </button>
-                      <span className='absolute bottom-2 left-2 bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-lg'>
-                        รอบันทึก
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Empty state */}
-          {slides.length === 0 && pendingPreviews.length === 0 && (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className='flex flex-col items-center justify-center gap-4 border-2 border-dashed border-slate-300 rounded-2xl p-16 text-slate-400 cursor-pointer hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50 transition-all'
-            >
-              <svg className='w-12 h-12' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={1.5} d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' />
-              </svg>
-              <div className='text-center'>
-                <p className='font-semibold text-base'>ยังไม่มีรูปภาพใน Slider</p>
-                <p className='text-sm mt-1'>คลิกที่นี่เพื่อเพิ่มรูปภาพแรก</p>
-              </div>
-            </div>
-          )}
-        </>
+        <div>
+          <h3 className='text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3'>
+            รูปภาพทั้งหมด ({orderedItems.length} รูป) — ลากเพื่อเรียงลำดับ
+            {hasPending && (
+              <span className='ml-2 text-amber-600 normal-case font-medium'>
+                (มีรูปที่รอบันทึก{' '}
+                {orderedItems.filter((i) => i.kind === 'pending').length} รูป)
+              </span>
+            )}
+          </h3>
+          <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
+            {orderedItems.map((item, index) => (
+              <UnifiedSlideCard
+                key={item.tempId}
+                item={item}
+                index={index}
+                dragOverIndex={dragOverIndex}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Preview Section */}
-      {(slides.length > 0 || pendingPreviews.length > 0) && (
+      {orderedItems.length > 0 && (
         <div className='mt-8 bg-slate-900 rounded-2xl p-4'>
           <h3 className='text-white text-sm font-semibold mb-3 flex items-center gap-2'>
             <svg className='w-4 h-4 text-blue-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
@@ -365,26 +426,29 @@ export default function SliderManagerDashboard() {
             ตัวอย่างลำดับการแสดงผล (Slider Preview)
           </h3>
           <div className='flex gap-2 overflow-x-auto pb-2'>
-            {slides.map((slide, i) => (
-              <div key={slide.id} className='shrink-0 relative rounded-xl overflow-hidden' style={{ width: 120, height: 68 }}>
-                <img
-                  src={slide.image_url.startsWith('http') ? slide.image_url : `${API_URL}${slide.image_url}`}
-                  alt={`Preview ${i + 1}`}
-                  className='w-full h-full object-cover'
-                />
-                <div className='absolute inset-0 bg-black/20 flex items-end justify-start p-1'>
-                  <span className='text-white text-xs font-bold bg-black/50 rounded px-1'>#{i + 1}</span>
+            {orderedItems.map((item, i) => {
+              const src =
+                item.kind === 'pending'
+                  ? item.preview
+                  : item.slide.image_url.startsWith('http')
+                    ? item.slide.image_url
+                    : `${API_URL}${item.slide.image_url}`
+              const isPending = item.kind === 'pending'
+              return (
+                <div
+                  key={item.tempId}
+                  className={`shrink-0 relative rounded-xl overflow-hidden ${isPending ? 'border-2 border-amber-400' : ''}`}
+                  style={{ width: 120, height: 68 }}
+                >
+                  <img src={src} alt={`Preview ${i + 1}`} className='w-full h-full object-cover' />
+                  <div className='absolute inset-0 bg-black/20 flex items-end justify-start p-1'>
+                    <span className={`text-xs font-bold bg-black/50 rounded px-1 ${isPending ? 'text-amber-300' : 'text-white'}`}>
+                      #{i + 1}{isPending ? ' รอ' : ''}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
-            {pendingPreviews.map((src, i) => (
-              <div key={`p${i}`} className='shrink-0 relative rounded-xl overflow-hidden border-2 border-amber-400' style={{ width: 120, height: 68 }}>
-                <img src={src} alt={`Pending ${i + 1}`} className='w-full h-full object-cover' />
-                <div className='absolute inset-0 bg-black/20 flex items-end justify-start p-1'>
-                  <span className='text-amber-300 text-xs font-bold bg-black/50 rounded px-1'>รอ</span>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
