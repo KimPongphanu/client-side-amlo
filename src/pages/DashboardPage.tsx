@@ -56,7 +56,7 @@ const SideBar = ({ activeMenu, setActiveMenu, isMobileOpen }: SideBarProps) => {
     { id: 'advertises', label: 'ประชาสัมพันธ์' },
     { id: 'news', label: 'กิจกรรมและประกาศ' },
     { id: 'departments', label: 'จัดการหน่วยงาน' },
-    { id: 'slider', label: '🖼 Slider หน้าหลัก' },
+    { id: 'slider', label: 'Slider หน้าหลัก' },
   ]
 
   return (
@@ -73,11 +73,11 @@ const SideBar = ({ activeMenu, setActiveMenu, isMobileOpen }: SideBarProps) => {
             key={menu.id}
             onClick={() => setActiveMenu(menu.id)}
             className={`
-              w-full text-left px-4 py-3 text-sm font-medium border-l-4 transition-colors cursor-pointer outline-none
+              w-full text-left px-4 py-3 text-sm font-medium transition-colors cursor-pointer outline-none rounded-md
               ${
                 activeMenu === menu.id
-                  ? 'border-blue-600 bg-blue-50 text-blue-700'
-                  : 'border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
               }
             `}
           >

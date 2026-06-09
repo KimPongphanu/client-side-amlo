@@ -567,12 +567,9 @@ export default function NewsManagerDashboard() {
                 </div>
               </div>
               <div
-                className='bg-slate-50 border-t border-slate-100 px-4 py-2.5 flex justify-between items-center'
+                className='bg-slate-50 border-t border-slate-100 px-4 py-2.5 flex justify-end items-center'
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className='text-[11px] text-slate-400 font-bold'>
-                  ยอดการเข้าชม {item.views || 0} ครั้ง
-                </div>
                 <ToggleSwitch
                   checked={!!item.isShow}
                   onChange={() => handleToggleShow(item.id, !!item.isShow)}
