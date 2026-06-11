@@ -1,3 +1,4 @@
+// src/pages/DashboardPage.tsx
 import { useEffect, useState } from 'react'
 
 import ContactRequestManager from '../components/dashboard/ContactRequestManager'
@@ -7,6 +8,7 @@ import NewsManagerDashboard from '../components/dashboard/NewsManagerDashboard'
 import PRManagerDashboard from '../components/dashboard/PRManagerDashboard'
 import ReviewManager from '../components/dashboard/ReviewManager'
 import SliderManagerDashboard from '../components/dashboard/SliderManagerDashboard'
+import UserManagerDashboard from '../components/dashboard/userManager/UserManagerDashboard'
 import { useAuthStore } from '../stores/useAuthStore'
 
 type MenuId =
@@ -16,6 +18,7 @@ type MenuId =
   | 'reviews'
   | 'contacts'
   | 'advertises'
+  | 'user-manage'
   | 'news'
   | 'departments'
   | 'slider'
@@ -51,6 +54,7 @@ const SideBar = ({ activeMenu, setActiveMenu, isMobileOpen }: SideBarProps) => {
     { id: 'overview', label: 'ภาพรวมระบบ' },
     { id: 'data-clean', label: 'จัดการข้อมูล' },
     { id: 'settings', label: 'ตั้งค่าระบบ' },
+    { id: 'user-manage', label: 'จัดการสมาชิก' },
     { id: 'reviews', label: 'รีวิว/ความคิดเห็น' },
     { id: 'contacts', label: 'การติดต่อ' },
     { id: 'advertises', label: 'ประชาสัมพันธ์' },
@@ -101,10 +105,31 @@ const DashboardPage = () => {
     return (savedMenu as MenuId) || 'overview'
   })
 
-  //Auth Store
+  // Auth Store - เพิ่ม user และ verifyUser
+  const user = useAuthStore((state) => state.user)
+  const verifyUser = useAuthStore((state) => state.verifyUser)
   const logoutUser = useAuthStore((state) => state.logoutUser)
-
   const initIdleTimeout = useAuthStore((state) => state.initIdleTimeout)
+
+  // 🌟 Loading state สำหรับตรวจสอบสิทธิ์
+  const [isVerifyingAuth, setIsVerifyingAuth] = useState<boolean>(true)
+
+  // 🌟 ตรวจสอบ token และสิทธิ์ผู้ใช้ก่อนโหลด Dashboard
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // ถ้ายังไม่มี user ให้ verify ก่อน
+        if (!user) {
+          await verifyUser()
+        }
+      } catch (error) {
+        console.error('[Dashboard] Auth verification failed:', error)
+      } finally {
+        setIsVerifyingAuth(false)
+      }
+    }
+    checkAuth()
+  }, [user, verifyUser])
 
   // 🌟 Unified secure logout handler
   const handleLogout = async () => {
@@ -136,6 +161,57 @@ const DashboardPage = () => {
     sessionStorage.setItem('activeDashboardMenu', activeMenu)
   }, [activeMenu])
 
+  // 🌟 แสดง Loading ขณะตรวจสอบสิทธิ์
+  if (isVerifyingAuth) {
+    return (
+      <div className='bg-slate-100 min-h-screen flex items-center justify-center'>
+        <div className='text-center'>
+          <div className='w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4'></div>
+          <p className='text-slate-600 font-medium'>
+            กำลังตรวจสอบสิทธิ์เข้าใช้งาน...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // 🌟 ถ้าไม่มี user หรือไม่ใช่ ADMIN ให้แสดงข้อความแจ้งเตือน
+  if (!user || user.role !== 'ADMIN') {
+    return (
+      <div className='bg-slate-100 min-h-screen flex items-center justify-center'>
+        <div className='bg-white rounded-2xl shadow-lg p-8 max-w-md text-center'>
+          <div className='w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+            <svg
+              className='w-8 h-8 text-red-500'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M12 15v2m0 0v2m0-2h2m-2 0H9m3-14v2m-5.7 2.3L4.93 4.93m14.14 14.14l-1.414-1.414M15 12a3 3 0 11-6 0 3 3 0 016 0z'
+              />
+            </svg>
+          </div>
+          <h2 className='text-xl font-bold text-slate-800 mb-2'>
+            ไม่มีสิทธิ์เข้าถึง
+          </h2>
+          <p className='text-slate-500 mb-6'>
+            คุณไม่มีสิทธิ์ในการเข้าถึง Dashboard นี้
+          </p>
+          <button
+            onClick={() => (window.location.href = '/')}
+            className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
+          >
+            กลับหน้าหลัก
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   const renderMainContent = () => {
     switch (activeMenu) {
       case 'overview':
@@ -154,6 +230,8 @@ const DashboardPage = () => {
         return <DepartmentManagerDashboard />
       case 'slider':
         return <SliderManagerDashboard />
+      case 'user-manage':
+        return <UserManagerDashboard />
       default:
         return <div className='p-6'>อยู่ระหว่างการพัฒนา...</div>
     }

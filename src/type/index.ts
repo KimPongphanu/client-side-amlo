@@ -4,11 +4,15 @@ import type React from 'react'
 // Authentication Types
 // ---------------------------------------------------------
 export interface UserProfile {
+  id: number
   uuid: string
   email: string
   firstname: string
   lastname: string
-  role?: string // ใส่ Optional ไว้ก่อนเพราะใน Database ยังไม่มีฟิลด์นี้
+  // 🌟 เพิ่มบรรทัดนี้เข้าไป เพื่อให้ตรงกับ Backend
+  role: 'USER' | 'ADMIN'
+  createdAt?: string
+  recentOnline?: string
 }
 
 export interface LoginResponse extends ApiResponseBase {
