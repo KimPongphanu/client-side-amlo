@@ -11,6 +11,7 @@ interface AuthState {
   error: string | null // 🌟 เพิ่มระบุประเภท Error ให้สัมพันธ์กับตัวแปรด้านล่าง
 
   // --- Actions ---
+  isAdmin: () => boolean
   setLoggedIn: (status: boolean) => void // 🌟 เพิ่มประเภทฟังก์ชันของ setLoggedIn ใน Interface
   verifyUser: () => Promise<void>
   loginUser: (payload: Record<string, unknown>) => Promise<boolean>
@@ -25,8 +26,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setLoggedIn: (status: boolean) => set({ isLoggedIn: status }),
   user: null,
   isLoggedIn: false,
-  isLoading: false,
+  isLoading: true,
   error: null,
+
+  isAdmin: () => {
+    const user = get().user
+    return user?.role === 'ADMIN' // ต้องไปอัปเดตไฟล์ type ให้มี role ด้วยนะ
+  },
 
   // =========================================================================
   // AUTHENTICATION ACTIONS

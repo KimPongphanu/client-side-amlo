@@ -1,6 +1,8 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
-import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import ScrollToTop from './pages/ScrollToTop'
+import ProtectedRoute from './routes/ProtectedRoute'
+import PublicRoute from './routes/PublicRoute'
 import { useAuthStore } from './stores/useAuthStore'
 import { initGA, logPageView } from './utils/analytics'
 
@@ -16,23 +18,6 @@ const Login = lazy(() => import('./pages/LoginPage'))
 const CommentForm = lazy(() => import('./components/CommentForm'))
 const ContactForm = lazy(() => import('./components/ContactForm'))
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
-
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
-  const user = useAuthStore((state) => state.user)
-
-  if (!isLoggedIn && !user) {
-    return <Navigate to='/login' replace />
-  }
-
-  return <>{children}</>
-}
-
-const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
-
-  return isLoggedIn ? <Navigate to='/dashboard' replace /> : <>{children}</>
-}
 
 function App() {
   const location = useLocation()
@@ -107,7 +92,7 @@ function App() {
           <Route
             path='/dashboard'
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['ADMIN']}>
                 <DashboardPage />
               </ProtectedRoute>
             }

@@ -1,6 +1,22 @@
 import type { ApiResponseBase, LoginResponse } from '../type'
 import { api } from '../utils/api'
 
+// กำหนด Interface สำหรับ Response ของ getUsers ให้ตรงกับหลังบ้าน
+export interface UserItem {
+  id: number
+  uuid: string
+  firstname: string
+  lastname: string
+  email: string
+  role: 'USER' | 'ADMIN'
+  createdAt: string
+}
+
+export interface UsersResponse extends ApiResponseBase {
+  count: number
+  data: UserItem[]
+}
+
 export const authService = {
   /**
    * Get current authenticated user profile
@@ -13,7 +29,6 @@ export const authService = {
    * Log in user with credentials
    */
   login: async (body: Record<string, unknown>): Promise<LoginResponse> => {
-    // ใส่ <LoginResponse> เพื่อบอกให้ฟังก์ชัน api รู้ว่าข้อมูลที่จะ return กลับมาหน้าตาเป็นอย่างไร
     return await api<LoginResponse>('/auth/login', {
       method: 'POST',
       body,
@@ -30,8 +45,15 @@ export const authService = {
     })
   },
 
+  /**
+   * ดึงรายชื่อผู้ใช้ทั้งหมด (เฉพาะสิทธิ์ ADMIN)
+   */
+  getUsers: async (): Promise<UsersResponse> => {
+    return await api<UsersResponse>('/auth/users', { method: 'GET' })
+  },
+
   clearLocalSession: (): void => {
     sessionStorage.removeItem('activeDashboardMenu')
-    sessionStorage.removeItem('token')
+    // ไม่ต้องลบ token จาก sessionStorage แล้ว เพราะใช้ HTTP-Only Cookie
   },
 }
