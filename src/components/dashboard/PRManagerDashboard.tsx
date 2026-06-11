@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import ReactQuill from 'react-quill-new'
 import 'react-quill-new/dist/quill.snow.css'
 import Swal from 'sweetalert2'
+import { dashboardService } from '../../services/dashboardService'
 import { useDashboardStore } from '../../stores/useDashboardStore'
 import type { NewsItem } from '../../type'
 
@@ -264,6 +265,9 @@ export default function PRManagerDashboard() {
     result.sort((a, b) => {
       const dateA = a.date ? new Date(a.date).getTime() : 0
       const dateB = b.date ? new Date(b.date).getTime() : 0
+      if (dateA === dateB) {
+        return sortOrder === 'newest' ? b.id - a.id : a.id - b.id
+      }
       return sortOrder === 'newest' ? dateB - dateA : dateA - dateB
     })
     return result
@@ -276,12 +280,14 @@ export default function PRManagerDashboard() {
       didOpen: () => Swal.showLoading(),
     })
     try {
+      // เรียก API patch โดยตรง ไม่ผ่าน updatePR ที่มี Swal ซ้อน
       const form = new FormData()
       form.append('isShow', String(!currentShow))
-      await updateNews(id, form)
+      await dashboardService.updateNewsItem(id, form)
+      await fetchNews() // refresh list (fetchNews = fetchPRs ตามที่ bind ไว้ด้านบน)
       Swal.fire({
         icon: 'success',
-        title: 'เปลี่ยนสถานะเรียบร้อย',
+        title: !currentShow ? 'แสดงบนเว็บแล้ว' : 'ซ่อนแล้ว',
         timer: 1000,
         showConfirmButton: false,
       })
@@ -562,12 +568,9 @@ export default function PRManagerDashboard() {
                 </div>
               </div>
               <div
-                className='bg-slate-50 border-t border-slate-100 px-4 py-2.5 flex justify-between items-center'
+                className='bg-slate-50 border-t border-slate-100 px-4 py-2.5 flex justify-end items-center'
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className='text-[11px] text-slate-400 font-bold'>
-                  ยอดการเข้าชม {item.views || 0} ครั้ง
-                </div>
                 <ToggleSwitch
                   checked={!!item.isShow}
                   onChange={() => handleToggleShow(item.id, !!item.isShow)}

@@ -32,7 +32,7 @@ export const dashboardService = {
   getNewsList: async (
     type: 'NEWS' | 'PR',
   ): Promise<ApiResponseBase<NewsItem[]>> => {
-    return api<ApiResponseBase<NewsItem[]>>(`/news?type=${type}&limit=50`, {
+    return api<ApiResponseBase<NewsItem[]>>(`/news?type=${type}&limit=50&all=true`, {
       method: 'GET',
     })
   },
