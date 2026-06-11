@@ -110,6 +110,7 @@ const DashboardPage = () => {
   const verifyUser = useAuthStore((state) => state.verifyUser)
   const logoutUser = useAuthStore((state) => state.logoutUser)
   const initIdleTimeout = useAuthStore((state) => state.initIdleTimeout)
+  const startHeartbeat = useAuthStore((state) => state.startHeartbeat)
 
   // 🌟 Loading state สำหรับตรวจสอบสิทธิ์
   const [isVerifyingAuth, setIsVerifyingAuth] = useState<boolean>(true)
@@ -148,10 +149,12 @@ const DashboardPage = () => {
       15 * 60 * 1000,
     ) as unknown as () => void
 
+    // เริ่ม Heartbeat พร้อมกันเลย เพื่ออัปเดต recentOnline ทุก 5 นาที
+    const cleanupHeartbeat = startHeartbeat()
+
     return () => {
-      if (typeof cleanupIdleTimer === 'function') {
-        cleanupIdleTimer()
-      }
+      if (typeof cleanupIdleTimer === 'function') cleanupIdleTimer()
+      cleanupHeartbeat()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

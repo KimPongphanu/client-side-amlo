@@ -12,11 +12,12 @@ interface AuthState {
 
   // --- Actions ---
   isAdmin: () => boolean
-  setLoggedIn: (status: boolean) => void // 🌟 เพิ่มประเภทฟังก์ชันของ setLoggedIn ใน Interface
+  setLoggedIn: (status: boolean) => void
   verifyUser: () => Promise<void>
   loginUser: (payload: Record<string, unknown>) => Promise<boolean>
   logoutUser: () => Promise<void>
   initIdleTimeout: (idleTimeMs?: number) => () => void
+  startHeartbeat: () => () => void // เริ่ม Heartbeat loop, คืนค่า cleanup fn
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -140,6 +141,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // =========================================================================
   // SECURITY & AUTOMATION ACTIONS
   // =========================================================================
+
+  /**
+   * Heartbeat: ยิง POST /auth/heartbeat ทุก 5 นาที เพื่ออัปเดต recentOnline
+   * สามารถใช้โดย Admin Dashboard เพื่อเช็คว่าใคร Online/Offline อยู่
+   */
+  startHeartbeat: () => {
+    const INTERVAL_MS = 5 * 60 * 1000 // 5 นาที
+
+    // ยิง ping ครั้งแรกทันที (silent fail)
+    authService.ping()
+
+    const intervalId = setInterval(() => {
+      // ตรวจว่ายัง logged in อยู่ก่อน ping เสมอ เพื่อไม่ ping หลัง logout
+      if (get().isLoggedIn) {
+        authService.ping()
+      } else {
+        clearInterval(intervalId)
+      }
+    }, INTERVAL_MS)
+
+    // คืน cleanup สำหรับเอาไปใช้ใน useEffect return
+    return () => clearInterval(intervalId)
+  },
 
   /**
    * ระบบตรวจสอบพฤติกรรมผู้ใช้งานนิ่ง (Idle Timeout) พร้อมเตือนก่อนหมดเวลาเซสชัน

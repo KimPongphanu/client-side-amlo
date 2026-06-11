@@ -8,9 +8,9 @@ import { useAuthStore } from '../../../stores/useAuthStore'
 import AccessDenied from './sub_components/AccessDenied'
 import BanModal from './sub_components/BanModal'
 import PasswordModal from './sub_components/PasswordModal'
-import RoleModal from './sub_components/RoleModal'
 import TableSkeleton from './sub_components/TableSkeleton'
 import UserTable from './sub_components/UserTable'
+import UserAuditLog from './sub_components/UserAuditLog'
 
 // --- Types ---
 export interface User {
@@ -21,7 +21,7 @@ export interface User {
   email: string
   role: 'ADMIN' | 'USER'
   createdAt: string
-  status?: 'Active' | 'Inactive'
+  recentOnline: string // เวลาใช้งานล่าสุดจาก DB
 }
 
 export type RoleFilter = 'ALL' | 'ADMIN' | 'USER'
@@ -38,12 +38,39 @@ const UserManagerDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('ALL')
 
-  // Modal States
+  // Modal & View States
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [isRoleModalOpen, setIsRoleModalOpen] = useState<boolean>(false)
+  const [viewingAuditUser, setViewingAuditUser] = useState<User | null>(null)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState<boolean>(false)
   const [isBanModalOpen, setIsBanModalOpen] = useState<boolean>(false)
-  const [reasonForChange, setReasonForChange] = useState<string>('')
+
+  // Pagination States
+  const [rowsPerPage, setRowsPerPage] = useState<number>(10)
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [isAutoRows, setIsAutoRows] = useState<boolean>(true)
+
+  // คำนวณจำนวนแถวแบบไดนามิกให้พอดีกับความสูงหน้าจอ (Responsive)
+  useEffect(() => {
+    if (!isAutoRows) return
+
+    const calculateRows = () => {
+      // คำนวณความสูงหน้าจอ ลบด้วยระยะขอบ (Margin/Padding), แถบค้นหา, แถบเมนูด้านบน และ Footer
+      // ค่า 440px คือพื้นที่คงที่โดยประมาณ เพื่อให้เหลือที่ว่างพอดีสำหรับตาราง
+      const availableHeight = window.innerHeight - 440
+      const rowHeight = 73 // ความสูงของแต่ละแถวในตารางโดยประมาณ (px)
+      const calculated = Math.max(1, Math.floor(availableHeight / rowHeight))
+      setRowsPerPage(calculated)
+    }
+
+    calculateRows()
+    window.addEventListener('resize', calculateRows)
+    return () => window.removeEventListener('resize', calculateRows)
+  }, [isAutoRows])
+
+  // รีเซ็ตกลับไปหน้า 1 เสมอเมื่อมีการค้นหาหรือเปลี่ยนตัวกรอง
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, roleFilter])
 
   // Fetch Users on Mount & Sync Auth Guard
   useEffect(() => {
@@ -64,7 +91,6 @@ const UserManagerDashboard: React.FC = () => {
           const usersWithStatus = response.data.map((u) => ({
             ...u,
             id: String(u.id),
-            status: 'Active' as const,
           }))
           setUsers(usersWithStatus)
         } else {
@@ -97,24 +123,18 @@ const UserManagerDashboard: React.FC = () => {
     })
   }, [users, searchTerm, roleFilter])
 
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredUsers.length / rowsPerPage) || 1
+  if (currentPage > totalPages && totalPages > 0) {
+    setCurrentPage(totalPages)
+  }
+
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * rowsPerPage
+    return filteredUsers.slice(startIndex, startIndex + rowsPerPage)
+  }, [filteredUsers, currentPage, rowsPerPage])
+
   // --- Action Handlers ---
-  const handleOpenRoleModal = (u: User) => {
-    setSelectedUser(u)
-    setReasonForChange('')
-    setIsRoleModalOpen(true)
-  }
-
-  const handleChangeRole = () => {
-    if (!selectedUser) return
-    const newRole = selectedUser.role === 'ADMIN' ? 'USER' : 'ADMIN'
-    console.log(
-      `[AUDIT LOG] เปลี่ยนสิทธิ์ ${selectedUser.email}: ${selectedUser.role} -> ${newRole}. เหตุผล: ${reasonForChange}`,
-    )
-    // TODO: Implement API call
-    alert(`จำลองสถานะ: เปลี่ยนสิทธิ์เป็น ${newRole} เรียบร้อยแล้ว`)
-    setIsRoleModalOpen(false)
-  }
-
   const handleOpenPasswordModal = (u: User) => {
     setSelectedUser(u)
     setIsPasswordModalOpen(true)
@@ -132,33 +152,17 @@ const UserManagerDashboard: React.FC = () => {
 
   const handleOpenBanModal = (u: User) => {
     setSelectedUser(u)
-    setReasonForChange('')
     setIsBanModalOpen(true)
   }
 
   const handleToggleBan = () => {
     if (!selectedUser) return
-    const newStatus = selectedUser.status === 'Active' ? 'Inactive' : 'Active'
-    console.log(
-      `[AUDIT LOG] เปลี่ยนสถานะบัญชี ${selectedUser.email}: -> ${newStatus}. เหตุผล: ${reasonForChange}`,
-    )
-
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === selectedUser.id ? { ...u, status: newStatus } : u,
-      ),
-    )
-    alert(
-      `จำลองสถานะ: บัญชีผู้ใช้เปลี่ยนเป็นสถานะ ${newStatus === 'Active' ? 'เปิดใช้งาน' : 'ระงับการใช้งาน'} แล้ว`,
-    )
+    // TODO: ฟีเจอระงับบัญชีจะเพิ่มเมื่อ Backend อัปเดต Schema ให้มีฟิลด์สถานะบัญชี
     setIsBanModalOpen(false)
   }
 
   const handleViewAuditLogs = (u: User) => {
-    console.log(`[NAVIGATION] เรียกดูประวัติการใช้งานของ ID: ${u.id}`)
-    alert(
-      `จำลองสถานะ: เปิดแสดงหน้าต่างประวัติการทำงาน (Audit Logs) ของคุณ ${u.firstname}`,
-    )
+    setViewingAuditUser(u)
   }
 
   // --- Auth Loading Guard ---
@@ -178,9 +182,9 @@ const UserManagerDashboard: React.FC = () => {
   }
 
   return (
-    <div className='min-h-screen bg-slate-50'>
+    <div className='bg-slate-50 rounded-xl shadow-sm overflow-hidden'>
       {/* Header */}
-      <header className='bg-white shadow-sm border-b border-gray-200'>
+      <header className='bg-white shadow-sm border-b border-gray-200 shrink-0'>
         <div className='max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8'>
           <div className='flex items-center justify-between'>
             <div>
@@ -208,8 +212,15 @@ const UserManagerDashboard: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className='max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8'>
-        {/* Search & Filter Bar */}
+      <main className='max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 w-full'>
+        {viewingAuditUser ? (
+          <UserAuditLog
+            user={viewingAuditUser}
+            onBack={() => setViewingAuditUser(null)}
+          />
+        ) : (
+          <>
+            {/* Search & Filter Bar */}
         <div className='mb-8 flex flex-col sm:flex-row gap-4'>
           <div className='relative flex-1'>
             <div className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none'>
@@ -260,8 +271,8 @@ const UserManagerDashboard: React.FC = () => {
         )}
 
         {/* Data Table */}
-        <div className='bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200'>
-          <div className='overflow-x-auto'>
+        <div className='flex flex-col h-[calc(100vh-400px)] bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200'>
+          <div className='flex-1 overflow-x-auto overflow-y-auto'>
             {isLoading ? (
               <TableSkeleton />
             ) : filteredUsers.length === 0 ? (
@@ -270,33 +281,107 @@ const UserManagerDashboard: React.FC = () => {
               </div>
             ) : (
               <UserTable
-                filteredUsers={filteredUsers}
-                onOpenRole={handleOpenRoleModal}
+                filteredUsers={paginatedUsers}
                 onOpenPassword={handleOpenPasswordModal}
                 onOpenBan={handleOpenBanModal}
                 onViewAudit={handleViewAuditLogs}
               />
             )}
           </div>
-          {/* Footer with count */}
-          <div className='bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200 text-sm text-gray-500'>
-            <span>
-              กำลังแสดง {filteredUsers.length} จากทั้งหมด {users.length} รายการ
-            </span>
+          {/* Pagination Footer (Light Theme) */}
+          <div className='bg-gray-50 px-6 py-3 flex items-center justify-end border-t border-gray-200 text-sm text-gray-600 shrink-0 select-none'>
+            <div className='flex items-center space-x-6'>
+              
+              {/* Pagination Controls */}
+              <div className='flex items-center space-x-1 border-r border-gray-300 pr-6'>
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className='p-1.5 rounded text-gray-500 hover:bg-gray-200 hover:text-gray-900 disabled:opacity-50 disabled:hover:bg-transparent transition-colors cursor-pointer disabled:cursor-not-allowed'
+                  title="หน้าแรก"
+                >
+                  <svg className='w-4 h-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M11 19l-7-7 7-7m8 14l-7-7 7-7' />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className='p-1.5 rounded text-gray-500 hover:bg-gray-200 hover:text-gray-900 disabled:opacity-50 disabled:hover:bg-transparent transition-colors cursor-pointer disabled:cursor-not-allowed'
+                  title="หน้าก่อนหน้า"
+                >
+                  <svg className='w-4 h-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M15 19l-7-7 7-7' />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Page Indicator */}
+              <div className='font-medium text-gray-700 border-r border-gray-300 pr-6'>
+                {currentPage} <span className='text-gray-400 font-normal mx-1'>of</span> {totalPages}
+              </div>
+              
+              {/* Rows Per Page Selector */}
+              <div className='flex items-center space-x-2 border-r border-gray-300 pr-6'>
+                <div className='relative'>
+                  <select
+                    value={isAutoRows ? 'auto' : rowsPerPage}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      if (val === 'auto') {
+                        setIsAutoRows(true)
+                      } else {
+                        setIsAutoRows(false)
+                        setRowsPerPage(Number(val))
+                        setCurrentPage(1)
+                      }
+                    }}
+                    className='bg-transparent text-gray-700 border-none focus:ring-0 cursor-pointer appearance-none outline-none font-medium text-sm pr-6 pl-2 py-1 hover:bg-gray-200 rounded transition-colors'
+                  >
+                    <option value="auto">Auto ({rowsPerPage} rows)</option>
+                    <option value={5}>5 rows per page</option>
+                    <option value={10}>10 rows per page</option>
+                    <option value={25}>25 rows per page</option>
+                    <option value={50}>50 rows per page</option>
+                  </select>
+                  <svg className='w-4 h-4 text-gray-400 absolute right-1 top-1/2 transform -translate-y-1/2 pointer-events-none' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Next/Last Page Controls */}
+              <div className='flex items-center space-x-1'>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className='p-1.5 rounded text-gray-500 hover:bg-gray-200 hover:text-gray-900 disabled:opacity-50 disabled:hover:bg-transparent transition-colors cursor-pointer disabled:cursor-not-allowed'
+                  title="หน้าถัดไป"
+                >
+                  <svg className='w-4 h-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M9 5l7 7-7 7' />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className='p-1.5 rounded text-gray-500 hover:bg-gray-200 hover:text-gray-900 disabled:opacity-50 disabled:hover:bg-transparent transition-colors cursor-pointer disabled:cursor-not-allowed'
+                  title="หน้าสุดท้าย"
+                >
+                  <svg className='w-4 h-4' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
+                    <path strokeLinecap='round' strokeLinejoin='round' d='M13 5l7 7-7 7M5 5l7 7-7 7' />
+                  </svg>
+                </button>
+              </div>
+
+            </div>
           </div>
         </div>
+        </>
+        )}
       </main>
 
       {/* --- Modals Section --- */}
-      <RoleModal
-        isOpen={isRoleModalOpen}
-        onClose={() => setIsRoleModalOpen(false)}
-        selectedUser={selectedUser}
-        reasonForChange={reasonForChange}
-        setReasonForChange={setReasonForChange}
-        onSubmit={handleChangeRole}
-      />
-
       <PasswordModal
         isOpen={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
@@ -308,8 +393,6 @@ const UserManagerDashboard: React.FC = () => {
         isOpen={isBanModalOpen}
         onClose={() => setIsBanModalOpen(false)}
         selectedUser={selectedUser}
-        reasonForChange={reasonForChange}
-        setReasonForChange={setReasonForChange}
         onSubmit={handleToggleBan}
       />
     </div>

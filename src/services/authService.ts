@@ -10,6 +10,7 @@ export interface UserItem {
   email: string
   role: 'USER' | 'ADMIN'
   createdAt: string
+  recentOnline: string // เวลาอัปเดตล่าสุดจาก DB สำหรับคำนวณสถานะ Online/Offline
 }
 
 export interface UsersResponse extends ApiResponseBase {
@@ -55,5 +56,15 @@ export const authService = {
   clearLocalSession: (): void => {
     sessionStorage.removeItem('activeDashboardMenu')
     // ไม่ต้องลบ token จาก sessionStorage แล้ว เพราะใช้ HTTP-Only Cookie
+  },
+
+  /**
+   * ยิง Heartbeat เพื่อบอกว่ายัง Active อยู่บนเว็บ
+   * ใช้ fire-and-forget: ไม่ให้ Error แพร่ออกมา เพราะเป็น background task
+   */
+  ping: async (): Promise<void> => {
+    await api('/auth/heartbeat', { method: 'POST' }).catch(() => {
+      // silent fail — ถ้า token หมดอายุหรือ network หลุดก็ไม่ crash
+    })
   },
 }

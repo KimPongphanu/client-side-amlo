@@ -1,9 +1,27 @@
 import React from 'react'
 import type { User } from '../UserManagerDashboard'
 
+// ย้ายออกนอก Component เป็น module-level utility fn
+// เพื่อเลี่ยงการ call Date.now() ใน render body (React pure function rule)
+const getOnlineStatus = (recentOnline: string) => {
+  const diffMs = Date.now() - new Date(recentOnline).getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+
+  if (diffMins < 10) {
+    return { label: 'Online', color: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500' }
+  } else if (diffMins < 60) {
+    return { label: `${diffMins} นาทีที่แล้ว`, color: 'bg-gray-100 text-gray-600', dot: null }
+  } else if (diffMins < 1440) {
+    const hours = Math.floor(diffMins / 60)
+    return { label: `${hours} ชั่วโมงที่แล้ว`, color: 'bg-gray-100 text-gray-600', dot: null }
+  } else {
+    const days = Math.floor(diffMins / 1440)
+    return { label: `${days} วันที่แล้ว`, color: 'bg-gray-100 text-gray-500', dot: null }
+  }
+}
+
 interface UserTableProps {
   filteredUsers: User[]
-  onOpenRole: (u: User) => void
   onOpenPassword: (u: User) => void
   onOpenBan: (u: User) => void
   onViewAudit: (u: User) => void
@@ -11,7 +29,6 @@ interface UserTableProps {
 
 const UserTable: React.FC<UserTableProps> = ({
   filteredUsers,
-  onOpenRole,
   onOpenPassword,
   onOpenBan,
   onViewAudit,
@@ -22,7 +39,7 @@ const UserTable: React.FC<UserTableProps> = ({
         <tr>
           <th
             scope='col'
-            className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
+            className='px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider'
           >
             รหัสประจำตัว
           </th>
@@ -48,7 +65,7 @@ const UserTable: React.FC<UserTableProps> = ({
             scope='col'
             className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
           >
-            สถานะบัญชี
+            ใช้งานล่าสุด
           </th>
           <th
             scope='col'
@@ -70,8 +87,8 @@ const UserTable: React.FC<UserTableProps> = ({
             key={u.id}
             className='hover:bg-gray-50 transition-colors duration-150'
           >
-            <td className='px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500'>
-              {u.id.substring(0, 8)}...
+            <td className='px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500 text-center'>
+              {u.id}
             </td>
             <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
               {u.firstname} {u.lastname}
@@ -87,11 +104,17 @@ const UserTable: React.FC<UserTableProps> = ({
               </span>
             </td>
             <td className='px-6 py-4 whitespace-nowrap'>
-              <span
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${u.status === 'Active' || !u.status ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
-              >
-                {u.status === 'Inactive' ? 'ระงับการใช้งาน' : 'เปิดใช้งานปกติ'}
-              </span>
+              {(() => {
+                const status = getOnlineStatus(u.recentOnline)
+                return (
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}>
+                    {status.dot && (
+                      <span className={`w-1.5 h-1.5 rounded-full ${status.dot} animate-pulse`} />
+                    )}
+                    {status.label}
+                  </span>
+                )
+              })()}
             </td>
             <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
               {new Date(u.createdAt).toLocaleDateString('th-TH', {
@@ -102,25 +125,6 @@ const UserTable: React.FC<UserTableProps> = ({
             </td>
             <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
               <div className='flex justify-end space-x-2'>
-                <button
-                  onClick={() => onOpenRole(u)}
-                  className='text-indigo-600 bg-indigo-50 hover:bg-indigo-100 p-2 rounded-full transition-colors'
-                  title='ปรับเปลี่ยนระดับสิทธิ์'
-                >
-                  <svg
-                    className='w-5 h-5'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'
-                    />
-                  </svg>
-                </button>
                 <button
                   onClick={() => onOpenPassword(u)}
                   className='text-amber-600 bg-amber-50 hover:bg-amber-100 p-2 rounded-full transition-colors'
@@ -142,12 +146,8 @@ const UserTable: React.FC<UserTableProps> = ({
                 </button>
                 <button
                   onClick={() => onOpenBan(u)}
-                  className={`${u.status === 'Inactive' ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-red-600 bg-red-50 hover:bg-red-100'} p-2 rounded-full transition-colors`}
-                  title={
-                    u.status === 'Inactive'
-                      ? 'เปิดคืนสิทธิ์การใช้งาน'
-                      : 'ระงับบัญชีนี้'
-                  }
+                  className='text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors'
+                  title='ระงับบัญชีนี้'
                 >
                   <svg
                     className='w-5 h-5'
