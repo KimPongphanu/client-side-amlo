@@ -1,7 +1,7 @@
-import type { ApiResponseBase } from '../type'
+// src/services/auditService.ts
 import { api } from '../utils/api'
 
-export interface AuditLogItem {
+export type AuditLogEntry = {
   id: string
   userId: number | null
   action: string
@@ -9,18 +9,23 @@ export interface AuditLogItem {
   userAgent: string
   details: string | null
   createdAt: string
+  user?: {
+    email: string
+    firstname: string
+    lastname: string
+  }
 }
 
-export interface AuditLogsResponse extends ApiResponseBase {
-  data: AuditLogItem[]
+export interface AuditLogResponse {
+  success: boolean
+  data: AuditLogEntry[]
 }
 
 export const auditService = {
-  /**
-   * Fetch audit logs, optionally filtered by user ID
-   */
-  getLogs: async (userId?: string): Promise<AuditLogsResponse> => {
-    const url = userId ? `/audit?userId=${userId}` : '/audit'
-    return await api<AuditLogsResponse>(url, { method: 'GET' })
+  getAuditLogs: async (limit: number = 100): Promise<AuditLogEntry[]> => {
+    const response = await api<AuditLogResponse>('/audit', {
+      method: 'GET',
+    })
+    return response.data || []
   },
 }
