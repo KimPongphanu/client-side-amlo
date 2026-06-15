@@ -1,4 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { api } from '../../../../utils/api'
+import { toast } from '../../../../utils/swalConfig'
 import type { DashboardUser } from './BanModal'
 
 interface UserDetailModalProps {
@@ -10,7 +12,16 @@ interface UserDetailModalProps {
   onDelete: (u: DashboardUser) => void
   onForcePassword: (u: DashboardUser) => void
   onOpenRequest?: (u: DashboardUser) => void
+  onRefresh?: () => void
 }
+
+// Action mode for supervisor modals
+type SupervisorAction =
+  | 'request'
+  | 'otp-unban'
+  | 'emergency'
+  | 'force-logout'
+  | null
 
 const getOnlineStatus = (recentOnline: string) => {
   const diffMs = Date.now() - new Date(recentOnline).getTime()
@@ -80,7 +91,132 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
   onDelete,
   onForcePassword,
   onOpenRequest,
+  onRefresh,
 }) => {
+  // State for supervisor action modals
+  const [actionMode, setActionMode] = useState<SupervisorAction>(null)
+  const [otpCode, setOtpCode] = useState('')
+  const [recoveryKey, setRecoveryKey] = useState('')
+  const [reason, setReason] = useState('')
+  const [emergencyAction, setEmergencyAction] = useState<
+    'BAN' | 'DELETE' | 'FORCE_RESET'
+  >('FORCE_RESET')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  // Reset state when modal opens/closes
+  React.useEffect(() => {
+    if (!isOpen) {
+      setActionMode(null)
+      setOtpCode('')
+      setRecoveryKey('')
+      setReason('')
+      setError('')
+      setIsSubmitting(false)
+    }
+  }, [isOpen])
+
+  // OTP Unban handler
+  const handleOTPUnban = async () => {
+    if (!user || !otpCode || otpCode.length !== 6 || !reason.trim()) {
+      setError('กรุณากรอก OTP 6 หลักและเหตุผล')
+      return
+    }
+    setIsSubmitting(true)
+    setError('')
+    try {
+      await api(`/auth/users/${user.uuid}/otp-action`, {
+        method: 'POST',
+        body: { otpToken: otpCode, reason: reason.trim() },
+      })
+      await toast.fire({
+        icon: 'success',
+        title: 'ปลดระงับการใช้งานสำเร็จ',
+        timer: 1500,
+        showConfirmButton: false,
+      })
+      setActionMode(null)
+      onRefresh?.()
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'การดำเนินการล้มเหลว')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Force Logout handler
+  const handleForceLogout = async () => {
+    if (!user || !otpCode || otpCode.length !== 6 || !reason.trim()) {
+      setError('กรุณากรอก OTP 6 หลักและเหตุผล')
+      return
+    }
+    setIsSubmitting(true)
+    setError('')
+    try {
+      await api(`/auth/users/${user.uuid}/force-logout`, {
+        method: 'POST',
+        body: { otpToken: otpCode, reason: reason.trim() },
+      })
+      await toast.fire({
+        icon: 'success',
+        title: 'บังคับออกจากระบบสำเร็จ',
+        text: `${user.firstname} ${user.lastname} ถูกเตะออกจากระบบแล้ว`,
+        timer: 1500,
+        showConfirmButton: false,
+      })
+      setActionMode(null)
+      setOtpCode('')
+      setReason('')
+      onRefresh?.()
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'การดำเนินการล้มเหลว')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Emergency handler
+  const handleEmergency = async () => {
+    if (!user || !recoveryKey.trim() || !reason.trim()) {
+      setError('กรุณากรอก Recovery Key และเหตุผล')
+      return
+    }
+    setIsSubmitting(true)
+    setError('')
+    try {
+      await api('/auth/emergency-action', {
+        method: 'POST',
+        body: {
+          targetUuid: user.uuid,
+          recoveryKey: recoveryKey.trim(),
+          action: emergencyAction,
+          reason: reason.trim(),
+        },
+      })
+      const actionLabels: Record<string, string> = {
+        BAN: 'ระงับบัญชี',
+        DELETE: 'ลบบัญชี',
+        FORCE_RESET: 'เปลี่ยนรหัสผ่าน',
+      }
+      await toast.fire({
+        icon: 'success',
+        title: 'ดำเนินการฉุกเฉินสำเร็จ',
+        text: `${actionLabels[emergencyAction]} — 2FA ถูกปิด, Recovery Key ถูกใช้แล้ว, Revoke Sessions`,
+        timer: 2000,
+        showConfirmButton: false,
+      })
+      setActionMode(null)
+      onRefresh?.()
+      onClose()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'การดำเนินการล้มเหลว')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   if (!isOpen || !user) return null
 
   const onlineStatus = getOnlineStatus(user.recentOnline)
@@ -92,8 +228,17 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
 
   const handleAction = (action: string) => {
     if (isSupervisorTarget && onOpenRequest) {
-      onOpenRequest(user)
-      onClose()
+      // For supervisor, use the new action system
+      if (action === 'request') {
+        onOpenRequest(user)
+        onClose()
+      } else if (action === 'otp-unban') {
+        setActionMode('otp-unban')
+      } else if (action === 'emergency') {
+        setActionMode('emergency')
+      } else if (action === 'force-logout') {
+        setActionMode('force-logout')
+      }
       return
     }
     onClose()
@@ -219,36 +364,283 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({
               </div>
             </div>
 
+            {/* Action Modals for Supervisor */}
+            {actionMode === 'otp-unban' && (
+              <div className='fixed inset-0 z-[60] flex items-center justify-center bg-black/40'>
+                <div className='bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4'>
+                  <h3 className='text-lg font-bold text-gray-900 mb-4'>
+                    🔓 ปลดแบน Supervisor ด้วย OTP
+                  </h3>
+                  <p className='text-sm text-gray-600 mb-4'>
+                    ยืนยันตัวตนด้วย OTP จาก Google Authenticator ของคุณ
+                  </p>
+                  <div className='mb-4'>
+                    <label className='block text-xs font-medium text-gray-500 mb-1'>
+                      OTP 6 หลัก
+                    </label>
+                    <input
+                      type='text'
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => {
+                        setOtpCode(e.target.value.replace(/\D/g, ''))
+                        setError('')
+                      }}
+                      className='block w-full px-3 py-2 text-center text-lg font-mono tracking-[0.5em] border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500'
+                      placeholder='------'
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <div className='mb-4'>
+                    <label className='block text-xs font-medium text-gray-500 mb-1'>
+                      เหตุผล
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={reason}
+                      onChange={(e) => {
+                        setReason(e.target.value)
+                        setError('')
+                      }}
+                      className='block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm'
+                      placeholder='ระบุเหตุผลในการปลดแบน...'
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  {error && (
+                    <p className='text-sm text-red-600 mb-3'>{error}</p>
+                  )}
+                  <div className='flex justify-end gap-3'>
+                    <button
+                      onClick={() => setActionMode(null)}
+                      disabled={isSubmitting}
+                      className='px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50'
+                    >
+                      ยกเลิก
+                    </button>
+                    <button
+                      onClick={handleOTPUnban}
+                      disabled={
+                        isSubmitting || otpCode.length !== 6 || !reason.trim()
+                      }
+                      className='px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50'
+                    >
+                      {isSubmitting ? 'กำลังดำเนินการ...' : 'ยืนยันปลดแบน'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {actionMode === 'force-logout' && (
+              <div className='fixed inset-0 z-[60] flex items-center justify-center bg-black/40'>
+                <div className='bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4'>
+                  <h3 className='text-lg font-bold text-orange-600 mb-4'>
+                    🔒 บังคับออกจากระบบด้วย OTP
+                  </h3>
+                  <p className='text-sm text-gray-600 mb-4'>
+                    ยืนยันตัวตนด้วย OTP จาก Google Authenticator
+                    ของคุณเพื่อบังคับ{' '}
+                    <strong>
+                      {user?.firstname} {user?.lastname}
+                    </strong>{' '}
+                    ออกจากระบบ
+                  </p>
+                  <div className='mb-4'>
+                    <label className='block text-xs font-medium text-gray-500 mb-1'>
+                      OTP 6 หลัก
+                    </label>
+                    <input
+                      type='text'
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => {
+                        setOtpCode(e.target.value.replace(/\D/g, ''))
+                        setError('')
+                      }}
+                      className='block w-full px-3 py-2 text-center text-lg font-mono tracking-[0.5em] border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500'
+                      placeholder='------'
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <div className='mb-4'>
+                    <label className='block text-xs font-medium text-gray-500 mb-1'>
+                      เหตุผล
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={reason}
+                      onChange={(e) => {
+                        setReason(e.target.value)
+                        setError('')
+                      }}
+                      className='block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500 text-sm'
+                      placeholder='ระบุเหตุผลในการบังคับออกจากระบบ...'
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  {error && (
+                    <p className='text-sm text-red-600 mb-3'>{error}</p>
+                  )}
+                  <div className='flex justify-end gap-3'>
+                    <button
+                      onClick={() => {
+                        setActionMode(null)
+                        setOtpCode('')
+                        setReason('')
+                      }}
+                      disabled={isSubmitting}
+                      className='px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50'
+                    >
+                      ยกเลิก
+                    </button>
+                    <button
+                      onClick={handleForceLogout}
+                      disabled={
+                        isSubmitting || otpCode.length !== 6 || !reason.trim()
+                      }
+                      className='px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50'
+                    >
+                      {isSubmitting
+                        ? 'กำลังดำเนินการ...'
+                        : 'ยืนยันบังคับออกจากระบบ'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {actionMode === 'emergency' && (
+              <div className='fixed inset-0 z-[60] flex items-center justify-center bg-black/40'>
+                <div className='bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4'>
+                  <h3 className='text-lg font-bold text-red-600 mb-4'>
+                    🚨 ดำเนินการฉุกเฉิน
+                  </h3>
+                  <p className='text-sm text-gray-600 mb-4'>
+                    ใช้ Recovery Key ของ{' '}
+                    <strong>
+                      {user?.firstname} {user?.lastname}
+                    </strong>{' '}
+                    เพื่อดำเนินการฉุกเฉิน (Key จะถูกใช้ครั้งเดียว)
+                  </p>
+                  <div className='mb-4'>
+                    <label className='block text-xs font-medium text-gray-500 mb-1'>
+                      เลือกการดำเนินการ
+                    </label>
+                    <select
+                      value={emergencyAction}
+                      onChange={(e) =>
+                        setEmergencyAction(
+                          e.target.value as 'BAN' | 'DELETE' | 'FORCE_RESET',
+                        )
+                      }
+                      disabled={isSubmitting}
+                      className='block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 text-sm'
+                    >
+                      <option value='BAN'>🚫 ระงับบัญชี (Ban)</option>
+                      <option value='DELETE'>🗑️ ลบบัญชี (Delete)</option>
+                      <option value='FORCE_RESET'>
+                        🔑 เปลี่ยนรหัสผ่าน (Force Reset)
+                      </option>
+                    </select>
+                  </div>
+                  <div className='mb-4'>
+                    <label className='block text-xs font-medium text-gray-500 mb-1'>
+                      Recovery Key (ของเป้าหมาย)
+                    </label>
+                    <input
+                      type='text'
+                      value={recoveryKey}
+                      onChange={(e) => {
+                        setRecoveryKey(e.target.value)
+                        setError('')
+                      }}
+                      className='block w-full px-3 py-2 font-mono text-sm border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500'
+                      placeholder='XXXXXXXX'
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <div className='mb-4'>
+                    <label className='block text-xs font-medium text-gray-500 mb-1'>
+                      เหตุผล
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={reason}
+                      onChange={(e) => {
+                        setReason(e.target.value)
+                        setError('')
+                      }}
+                      className='block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 text-sm'
+                      placeholder='ระบุเหตุผลฉุกเฉิน...'
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  {error && (
+                    <p className='text-sm text-red-600 mb-3'>{error}</p>
+                  )}
+                  <div className='flex justify-end gap-3'>
+                    <button
+                      onClick={() => setActionMode(null)}
+                      disabled={isSubmitting}
+                      className='px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50'
+                    >
+                      ยกเลิก
+                    </button>
+                    <button
+                      onClick={handleEmergency}
+                      disabled={
+                        isSubmitting || !recoveryKey.trim() || !reason.trim()
+                      }
+                      className='px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50'
+                    >
+                      {isSubmitting ? 'กำลังดำเนินการ...' : 'ยืนยันดำเนินการ'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className='flex flex-wrap gap-3 pt-4 border-t border-gray-200'>
               {isSupervisorTarget ? (
                 <>
                   <div className='w-full p-3 bg-amber-50 border border-amber-200 rounded-lg mb-2'>
                     <p className='text-xs font-medium text-amber-700'>
-                      ⚠️ Supervisor ต้องการคำร้องเพื่อดำเนินการ
+                      ⚠️ Supervisor — เลือกวิธีดำเนินการ
                     </p>
                     <p className='text-xs text-amber-600 mt-0.5'>
-                      ต้องได้รับการอนุมัติจาก Supervisor เป้าหมายก่อน
+                      Force Logout = OTP ของคุณ | ปลดแบน = OTP ของคุณ | ฉุกเฉิน
+                      = Recovery Key ของเป้าหมาย
                     </p>
                   </div>
                   <button
                     onClick={() => handleAction('request')}
                     className='inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-sm bg-[#185FA5] hover:bg-[#134b82] text-white'
                   >
-                    <svg
-                      className='w-4 h-4'
-                      fill='none'
-                      stroke='currentColor'
-                      viewBox='0 0 24 24'
-                    >
-                      <path
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                        strokeWidth={2}
-                        d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
-                      />
-                    </svg>
-                    ยื่นคำร้อง
+                    📋 ยื่นคำร้อง
                   </button>
+                  <button
+                    onClick={() => handleAction('force-logout')}
+                    className='inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-sm bg-orange-500 hover:bg-orange-600 text-white'
+                  >
+                    🔒 Force Logout (OTP)
+                  </button>
+                  {isBanned && (
+                    <button
+                      onClick={() => handleAction('otp-unban')}
+                      className='inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-sm bg-emerald-500 hover:bg-emerald-600 text-white'
+                    >
+                      🔓 ปลดแบน (OTP)
+                    </button>
+                  )}
+                  {!isBanned && (
+                    <button
+                      onClick={() => handleAction('emergency')}
+                      className='inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all shadow-sm bg-red-500 hover:bg-red-600 text-white'
+                    >
+                      🚨 ฉุกเฉิน
+                    </button>
+                  )}
                 </>
               ) : (
                 <>

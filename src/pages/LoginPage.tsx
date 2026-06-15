@@ -18,6 +18,20 @@ const LoginPage = () => {
 
   useEffect(() => {
     console.log('[Login LifeCycle] Component mounted')
+
+    // 🌟 ตรวจสอบ query param ?logout=success สำหรับแสดง toast แจ้งเตือน
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('logout') === 'success') {
+      toast.fire({
+        icon: 'success',
+        title: 'ออกจากระบบสำเร็จ',
+        showConfirmButton: false,
+        timer: 1500,
+      })
+      // ลบ query param ออกจาก URL ป้องกัน toast ซ้ำเมื่อ refresh
+      window.history.replaceState({}, '', '/login')
+    }
+
     const t = setTimeout(() => setPhase('zoom-out'), 400)
     const t2 = setTimeout(() => setPhase('done'), 1600)
     return () => {

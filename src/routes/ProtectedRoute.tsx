@@ -10,8 +10,14 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
+  const isLoggingOut = useAuthStore((state) => state.isLoggingOut)
   const user = useAuthStore((state) => state.user)
   const location = useLocation()
+
+  // 🌟 ถ้ากำลัง Logout อยู่ — รอ Hard Redirect อย่างเดียว ไม่ Navigate ซ้ำ
+  if (isLoggingOut) {
+    return null
+  }
 
   console.log('[ProtectedRoute] isLoggedIn:', isLoggedIn)
   console.log('[ProtectedRoute] user:', user)

@@ -51,6 +51,7 @@ export const api = async <T = unknown>(
     if (
       window.location.pathname === '/login' ||
       endpoint.includes('/auth/login') ||
+      endpoint.includes('/auth/logout') ||
       endpoint.includes('/auth/me') ||
       endpoint.includes('/2fa/verify-login') ||
       endpoint.includes('/2fa/recovery/use') // ✨ Recovery key: อย่า redirect กลับ login

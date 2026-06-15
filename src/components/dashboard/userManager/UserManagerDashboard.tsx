@@ -518,6 +518,7 @@ const UserProfileManagerDashboard: React.FC = () => {
         onDelete={handleOpenDeleteModal}
         onForcePassword={handleOpenPasswordModal}
         onOpenRequest={handleOpenRequest}
+        onRefresh={handleRefreshUsers}
       />
       <CreateRequestModal
         isOpen={requestTarget !== null}

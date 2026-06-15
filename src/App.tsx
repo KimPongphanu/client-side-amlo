@@ -45,6 +45,11 @@ function App() {
   useEffect(() => {
     const initAuth = async () => {
       try {
+        // 🌟 ถ้าเพิ่ง logout — ข้าม verifyUser ให้ LoginPage จัดการ toast แทน
+        if (window.location.search.includes('logout=success')) {
+          setIsCheckingAuth(false)
+          return
+        }
         await verifyUser()
       } catch (err) {
         console.error(err)

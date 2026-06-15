@@ -1,0 +1,11 @@
+1. Create Admin
+-สามารถเลือก Gen รหัสผ่าน / กรอกรหัสผ่านเอง
+-บังคับ Force Password Reset ทันที
+2.2FA 2 หน้า มีปัญหา
+-Setup ถ้า ยืนยัน QrCode เสร็จ -> สร้าง Recoverty keys
+-ต้องแสดง List Recovery Keys
+-เมื่อเสร็จต้องย้อนกลับไป /login
+3.ระบบ Forgot Password ต้องกรอกอีเมล รองรับ เฉพาะ Admin
+-ตรวจสอบ Account -> if(Admin) -> Allowed Reset Password
+4.ระบบคำร้องยังมีปัญหา 
+5.ตอน logout มีปัญหา redirect ไป /login ซ้ำซ้อน

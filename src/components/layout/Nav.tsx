@@ -16,17 +16,12 @@ export default function Nav() {
   const [isAccountOpen, setIsAccountOpen] = useState(false)
   const accountRef = useRef<HTMLDivElement>(null)
 
-  const { isLoggedIn, logoutUser, verifyUser } = useAuthStore()
+  const { isLoggedIn, logoutUser } = useAuthStore()
 
   // 🌟 2. ดึง departmentList ออกมาจาก Store เพื่อไปใช้งานด้านล่าง
   const departmentList = useContentStore((state) => state.departmentList)
 
-  // 🌟 3. ปรับให้รันรอบเดียวตอนโหลด Component ป้องกันสภาวะ Infinite Loop
-  useEffect(() => {
-    verifyUser()
-  }, [verifyUser])
-
-  // 🌟 4. เพิ่ม Cleanup ป้องกัน Memory Leak จากการตั้งค่าดีเลย์เมาส์
+  // 🌟 3. เพิ่ม Cleanup ป้องกัน Memory Leak จากการตั้งค่าดีเลย์เมาส์
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
@@ -42,7 +37,7 @@ export default function Nav() {
     setIsAccountOpen(false)
     handleCloseMobileMenu()
     await logoutUser()
-    navigate('/')
+    // logoutUser() has hard redirect to /login?logout=success already
   }
 
   useEffect(() => {

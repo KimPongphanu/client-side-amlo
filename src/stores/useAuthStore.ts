@@ -1,13 +1,14 @@
 import { create } from 'zustand'
 import { authService } from '../services/authService'
 import type { UserProfile } from '../type'
-import { swal, toast } from '../utils/swalConfig'
+import { swal } from '../utils/swalConfig'
 
 interface AuthState {
   // --- States ---
   user: UserProfile | null
   isLoggedIn: boolean
   isLoading: boolean
+  isLoggingOut: boolean // NEW: Flag to block ProtectedRoute during logout
   error: string | null
 
   // --- Role Checking Helpers ---
@@ -33,6 +34,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoggedIn: false,
   isLoading: true,
+  isLoggingOut: false, // NEW
   error: null,
 
   /**
@@ -136,40 +138,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
    * Clears client storage, invalidates backend session, and redirects to login
    */
   logoutUser: async () => {
-    console.log(
-      '[Logout Store] Initiating integrated secure logout sequence...',
-    )
+    // 0. ยก Flag ป้องกัน ProtectedRoute redirect ซ้ำ
+    set({ isLoggingOut: true })
 
-    // 1. Clear client-side session immediately
-    try {
-      if (typeof authService.clearLocalSession === 'function') {
-        authService.clearLocalSession()
-      } else {
-        sessionStorage.clear()
-      }
-    } catch (cleanError) {
-      console.error('[Logout Store] Client session cleanup failed:', cleanError)
-    }
+    // 1. Clear local state และ session
+    authService.clearLocalSession()
 
-    // 2. Call backend logout API to invalidate session
-    try {
-      await authService.logout()
-    } catch (apiError) {
-      console.error('[Logout Store] API logout request failed:', apiError)
-    } finally {
-      // Ensure state is cleared even if API fails
-      set({ user: null, isLoggedIn: false })
+    // 2. Fire-and-forget API call (ไม่รอ response)
+    authService.logout().catch(() => {})
 
-      // 3. Show success notification
-      await toast.fire({
-        icon: 'success',
-        title: 'ออกจากระบบสำเร็จ',
-        text: 'กำลังพาท่านกลับไปยังหน้าแรก',
-      })
-
-      // 4. Hard redirect to clear all application state
-      window.location.href = '/login'
-    }
+    // 3. Clear state และ redirect ไปหน้า login ทันที พร้อม query param ให้ LoginPage แสดง toast
+    set({ user: null, isLoggedIn: false, isLoading: false })
+    window.location.href = '/login?logout=success'
   },
 
   // =========================================================================

@@ -10,14 +10,12 @@ import {
 import QRCode from 'qrcode'
 import { useEffect, useRef, useState } from 'react'
 import { FaQuestionCircle } from 'react-icons/fa'
-import { useNavigate } from 'react-router-dom'
 import OtpInput from '../components/common/OtpInput'
 import { twoFactorService } from '../services/twoFactorService'
 import { useAuthStore } from '../stores/useAuthStore'
 
 export default function TwoFactorSetup() {
   const { user } = useAuthStore()
-  const navigate = useNavigate()
   const [step, setStep] = useState<'setup' | 'verify' | 'complete'>('setup')
   const [secret, setSecret] = useState('')
   const [otpToken, setOtpToken] = useState('')
@@ -71,6 +69,8 @@ export default function TwoFactorSetup() {
     try {
       const response = await twoFactorService.enable2FA(otpToken)
       setRecoveryKeys(response.data.recoveryKeys)
+      // 🌟 รีเฟรช user object ใน store เพื่อให้ twoFactorEnabled = true
+      await useAuthStore.getState().verifyUser()
       setStep('complete')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'รหัส OTP ไม่ถูกต้อง')
@@ -176,12 +176,51 @@ export default function TwoFactorSetup() {
               </button>
             </div>
 
+            {/* 🌟 แสดง Recovery Keys ทั้ง 8 รหัส */}
+            <div className='mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg'>
+              <h3 className='font-bold text-yellow-800'>
+                ⚠️ บันทึก Recovery Keys ของคุณ
+              </h3>
+              <p className='text-sm text-yellow-700 mt-1'>
+                รหัสเหล่านี้ใช้สำหรับเข้าสู่ระบบหากคุณไม่สามารถใช้ 2FA ได้ (เช่น
+                มือถือหาย) แต่ละรหัสใช้ได้ครั้งเดียว เก็บไว้ในที่ปลอดภัย
+              </p>
+
+              <div className='mt-3 p-3 bg-white rounded border'>
+                <div className='grid grid-cols-2 gap-2 font-mono text-sm'>
+                  {recoveryKeys.map((key, idx) => (
+                    <div key={idx} className='p-1'>
+                      {idx + 1}. {key}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className='mt-4 flex space-x-3'>
+                <button
+                  onClick={handleCopyKeys}
+                  className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 cursor-pointer'
+                >
+                  {keysCopied ? 'คัดลอกแล้ว!' : 'คัดลอก'}
+                </button>
+                <button
+                  onClick={handlePrintKeys}
+                  className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer'
+                >
+                  พิมพ์
+                </button>
+              </div>
+            </div>
+
             <div className='mt-6 flex justify-end'>
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => {
+                  // Logout แล้ว redirect ไปหน้า login เพื่อให้ login ใหม่ด้วย 2FA
+                  useAuthStore.getState().logoutUser()
+                }}
                 className='px-6 py-2.5 text-sm font-bold text-white bg-green-600 rounded-xl hover:bg-green-700 cursor-pointer transition-colors'
               >
-                เสร็จสิ้น → ไปยังหน้า Dashboard
+                เสร็จสิ้น → ไปยังหน้าเข้าสู่ระบบ
               </button>
             </div>
           </div>
