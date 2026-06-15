@@ -6,6 +6,7 @@ import ContactRequestManager from '../components/dashboard/ContactRequestManager
 import DepartmentManagerDashboard from '../components/dashboard/department/DepartmentManagerDashboard'
 import NavBar from '../components/dashboard/NavBarComponent'
 import NewsManagerDashboard from '../components/dashboard/NewsManagerDashboard'
+import OverviewDashboard from '../components/dashboard/OverviewDashboard'
 import PRManagerDashboard from '../components/dashboard/PRManagerDashboard'
 import ProfileDashboard from '../components/dashboard/ProfileDashboard'
 import ReviewManager from '../components/dashboard/ReviewManager'
@@ -32,12 +33,6 @@ type MenuId =
 // ---------------------------------------------------------
 // Mockup Components
 // ---------------------------------------------------------
-const OverviewComponent = () => (
-  <div className='bg-slate-50 border border-slate-200 p-6'>
-    <h2 className='text-xl font-bold mb-4'>ภาพรวมระบบ (Overview)</h2>
-    <p className='text-slate-600'>กำลังแสดงข้อมูลสถิติ...</p>
-  </div>
-)
 
 const DataCleansingComponent = () => (
   <div className='bg-slate-50 border border-slate-200 p-6'>
@@ -339,7 +334,7 @@ const DashboardPage = () => {
   const renderMainContent = () => {
     switch (activeMenu) {
       case 'overview':
-        return <OverviewComponent />
+        return <OverviewDashboard />
       case 'profile':
         return <ProfileDashboard />
       case 'data-clean':
