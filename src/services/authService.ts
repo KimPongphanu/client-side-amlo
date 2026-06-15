@@ -29,6 +29,19 @@ export const authService = {
   },
 
   /**
+   * Update current user's firstname and lastname
+   */
+  updateProfile: async (data: {
+    firstname: string
+    lastname: string
+  }): Promise<ApiResponseBase> => {
+    return await api('/auth/me', {
+      method: 'PUT',
+      body: data as unknown as Record<string, unknown>,
+    })
+  },
+
+  /**
    * Log in user with credentials
    * Returns login response which may include requires2FA flag
    */

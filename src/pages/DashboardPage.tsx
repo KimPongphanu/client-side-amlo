@@ -1,11 +1,13 @@
 // src/pages/DashboardPage.tsx
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import AuditLogDashboard from '../components/dashboard/AuditLogDashboard'
 import ContactRequestManager from '../components/dashboard/ContactRequestManager'
 import DepartmentManagerDashboard from '../components/dashboard/department/DepartmentManagerDashboard'
 import NavBar from '../components/dashboard/NavBarComponent'
 import NewsManagerDashboard from '../components/dashboard/NewsManagerDashboard'
 import PRManagerDashboard from '../components/dashboard/PRManagerDashboard'
+import ProfileDashboard from '../components/dashboard/ProfileDashboard'
 import ReviewManager from '../components/dashboard/ReviewManager'
 import SliderManagerDashboard from '../components/dashboard/SliderManagerDashboard'
 import UserManagerDashboard from '../components/dashboard/userManager/UserManagerDashboard'
@@ -14,6 +16,7 @@ import SupervisorRequests from './SupervisorRequests'
 
 type MenuId =
   | 'overview'
+  | 'profile'
   | 'data-clean'
   | 'settings'
   | 'reviews'
@@ -24,6 +27,7 @@ type MenuId =
   | 'departments'
   | 'slider'
   | 'requests'
+  | 'audit-logs'
 
 // ---------------------------------------------------------
 // Mockup Components
@@ -43,13 +47,57 @@ const DataCleansingComponent = () => (
 )
 
 // ---------------------------------------------------------
+// Menu Category Types
+// ---------------------------------------------------------
+interface MenuCategory {
+  title: string
+  icon: string
+  supervisorOnly?: boolean
+  items: { id: MenuId; label: string; icon: string }[]
+}
+
+const allCategories: MenuCategory[] = [
+  {
+    title: 'ภาพรวม',
+    icon: 'fa-chart-pie',
+    items: [
+      { id: 'overview', label: 'ภาพรวมระบบ', icon: 'fa-chart-bar' },
+      { id: 'profile', label: 'ข้อมูลส่วนตัว', icon: 'fa-user-circle' },
+    ],
+  },
+  {
+    title: 'จัดการเนื้อหา',
+    icon: 'fa-edit',
+    items: [
+      { id: 'news', label: 'กิจกรรมและประกาศ', icon: 'fa-newspaper' },
+      { id: 'advertises', label: 'ประชาสัมพันธ์', icon: 'fa-bullhorn' },
+      { id: 'departments', label: 'จัดการหน่วยงาน', icon: 'fa-building' },
+      { id: 'slider', label: 'Slider หน้าหลัก', icon: 'fa-images' },
+      { id: 'reviews', label: 'รีวิว/ความคิดเห็น', icon: 'fa-star' },
+      { id: 'contacts', label: 'การติดต่อ', icon: 'fa-envelope' },
+    ],
+  },
+  {
+    title: 'ระบบ',
+    icon: 'fa-cogs',
+    supervisorOnly: true,
+    items: [
+      { id: 'user-manage', label: 'จัดการสมาชิก', icon: 'fa-users-cog' },
+      { id: 'requests', label: 'คำร้อง', icon: 'fa-file-alt' },
+      { id: 'audit-logs', label: 'Audit Logs', icon: 'fa-history' },
+      { id: 'settings', label: 'ตั้งค่าระบบ', icon: 'fa-cog' },
+    ],
+  },
+]
+
+// ---------------------------------------------------------
 // Sidebar Component
 // ---------------------------------------------------------
 type SideBarProps = {
   activeMenu: MenuId
   setActiveMenu: (id: MenuId) => void
   isMobileOpen: boolean
-  menus: { id: MenuId; label: string }[]
+  categories: MenuCategory[]
   pendingCount: number
 }
 
@@ -57,32 +105,82 @@ const SideBar = ({
   activeMenu,
   setActiveMenu,
   isMobileOpen,
-  menus,
+  categories,
   pendingCount,
 }: SideBarProps) => {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {}
+    categories.forEach((cat) => {
+      initial[cat.title] = true
+    })
+    return initial
+  })
+
+  const toggleCategory = (title: string) => {
+    setExpanded((prev) => ({ ...prev, [title]: !prev[title] }))
+  }
+
   return (
     <aside
       className={`bg-white border-r border-slate-200 w-64 min-h-[calc(100vh-5rem)] absolute md:static top-0 left-0 z-10 transition-transform duration-300 ease-in-out ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
     >
-      <nav className='p-4 flex flex-col gap-y-2'>
-        {menus.map((menu) => (
-          <button
-            key={menu.id}
-            onClick={() => setActiveMenu(menu.id)}
-            className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors cursor-pointer outline-none rounded-md flex items-center justify-between ${
-              activeMenu === menu.id
-                ? 'bg-blue-50 text-blue-700'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-          >
-            <span>{menu.label}</span>
-            {menu.id === 'requests' && pendingCount > 0 && (
-              <span className='inline-flex items-center justify-center w-5 h-5 text-[11px] font-bold text-white bg-red-500 rounded-full'>
-                {pendingCount}
-              </span>
-            )}
-          </button>
-        ))}
+      <nav className='p-3 flex flex-col gap-y-3'>
+        {categories.map((cat) => {
+          const isExpanded = expanded[cat.title] !== false
+          return (
+            <div key={cat.title}>
+              {/* Category Header */}
+              <button
+                onClick={() => toggleCategory(cat.title)}
+                className='w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gray-100/80 hover:bg-gray-200 transition-colors cursor-pointer outline-none'
+              >
+                <div className='flex items-center gap-2.5'>
+                  <i className={`fas ${cat.icon} text-gray-500 text-sm`} />
+                  <p className='text-sm font-bold text-gray-600 uppercase tracking-wider'>
+                    {cat.title}
+                  </p>
+                </div>
+                <i
+                  className={`fas fa-chevron-down text-gray-400 text-xs transition-transform duration-200 ${isExpanded ? 'rotate-0' : '-rotate-90'}`}
+                />
+              </button>
+
+              {/* Items */}
+              <div
+                className={`overflow-hidden transition-all duration-200 ${isExpanded ? 'max-h-96 opacity-100 mt-0.5' : 'max-h-0 opacity-0'}`}
+              >
+                <div className='flex flex-col gap-y-0.5 pl-2'>
+                  {cat.items.map((item) => {
+                    const isActive = activeMenu === item.id
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setActiveMenu(item.id)}
+                        className={`w-full text-left px-4 py-3 text-base font-medium transition-all cursor-pointer outline-none rounded-xl flex items-center justify-between ${
+                          isActive
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                        }`}
+                      >
+                        <span className='flex items-center gap-3'>
+                          <i
+                            className={`fas ${item.icon} w-5 text-center text-sm ${isActive ? 'text-blue-600' : 'text-gray-400'}`}
+                          />
+                          {item.label}
+                        </span>
+                        {item.id === 'requests' && pendingCount > 0 && (
+                          <span className='inline-flex items-center justify-center min-w-[20px] h-5 px-1 text-[11px] font-bold text-white bg-red-500 rounded-full'>
+                            {pendingCount}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )
+        })}
       </nav>
     </aside>
   )
@@ -128,35 +226,10 @@ const DashboardPage = () => {
     }
   }, [user])
 
-  const baseMenus: { id: MenuId; label: string }[] = useMemo(
-    () => [
-      { id: 'overview', label: 'ภาพรวมระบบ' },
-      { id: 'data-clean', label: 'จัดการข้อมูล' },
-      { id: 'reviews', label: 'รีวิว/ความคิดเห็น' },
-      { id: 'contacts', label: 'การติดต่อ' },
-      { id: 'advertises', label: 'ประชาสัมพันธ์' },
-      { id: 'news', label: 'กิจกรรมและประกาศ' },
-      { id: 'departments', label: 'จัดการหน่วยงาน' },
-      { id: 'slider', label: 'Slider หน้าหลัก' },
-    ],
-    [],
-  )
-
-  const supervisorOnlyMenus: { id: MenuId; label: string }[] = useMemo(
-    () => [
-      { id: 'settings', label: 'ตั้งค่าระบบ' },
-      { id: 'user-manage', label: 'จัดการสมาชิก' },
-      { id: 'requests', label: '📋 คำร้อง' },
-    ],
-    [],
-  )
-
-  const getFilteredMenus = useCallback((): { id: MenuId; label: string }[] => {
-    if (isSupervisor()) return [...baseMenus, ...supervisorOnlyMenus]
-    return baseMenus
-  }, [isSupervisor, baseMenus, supervisorOnlyMenus])
-
-  const filteredMenus = useMemo(() => getFilteredMenus(), [getFilteredMenus])
+  const filteredCategories = useMemo(() => {
+    if (isSupervisor()) return allCategories
+    return allCategories.filter((cat) => !cat.supervisorOnly)
+  }, [isSupervisor])
 
   const canAccessMenu = useCallback(
     (menuId: MenuId): boolean => {
@@ -165,6 +238,7 @@ const DashboardPage = () => {
         'settings',
         'user-manage',
         'requests',
+        'audit-logs',
       ]
       return !supervisorOnlyMenuIds.includes(menuId)
     },
@@ -266,6 +340,8 @@ const DashboardPage = () => {
     switch (activeMenu) {
       case 'overview':
         return <OverviewComponent />
+      case 'profile':
+        return <ProfileDashboard />
       case 'data-clean':
         return <DataCleansingComponent />
       case 'settings':
@@ -300,6 +376,8 @@ const DashboardPage = () => {
         return <SliderManagerDashboard />
       case 'requests':
         return <SupervisorRequests />
+      case 'audit-logs':
+        return <AuditLogDashboard />
       default:
         return <div className='p-6'>อยู่ระหว่างการพัฒนา...</div>
     }
@@ -332,7 +410,7 @@ const DashboardPage = () => {
             setIsMobileOpen(false)
           }}
           isMobileOpen={isMobileOpen}
-          menus={filteredMenus}
+          categories={filteredCategories}
           pendingCount={pendingCount}
         />
         <main className='flex-1 p-4 md:p-8 overflow-auto h-[calc(100vh-5rem)]'>
