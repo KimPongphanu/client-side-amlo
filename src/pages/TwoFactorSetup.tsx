@@ -1,21 +1,41 @@
 // src/pages/TwoFactorSetup.tsx
-import { useEffect, useState } from 'react'
+import {
+  AlertTriangle,
+  CheckCircle,
+  KeyRound,
+  ScanLine,
+  Smartphone,
+  X,
+} from 'lucide-react'
+import QRCode from 'qrcode'
+import { useEffect, useRef, useState } from 'react'
+import { FaQuestionCircle } from 'react-icons/fa'
+import { useNavigate } from 'react-router-dom'
+import OtpInput from '../components/common/OtpInput'
 import { twoFactorService } from '../services/twoFactorService'
 import { useAuthStore } from '../stores/useAuthStore'
 
 export default function TwoFactorSetup() {
   const { user } = useAuthStore()
+  const navigate = useNavigate()
   const [step, setStep] = useState<'setup' | 'verify' | 'complete'>('setup')
   const [secret, setSecret] = useState('')
-  const [otpauthUrl, setOtpauthUrl] = useState('')
   const [otpToken, setOtpToken] = useState('')
   const [recoveryKeys, setRecoveryKeys] = useState<string[]>([])
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [keysCopied, setKeysCopied] = useState(false)
+  const [showTips, setShowTips] = useState(false)
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('')
+
+  const didInit = useRef(false)
 
   useEffect(() => {
-    if (user?.twoFactorEnabled) {
+    // Strict Mode guard: run setup only once per true mount
+    if (didInit.current || !user) return
+    didInit.current = true
+
+    if (user.twoFactorEnabled) {
       setStep('complete')
     } else {
       loadSetup()
@@ -27,9 +47,15 @@ export default function TwoFactorSetup() {
     try {
       const response = await twoFactorService.setup2FA()
       setSecret(response.data.secret)
-      setOtpauthUrl(response.data.otpauthUrl)
-    } catch (err) {
-      setError('Failed to load 2FA setup')
+      // Generate QR code data URL client-side (no external API dependency)
+      const dataUrl = await QRCode.toDataURL(response.data.otpauthUrl, {
+        width: 200,
+        margin: 2,
+        color: { dark: '#000000', light: '#ffffff' },
+      })
+      setQrCodeDataUrl(dataUrl)
+    } catch {
+      setError('ไม่สามารถโหลดข้อมูลการตั้งค่า 2FA ได้')
     } finally {
       setIsLoading(false)
     }
@@ -37,7 +63,7 @@ export default function TwoFactorSetup() {
 
   const handleVerify = async () => {
     if (!otpToken || otpToken.length !== 6) {
-      setError('Please enter a valid 6-digit OTP')
+      setError('กรุณากรอกรหัส 6 หลักให้ครบ')
       return
     }
 
@@ -47,7 +73,8 @@ export default function TwoFactorSetup() {
       setRecoveryKeys(response.data.recoveryKeys)
       setStep('complete')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid OTP code')
+      setError(err instanceof Error ? err.message : 'รหัส OTP ไม่ถูกต้อง')
+      setOtpToken('')
     } finally {
       setIsLoading(false)
     }
@@ -59,8 +86,8 @@ export default function TwoFactorSetup() {
       const response = await twoFactorService.regenerateRecoveryKeys()
       setRecoveryKeys(response.data.recoveryKeys)
       setKeysCopied(false)
-    } catch (err) {
-      setError('Failed to regenerate recovery keys')
+    } catch {
+      setError('ไม่สามารถสร้าง Recovery Keys ใหม่ได้')
     } finally {
       setIsLoading(false)
     }
@@ -79,14 +106,14 @@ export default function TwoFactorSetup() {
         <html>
           <head><title>AMLO Recovery Keys</title></head>
           <body>
-            <h1>AMLO Account Recovery Keys</h1>
-            <p>Store these keys in a secure location. Each key can only be used once.</p>
+            <h1>AMLO Recovery Keys — กุญแจสำรองสำหรับบัญชีของคุณ</h1>
+            <p>เก็บรหัสเหล่านี้ในที่ปลอดภัย แต่ละรหัสใช้ได้ครั้งเดียวเท่านั้น</p>
             <ul>
               ${recoveryKeys.map((key) => `<li><strong>${key}</strong></li>`).join('')}
             </ul>
-            <p>Generated: ${new Date().toLocaleString()}</p>
+            <p>สร้างเมื่อ: ${new Date().toLocaleString('th-TH')}</p>
             <hr>
-            <p><small>Anti-Money Laundering Office (AMLO)</small></p>
+            <p><small>สำนักงานป้องกันและปราบปรามการฟอกเงิน (ปปง.)</small></p>
           </body>
         </html>
       `)
@@ -99,60 +126,62 @@ export default function TwoFactorSetup() {
     return (
       <div className='flex items-center justify-center min-h-screen bg-gray-50'>
         <div className='p-8 text-center bg-white rounded-lg shadow-md'>
-          <h2 className='text-xl font-bold text-red-600'>Access Denied</h2>
+          <h2 className='text-xl font-bold text-red-600'>ไม่มีสิทธิ์เข้าถึง</h2>
           <p className='mt-2 text-gray-600'>
-            2FA setup is only available for Supervisor accounts.
+            การตั้งค่า 2FA ใช้ได้เฉพาะบัญชี Supervisor เท่านั้น
           </p>
         </div>
       </div>
     )
   }
 
-  if (step === 'complete' && user?.twoFactorEnabled) {
+  if (
+    step === 'complete' &&
+    (user?.twoFactorEnabled || recoveryKeys.length > 0)
+  ) {
     return (
       <div className='max-w-2xl mx-auto p-6'>
         <div className='bg-white rounded-lg shadow-md p-6'>
           <div className='text-center'>
             <div className='w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center'>
-              <svg
-                className='w-8 h-8 text-green-600'
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth='2'
-                  d='M5 13l4 4L19 7'
-                />
-              </svg>
+              <CheckCircle className='w-8 h-8 text-green-600' />
             </div>
             <h2 className='mt-4 text-xl font-bold text-gray-900'>
-              2FA is Enabled
+              เปิดใช้งาน 2FA แล้ว
             </h2>
             <p className='mt-2 text-gray-600'>
-              Your account is protected with two-factor authentication.
+              บัญชีของคุณปลอดภัยด้วยการยืนยันตัวตนสองชั้น
             </p>
           </div>
 
           <div className='mt-6 border-t pt-6'>
-            <h3 className='font-medium text-gray-900'>Recovery Keys</h3>
+            <h3 className='font-medium text-gray-900'>
+              Recovery Keys ที่เหลือ
+            </h3>
             <p className='text-sm text-gray-500 mt-1'>
-              You have {recoveryKeys.length} unused recovery keys.
+              คุณมี Recovery Keys ที่ยังไม่ได้ใช้ {recoveryKeys.length} รหัส
             </p>
             <div className='mt-4 flex space-x-3'>
               <button
                 onClick={handleRegenerateKeys}
-                className='px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700'
+                className='px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700 cursor-pointer'
               >
-                Regenerate Keys
+                สร้าง Keys ใหม่
               </button>
               <button
                 onClick={handlePrintKeys}
-                className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200'
+                className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer'
               >
-                Print Keys
+                พิมพ์ Keys
+              </button>
+            </div>
+
+            <div className='mt-6 flex justify-end'>
+              <button
+                onClick={() => navigate('/dashboard')}
+                className='px-6 py-2.5 text-sm font-bold text-white bg-green-600 rounded-xl hover:bg-green-700 cursor-pointer transition-colors'
+              >
+                เสร็จสิ้น → ไปยังหน้า Dashboard
               </button>
             </div>
           </div>
@@ -164,13 +193,113 @@ export default function TwoFactorSetup() {
   return (
     <div className='max-w-2xl mx-auto p-6'>
       <div className='bg-white rounded-lg shadow-md p-6'>
-        <h1 className='text-2xl font-bold text-gray-900'>
-          Two-Factor Authentication Setup
-        </h1>
+        {/* Header with Tips button */}
+        <div className='flex items-center gap-2'>
+          <h1 className='text-2xl font-bold text-gray-900'>
+            ตั้งค่า Two-Factor Authentication (2FA)
+          </h1>
+          <button
+            onClick={() => setShowTips(true)}
+            className='text-blue-500 hover:text-blue-700 transition-colors cursor-pointer'
+            title='ดูคำแนะนำ'
+          >
+            <FaQuestionCircle size={22} />
+          </button>
+        </div>
         <p className='mt-2 text-gray-600'>
-          Protect your Supervisor account with 2FA using Google Authenticator or
-          Microsoft Authenticator.
+          เพิ่มความปลอดภัยให้บัญชี Supervisor ของคุณด้วย Google Authenticator
+          หรือ Microsoft Authenticator
         </p>
+
+        {/* Tips Modal */}
+        {showTips && (
+          <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'>
+            <div className='bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6 relative'>
+              <button
+                onClick={() => setShowTips(false)}
+                className='absolute top-4 right-4 text-gray-400 hover:text-gray-700 cursor-pointer'
+              >
+                <X size={24} />
+              </button>
+
+              <h2 className='text-lg font-bold text-gray-900 mb-4'>
+                วิธีตั้งค่า Google Authenticator
+              </h2>
+
+              <div className='space-y-4'>
+                <div className='flex gap-3'>
+                  <div className='flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
+                    <Smartphone className='w-4 h-4 text-blue-600' />
+                  </div>
+                  <div>
+                    <h3 className='font-medium text-gray-900'>
+                      ขั้นตอนที่ 1: ติดตั้งแอป
+                    </h3>
+                    <p className='text-sm text-gray-600 mt-1'>
+                      <strong>iOS:</strong> ไปที่ App Store → ค้นหา "Google
+                      Authenticator"
+                      <br />
+                      <strong>Android:</strong> ไปที่ Play Store → ค้นหา "Google
+                      Authenticator"
+                    </p>
+                  </div>
+                </div>
+
+                <div className='flex gap-3'>
+                  <div className='flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
+                    <ScanLine className='w-4 h-4 text-blue-600' />
+                  </div>
+                  <div>
+                    <h3 className='font-medium text-gray-900'>
+                      ขั้นตอนที่ 2: เพิ่มบัญชี
+                    </h3>
+                    <p className='text-sm text-gray-600 mt-1'>
+                      เปิดแอป → กดปุ่ม "+" หรือ "Add account" → เลือก "Scan a QR
+                      code" → สแกน QR Code บนหน้านี้
+                    </p>
+                  </div>
+                </div>
+
+                <div className='flex gap-3'>
+                  <div className='flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
+                    <KeyRound className='w-4 h-4 text-blue-600' />
+                  </div>
+                  <div>
+                    <h3 className='font-medium text-gray-900'>
+                      ขั้นตอนที่ 3: กรอกรหัสยืนยัน
+                    </h3>
+                    <p className='text-sm text-gray-600 mt-1'>
+                      แอปจะแสดงรหัส 6 หลักที่เปลี่ยนทุก 30 วินาที —
+                      กรอกรหัสปัจจุบันลงในช่องด้านล่าง
+                    </p>
+                  </div>
+                </div>
+
+                <div className='flex gap-3'>
+                  <div className='flex-shrink-0 w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center'>
+                    <AlertTriangle className='w-4 h-4 text-yellow-600' />
+                  </div>
+                  <div>
+                    <h3 className='font-medium text-gray-900'>ข้อควรระวัง</h3>
+                    <p className='text-sm text-gray-600 mt-1'>
+                      รหัสเปลี่ยนทุก 30 วินาที — ต้องกรอกให้ทันเวลา!
+                      <br />
+                      <strong>Recovery Keys</strong> คือทางสำรองถ้ามือถือหาย —
+                      ต้องบันทึกไว้ในที่ปลอดภัย
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowTips(false)}
+                className='mt-6 w-full py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors cursor-pointer'
+              >
+                ตกลง
+              </button>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className='mt-4 p-3 text-sm text-red-700 bg-red-100 rounded-lg'>
@@ -188,19 +317,19 @@ export default function TwoFactorSetup() {
               <>
                 <div className='mt-6 p-4 bg-gray-50 rounded-lg'>
                   <h3 className='font-medium text-gray-900'>
-                    Step 1: Scan QR Code
+                    ขั้นตอนที่ 1: สแกน QR Code
                   </h3>
                   <p className='text-sm text-gray-500 mt-1'>
-                    Open Google Authenticator or Microsoft Authenticator and
-                    scan this QR code:
+                    เปิด Google Authenticator หรือ Microsoft Authenticator
+                    แล้วสแกน QR Code ด้านล่าง
                   </p>
 
                   <div className='mt-4 flex justify-center'>
                     <div className='p-4 bg-white rounded-lg border'>
-                      {otpauthUrl && (
+                      {qrCodeDataUrl && (
                         <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauthUrl)}`}
-                          alt='QR Code'
+                          src={qrCodeDataUrl}
+                          alt='QR Code สำหรับตั้งค่า 2FA'
                           className='w-48 h-48'
                         />
                       )}
@@ -208,8 +337,8 @@ export default function TwoFactorSetup() {
                   </div>
 
                   <p className='mt-3 text-sm text-gray-500 text-center'>
-                    Can't scan? Manually enter this code:{' '}
-                    <code className='px-1 py-0.5 bg-gray-200 rounded'>
+                    สแกนไม่ได้? ป้อนรหัสนี้ด้วยตนเอง:{' '}
+                    <code className='px-1 py-0.5 bg-gray-200 rounded text-xs break-all'>
                       {secret}
                     </code>
                   </p>
@@ -217,22 +346,19 @@ export default function TwoFactorSetup() {
 
                 <div className='mt-6 p-4 bg-gray-50 rounded-lg'>
                   <h3 className='font-medium text-gray-900'>
-                    Step 2: Verify Setup
+                    ขั้นตอนที่ 2: ยืนยันการตั้งค่า
                   </h3>
                   <p className='text-sm text-gray-500 mt-1'>
-                    Enter the 6-digit code from your authenticator app:
+                    กรอกรหัส 6 หลักจากแอปพลิเคชันยืนยันตัวตน:
                   </p>
                   <div className='mt-3'>
-                    <input
-                      type='text'
-                      placeholder='000000'
-                      maxLength={6}
-                      className='w-full px-3 py-2 text-center text-2xl font-mono border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500'
+                    <OtpInput
                       value={otpToken}
-                      onChange={(e) => {
-                        setOtpToken(e.target.value.replace(/\D/g, ''))
+                      onChange={(val) => {
+                        setOtpToken(val)
                         setError('')
                       }}
+                      error={error}
                     />
                   </div>
                 </div>
@@ -241,9 +367,9 @@ export default function TwoFactorSetup() {
                   <button
                     onClick={handleVerify}
                     disabled={!otpToken || otpToken.length !== 6}
-                    className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50'
+                    className='px-6 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 cursor-pointer transition-colors'
                   >
-                    Verify and Enable 2FA
+                    เปิดใช้งาน 2FA
                   </button>
                 </div>
               </>
@@ -252,12 +378,11 @@ export default function TwoFactorSetup() {
             {step === 'complete' && recoveryKeys.length > 0 && (
               <div className='mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg'>
                 <h3 className='font-bold text-yellow-800'>
-                  Important: Save Your Recovery Keys
+                  ⚠️ บันทึก Recovery Keys ของคุณ
                 </h3>
                 <p className='text-sm text-yellow-700 mt-1'>
-                  These keys can be used to access your account if you lose your
-                  2FA device. Each key can only be used once. Store them
-                  securely.
+                  รหัสเหล่านี้ใช้สำหรับเข้าสู่ระบบหากคุณไม่สามารถใช้ 2FA ได้
+                  (เช่น มือถือหาย) แต่ละรหัสใช้ได้ครั้งเดียว เก็บไว้ในที่ปลอดภัย
                 </p>
 
                 <div className='mt-3 p-3 bg-white rounded border'>
@@ -273,15 +398,15 @@ export default function TwoFactorSetup() {
                 <div className='mt-4 flex space-x-3'>
                   <button
                     onClick={handleCopyKeys}
-                    className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700'
+                    className='px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 cursor-pointer'
                   >
-                    {keysCopied ? 'Copied!' : 'Copy to Clipboard'}
+                    {keysCopied ? 'คัดลอกแล้ว!' : 'คัดลอก'}
                   </button>
                   <button
                     onClick={handlePrintKeys}
-                    className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200'
+                    className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 cursor-pointer'
                   >
-                    Print Keys
+                    พิมพ์
                   </button>
                 </div>
               </div>

@@ -1,4 +1,3 @@
-import Swal from 'sweetalert2'
 import { create } from 'zustand'
 import { dashboardService } from '../services/dashboardService'
 import type {
@@ -8,6 +7,7 @@ import type {
   DepartmentItem,
   NewsItem,
 } from '../type'
+import { swal, toast } from '../utils/swalConfig'
 
 interface ContactsGroup {
   data: ContactRequest[]
@@ -93,7 +93,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
       const nextStatus =
         currentStatus === 'ยังไม่ตอบกลับ' ? 'ตอบกลับแล้ว' : 'ยังไม่ตอบกลับ'
 
-      const result = await Swal.fire({
+      const result = await swal.fire({
         title: 'เปลี่ยนสถานะการติดต่อ?',
         text: `ปรับสถานะรายการนี้เป็น "${nextStatus}" ใช่หรือไม่?`,
         icon: 'question',
@@ -106,10 +106,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
       if (!result.isConfirmed) return
 
-      Swal.fire({
+      swal.fire({
         title: 'กำลังประมวลผล...',
         allowOutsideClick: false,
-        didOpen: () => Swal.showLoading(),
+        didOpen: () => swal.showLoading(),
       })
 
       try {
@@ -117,12 +117,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
           await dashboardService.updateContactStatus(id, nextStatus)
 
         if (response?.success) {
-          await Swal.fire({
+          await toast.fire({
             icon: 'success',
             title: 'อัปเดตสำเร็จ',
             text: `เปลี่ยนสถานะเป็น "${nextStatus}" เรียบร้อยแล้ว`,
-            confirmButtonColor: '#185FA5',
-            timer: 1500,
           })
           get().contacts.fetchAll()
         } else {
@@ -134,11 +132,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             ? error.message
             : 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้'
         console.error('Update contact status failed:', error)
-        Swal.fire({
+        toast.fire({
           icon: 'error',
           title: 'เกิดข้อผิดพลาด',
           text: errorMessage,
-          confirmButtonColor: '#dc2626',
         })
       }
     },
@@ -159,19 +156,17 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     }
   },
   createPR: async (form: FormData) => {
-    Swal.fire({
+    swal.fire({
       title: 'กำลังจัดเก็บข้อมูลประชาสัมพันธ์...',
-      didOpen: () => Swal.showLoading(),
+      didOpen: () => swal.showLoading(),
       allowOutsideClick: false,
     })
     try {
       await dashboardService.createNewsItem(form)
       await get().fetchPRs()
-      Swal.fire({
+      toast.fire({
         icon: 'success',
         title: 'บันทึกข้อมูลประชาสัมพันธ์สำเร็จ',
-        showConfirmButton: false,
-        timer: 1500,
       })
     } catch (error: unknown) {
       const msg =
@@ -183,32 +178,28 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         msg.includes('Success')
       ) {
         await get().fetchPRs()
-        Swal.fire({
+        toast.fire({
           icon: 'success',
           title: 'บันทึกข้อมูลสำเร็จ',
-          showConfirmButton: false,
-          timer: 1500,
         })
         return
       }
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: msg })
+      toast.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: msg })
       throw error // โยนต่อเพื่อให้ component รู้ว่าแครช ห้ามปิด modal
     }
   },
   updatePR: async (id: number, form: FormData) => {
-    Swal.fire({
+    swal.fire({
       title: 'กำลังจัดเก็บข้อมูลประชาสัมพันธ์...',
-      didOpen: () => Swal.showLoading(),
+      didOpen: () => swal.showLoading(),
       allowOutsideClick: false,
     })
     try {
       await dashboardService.updateNewsItem(id, form)
       await get().fetchPRs()
-      Swal.fire({
+      toast.fire({
         icon: 'success',
         title: 'บันทึกข้อมูลประชาสัมพันธ์สำเร็จ',
-        showConfirmButton: false,
-        timer: 1500,
       })
     } catch (error: unknown) {
       const msg =
@@ -219,15 +210,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         msg.includes('Success')
       ) {
         await get().fetchPRs()
-        Swal.fire({
+        toast.fire({
           icon: 'success',
           title: 'บันทึกข้อมูลสำเร็จ',
-          showConfirmButton: false,
-          timer: 1500,
         })
         return
       }
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: msg })
+      toast.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: msg })
       throw error
     }
   },
@@ -247,19 +236,17 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     }
   },
   createNews: async (form: FormData) => {
-    Swal.fire({
+    swal.fire({
       title: 'กำลังจัดเก็บข้อมูลกิจกรรม...',
-      didOpen: () => Swal.showLoading(),
+      didOpen: () => swal.showLoading(),
       allowOutsideClick: false,
     })
     try {
       await dashboardService.createNewsItem(form)
       await get().fetchNews()
-      Swal.fire({
+      toast.fire({
         icon: 'success',
         title: 'บันทึกข้อมูลกิจกรรมสำเร็จ',
-        showConfirmButton: false,
-        timer: 1500,
       })
     } catch (error: unknown) {
       const msg =
@@ -270,15 +257,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         msg.includes('Success')
       ) {
         await get().fetchNews()
-        Swal.fire({
+        toast.fire({
           icon: 'success',
           title: 'บันทึกข้อมูลสำเร็จ',
-          showConfirmButton: false,
-          timer: 1500,
         })
         return
       }
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'เกิดข้อผิดพลาดในการบันทึก',
         text: msg,
@@ -287,19 +272,17 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     }
   },
   updateNews: async (id: number, form: FormData) => {
-    Swal.fire({
+    swal.fire({
       title: 'กำลังจัดเก็บข้อมูลกิจกรรม...',
-      didOpen: () => Swal.showLoading(),
+      didOpen: () => swal.showLoading(),
       allowOutsideClick: false,
     })
     try {
       await dashboardService.updateNewsItem(id, form)
       await get().fetchNews()
-      Swal.fire({
+      toast.fire({
         icon: 'success',
         title: 'บันทึกข้อมูลกิจกรรมสำเร็จ',
-        showConfirmButton: false,
-        timer: 1500,
       })
     } catch (error: unknown) {
       const msg =
@@ -310,15 +293,13 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         msg.includes('Success')
       ) {
         await get().fetchNews()
-        Swal.fire({
+        toast.fire({
           icon: 'success',
           title: 'บันทึกข้อมูลสำเร็จ',
-          showConfirmButton: false,
-          timer: 1500,
         })
         return
       }
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'เกิดข้อผิดพลาดในการบันทึก',
         text: msg,

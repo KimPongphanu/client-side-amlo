@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import Swal from 'sweetalert2'
 import { useDashboardStore } from '../../stores/useDashboardStore'
+import { swal, toast } from '../../utils/swalConfig'
 
 // interface FilterState {
 //   startDate: string
@@ -62,7 +62,7 @@ export default function ReviewManager() {
   ) => {
     e.stopPropagation()
 
-    Swal.fire({
+    swal.fire({
       title: 'กำลังบันทึกสถานะ',
       html: 'ระบบกำลังดำเนินการสื่อสารกับฐานข้อมูลส่วนกลาง',
       allowOutsideClick: false,
@@ -76,14 +76,14 @@ export default function ReviewManager() {
         loader: 'border-stone-900 border-t-stone-200 w-10 h-10',
       },
       didOpen: () => {
-        Swal.showLoading()
+        swal.showLoading()
       },
     })
 
     try {
       await Promise.all([toggleCommentShow(id, currentShow), sleep(500)])
 
-      Swal.fire({
+      toast.fire({
         title: 'บันทึกสถานะเรียบร้อย',
         icon: 'success',
         timer: 500,
@@ -102,7 +102,7 @@ export default function ReviewManager() {
         err instanceof Error
           ? err.message
           : 'เกิดข้อผิดพลาดภายในระบบเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง'
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         iconColor: '#DC2626',
         title: 'อัปเดตสถานะล้มเหลว',
@@ -126,7 +126,7 @@ export default function ReviewManager() {
   const handleBulkSetShow = async (show: boolean) => {
     if (selectedIds.size === 0) return
 
-    Swal.fire({
+    swal.fire({
       title: `กำลังอัปเดตสถานะ ${selectedIds.size} รายการ`,
       html: 'ระบบกำลังดำเนินการส่งชุดข้อมูลแบบ Multitask ไปยังเซิร์ฟเวอร์ส่วนกลาง',
       allowOutsideClick: false,
@@ -140,7 +140,7 @@ export default function ReviewManager() {
         loader: 'border-stone-900 border-t-stone-200 w-10 h-10',
       },
       didOpen: () => {
-        Swal.showLoading()
+        swal.showLoading()
       },
     })
 
@@ -152,7 +152,7 @@ export default function ReviewManager() {
 
       setSelectedIds(new Set())
 
-      Swal.fire({
+      toast.fire({
         title: 'อัปเดตกลุ่มสำเร็จเรียบร้อย',
         icon: 'success',
         timer: 800,
@@ -171,7 +171,7 @@ export default function ReviewManager() {
         err instanceof Error
           ? err.message
           : 'กระบวนการส่งสัญญาณล้มเหลว กรุณาลองใหม่อีกครั้ง'
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         iconColor: '#DC2626',
         title: 'เกิดข้อผิดพลาดในการอัปเดตกลุ่ม',

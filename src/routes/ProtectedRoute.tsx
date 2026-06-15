@@ -1,17 +1,18 @@
 // src/routes/ProtectedRoute.tsx
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/useAuthStore'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
-  allowedRoles?: ('USER' | 'ADMIN')[] // เพิ่มตัวเลือกเช็คสิทธิ์ Role
+  // เพิ่ม SUPERVISOR เข้าไปใน type
+  allowedRoles?: ('USER' | 'ADMIN' | 'SUPERVISOR')[]
 }
 
 const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
   const user = useAuthStore((state) => state.user)
+  const location = useLocation()
 
-  // เพิ่ม Log เพื่อ Debug
   console.log('[ProtectedRoute] isLoggedIn:', isLoggedIn)
   console.log('[ProtectedRoute] user:', user)
   console.log('[ProtectedRoute] allowedRoles:', allowedRoles)
@@ -21,16 +22,43 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to='/login' replace />
   }
 
-  // ถ้าระบุสิทธิ์ที่ต้องการ แล้วผู้ใช้ไม่มีสิทธิ์นั้น ให้ดีดกลับหน้าแรกทันที
-  if (allowedRoles && allowedRoles.length > 0) {
-    // แปลง role ทั้งสองฝั่งให้เป็นตัวพิมพ์ใหญ่เพื่อป้องกัน case-sensitive issue
-    const userRoleUpper = user.role?.toUpperCase()
-    const hasAllowedRole = allowedRoles.some(
-      (role) => role.toUpperCase() === userRoleUpper,
-    )
+  // If user is forced to reset password, redirect to force-password-reset
+  // unless they are already on that page
+  if (
+    user.forcePasswordReset &&
+    location.pathname !== '/force-password-reset'
+  ) {
+    console.log('[ProtectedRoute] Force password reset required, redirecting')
+    return <Navigate to='/force-password-reset' replace />
+  }
 
-    console.log('[ProtectedRoute] user.role:', user.role)
-    console.log('[ProtectedRoute] userRoleUpper:', userRoleUpper)
+  // 🌟 NEW: Force SUPERVISOR to enable 2FA before accessing any protected page
+  if (
+    user.role === 'SUPERVISOR' &&
+    !user.twoFactorEnabled &&
+    location.pathname !== '/2fa-setup'
+  ) {
+    console.log('[ProtectedRoute] SUPERVISOR must setup 2FA, redirecting')
+    return <Navigate to='/2fa-setup' replace />
+  }
+
+  if (allowedRoles && allowedRoles.length > 0) {
+    const userRole = user.role
+    const hasAllowedRole = allowedRoles.some((role) => {
+      const match = role === userRole
+      console.log(
+        `[ProtectedRoute] Comparing: "${role}" === "${userRole}" => ${match}`,
+      )
+      return match
+    })
+
+    console.log(
+      '[ProtectedRoute] user.role:',
+      user.role,
+      'typeof:',
+      typeof user.role,
+    )
+    console.log('[ProtectedRoute] allowedRoles:', allowedRoles)
     console.log('[ProtectedRoute] hasAllowedRole:', hasAllowedRole)
 
     if (!hasAllowedRole) {

@@ -1,11 +1,11 @@
 import React from 'react'
-import type { User } from '../UserManagerDashboard'
+import type { DashboardUser } from './BanModal'
 import BaseModal from './BaseModal'
 
 interface PasswordModalProps {
   isOpen: boolean
   onClose: () => void
-  selectedUser: User | null
+  selectedUser: DashboardUser | null
   onSubmit: () => void
 }
 

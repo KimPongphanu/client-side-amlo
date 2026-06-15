@@ -3,14 +3,16 @@ import { api } from '../utils/api'
 
 // กำหนด Interface สำหรับ Response ของ getUsers ให้ตรงกับหลังบ้าน
 export interface UserItem {
-  id: number
   uuid: string
   firstname: string
   lastname: string
   email: string
-  role: 'USER' | 'ADMIN'
+  role: 'USER' | 'ADMIN' | 'SUPERVISOR'
+  status: string
+  twoFactorEnabled?: boolean
+  twoFactorMethod?: string
   createdAt: string
-  recentOnline: string // เวลาอัปเดตล่าสุดจาก DB สำหรับคำนวณสถานะ Online/Offline
+  recentOnline: string
 }
 
 export interface UsersResponse extends ApiResponseBase {
@@ -28,6 +30,7 @@ export const authService = {
 
   /**
    * Log in user with credentials
+   * Returns login response which may include requires2FA flag
    */
   login: async (body: Record<string, unknown>): Promise<LoginResponse> => {
     return await api<LoginResponse>('/auth/login', {

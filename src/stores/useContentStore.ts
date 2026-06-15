@@ -1,4 +1,3 @@
-import Swal from 'sweetalert2'
 import isEmail from 'validator/lib/isEmail'
 import { create } from 'zustand'
 import { contentService } from '../services/contentService'
@@ -12,6 +11,7 @@ import type {
   NewsFormData,
   NewsItem,
 } from '../type'
+import { swal, toast } from '../utils/swalConfig'
 
 interface ContentState {
   newsList: NewsItem[]
@@ -200,11 +200,11 @@ export const useContentStore = create<ContentState>((set, get) => ({
 
     set({ isSubmittingContact: true })
 
-    Swal.fire({
+    swal.fire({
       title: 'กำลังส่งข้อความ...',
       text: 'กรุณารอสักครู่ระบบกำลังบันทึกข้อมูล',
       allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
+      didOpen: () => swal.showLoading(),
     })
 
     const { botField: _, ...actualData } = formData
@@ -213,31 +213,28 @@ export const useContentStore = create<ContentState>((set, get) => ({
       const response = await contentService.createContact(actualData)
 
       if (response && response.success) {
-        await Swal.fire({
+        await toast.fire({
           icon: 'success',
           title: 'ส่งข้อความสำเร็จ!',
           text: 'ขอบคุณที่ติดต่อเรา เจ้าหน้าที่จะติดต่อกลับโดยเร็วที่สุด',
-          confirmButtonColor: '#2563eb',
         })
         resetForm()
         await get().fetchContacts()
       } else {
-        Swal.fire({
+        toast.fire({
           icon: 'error',
           title: 'เกิดข้อผิดพลาด',
           text:
             response?.message ||
             'ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่อีกครั้งในภายหลัง',
-          confirmButtonColor: '#dc2626',
         })
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'ระบบขัดข้อง'
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'การเชื่อมต่อล้มเหลว',
         text: msg,
-        confirmButtonColor: '#dc2626',
       })
     } finally {
       set({ isSubmittingContact: false })
@@ -248,7 +245,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
     const { formData, activePost, uploadFile, mobileView } = get()
 
     if (!formData || !formData.title.trim()) {
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'ข้อมูลไม่ครบ',
         text: 'กรุณาระบุหัวข้อประกาศก่อนดำเนินการต่อครับ',
@@ -258,7 +255,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
     }
 
     if (activePost === null && !uploadFile) {
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'ข้อมูลไม่ครบ',
         text: 'กรุณาทำการอัปโหลดรูปภาพปกสำหรับประกาศใหม่นี้ด้วยครับ',
@@ -266,11 +263,11 @@ export const useContentStore = create<ContentState>((set, get) => ({
       return
     }
 
-    Swal.fire({
+    swal.fire({
       title: 'กำลังบันทึกข้อมูล...',
       allowOutsideClick: false,
       showConfirmButton: false,
-      didOpen: () => Swal.showLoading(),
+      didOpen: () => swal.showLoading(),
     })
 
     try {
@@ -290,15 +287,13 @@ export const useContentStore = create<ContentState>((set, get) => ({
       await get().fetchPublicData()
       closeModal()
 
-      Swal.fire({
+      toast.fire({
         icon: 'success',
         title: 'บันทึกสำเร็จเรียบร้อย',
-        showConfirmButton: false,
-        timer: 1500,
       })
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'บันทึกข้อมูลล้มเหลว'
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'เกิดข้อผิดพลาดภายในระบบ',
         text: msg,
@@ -318,11 +313,11 @@ export const useContentStore = create<ContentState>((set, get) => ({
   },
 
   toggleCommentStatus: async (id, currentShow) => {
-    Swal.fire({
+    swal.fire({
       title: 'กำลังบันทึกสถานะ',
       allowOutsideClick: false,
       showConfirmButton: false,
-      didOpen: () => Swal.showLoading(),
+      didOpen: () => swal.showLoading(),
     })
     try {
       const nextShow = !currentShow
@@ -332,15 +327,13 @@ export const useContentStore = create<ContentState>((set, get) => ({
           c.id === id ? { ...c, isShow: nextShow } : c,
         ),
       }))
-      Swal.fire({
+      toast.fire({
         title: 'บันทึกสถานะเรียบร้อย',
         icon: 'success',
-        timer: 500,
-        showConfirmButton: false,
       })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'ระบบขัดข้อง'
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'อัปเดตสถานะล้มเหลว',
         text: msg,
@@ -350,11 +343,11 @@ export const useContentStore = create<ContentState>((set, get) => ({
 
   bulkCommentsStatus: async (ids, show) => {
     if (ids.size === 0) return
-    Swal.fire({
+    swal.fire({
       title: `กำลังอัปเดตสถานะ ${ids.size} รายการ`,
       allowOutsideClick: false,
       showConfirmButton: false,
-      didOpen: () => Swal.showLoading(),
+      didOpen: () => swal.showLoading(),
     })
     try {
       await Promise.all(
@@ -367,15 +360,13 @@ export const useContentStore = create<ContentState>((set, get) => ({
           ids.has(c.id) ? { ...c, isShow: show } : c,
         ),
       }))
-      Swal.fire({
+      toast.fire({
         title: 'อัปเดตกลุ่มสำเร็จเรียบร้อย',
         icon: 'success',
-        timer: 800,
-        showConfirmButton: false,
       })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'ระบบขัดข้อง'
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'เกิดข้อผิดพลาดในการอัปเดตกลุ่ม',
         text: msg,
@@ -386,7 +377,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
   updateContactStatus: async (id, currentStatus) => {
     const nextStatus =
       currentStatus === 'ยังไม่ตอบกลับ' ? 'ตอบกลับแล้ว' : 'ยังไม่ตอบกลับ'
-    const result = await Swal.fire({
+    const result = await swal.fire({
       title: 'เปลี่ยนสถานะการติดต่อ?',
       text: `ปรับสถานะรายการนี้เป็น "${nextStatus}" ใช่หรือไม่?`,
       icon: 'question',
@@ -397,25 +388,23 @@ export const useContentStore = create<ContentState>((set, get) => ({
 
     if (!result.isConfirmed) return
 
-    Swal.fire({
+    swal.fire({
       title: 'กำลังประมวลผล...',
       allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
+      didOpen: () => swal.showLoading(),
     })
     try {
       await contentService.updateContactStatus(id, nextStatus)
       await get().fetchContacts()
-      Swal.fire({
+      toast.fire({
         icon: 'success',
         title: 'อัปเดตสำเร็จ',
         text: `เปลี่ยนสถานะเป็น "${nextStatus}" เรียบร้อยแล้ว`,
-        timer: 1500,
-        showConfirmButton: false,
       })
     } catch (error: unknown) {
       const msg =
         error instanceof Error ? error.message : 'ไม่สามารถอัปเดตสถานะได้'
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'เกิดข้อผิดพลาด',
         text: msg,
@@ -430,18 +419,9 @@ export const useContentStore = create<ContentState>((set, get) => ({
     const RATE_LIMIT_COUNT = 3
 
     if (formData.botField) {
-      Swal.fire({
+      toast.fire({
         title: 'ส่งความคิดเห็นสำเร็จ',
         icon: 'success',
-        timer: 1500,
-        timerProgressBar: true,
-        showConfirmButton: false,
-        customClass: {
-          popup:
-            'rounded-3xl border-2 border-stone-900 bg-white p-6 shadow-2xl',
-          title: 'text-sm font-bold text-stone-950 font-sans tracking-tight',
-          timerProgressBar: 'bg-stone-900',
-        },
       })
       resetForm()
       setIsOpen(false)
@@ -449,23 +429,10 @@ export const useContentStore = create<ContentState>((set, get) => ({
     }
 
     if (formData.rating === 0) {
-      Swal.fire({
+      toast.fire({
         icon: 'warning',
-        iconColor: '#D97706',
         title: 'กรุณาให้คะแนนความพึงพอใจ',
         text: 'โปรดเลือกคะแนนดาวก่อนส่งข้อเสนอแนะให้แก่ระบบครับ',
-        buttonsStyling: false,
-        confirmButtonText: 'รับทราบ',
-        customClass: {
-          popup:
-            'rounded-3xl border-2 border-stone-900 bg-white p-6 shadow-2xl',
-          title:
-            'text-base font-bold text-stone-950 font-sans tracking-tight pt-2',
-          htmlContainer:
-            'text-xs text-stone-600 font-medium leading-relaxed mt-2 px-4',
-          confirmButton:
-            'bg-stone-900 hover:bg-black text-white text-xs font-bold px-6 py-2 rounded-xl transition-all duration-200 cursor-pointer shadow-sm active:scale-95 mt-3 outline-none',
-        },
       })
       return
     }
@@ -477,23 +444,10 @@ export const useContentStore = create<ContentState>((set, get) => ({
 
     const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/i
     if (urlRegex.test(formData.content)) {
-      Swal.fire({
+      toast.fire({
         icon: 'error',
-        iconColor: '#DC2626',
         title: 'ไม่อนุญาตให้แนบลิงก์',
         text: 'ระบบความปลอดภัยไม่อนุญาตให้ระบุที่อยู่ลิงก์เว็บไซต์ใดๆ ภายในช่องความคิดเห็นครับ',
-        buttonsStyling: false,
-        confirmButtonText: 'กลับไปแก้ไข',
-        customClass: {
-          popup:
-            'rounded-3xl border-2 border-stone-900 bg-white p-6 shadow-2xl',
-          title:
-            'text-base font-bold text-stone-950 font-sans tracking-tight pt-2',
-          htmlContainer:
-            'text-xs text-stone-600 font-medium leading-relaxed mt-2 px-4',
-          confirmButton:
-            'bg-stone-900 hover:bg-black text-white text-xs font-bold px-6 py-2 rounded-xl transition-all duration-200 cursor-pointer shadow-sm active:scale-95 mt-3 outline-none',
-        },
       })
       return
     }
@@ -504,23 +458,10 @@ export const useContentStore = create<ContentState>((set, get) => ({
     )
 
     if (filteredTimestamps.length >= RATE_LIMIT_COUNT) {
-      Swal.fire({
+      toast.fire({
         icon: 'warning',
-        iconColor: '#D97706',
         title: 'ส่งข้อมูลบ่อยเกินไป',
         text: 'คุณทำรายการถี่เกินกำหนด กรุณาเว้นระยะสักครู่แล้วลองใหม่อีกครั้งครับ',
-        buttonsStyling: false,
-        confirmButtonText: 'ตกลง',
-        customClass: {
-          popup:
-            'rounded-3xl border-2 border-stone-900 bg-white p-6 shadow-2xl',
-          title:
-            'text-base font-bold text-stone-950 font-sans tracking-tight pt-2',
-          htmlContainer:
-            'text-xs text-stone-600 font-medium leading-relaxed mt-2 px-4',
-          confirmButton:
-            'bg-stone-900 hover:bg-black text-white text-xs font-bold px-6 py-2 rounded-xl transition-all duration-200 cursor-pointer shadow-sm active:scale-95 mt-3 outline-none',
-        },
       })
       set({ commentTimestamps: filteredTimestamps })
       return
@@ -538,20 +479,10 @@ export const useContentStore = create<ContentState>((set, get) => ({
       })
 
       if (response && response.success) {
-        Swal.fire({
+        toast.fire({
           title: 'ส่งความคิดเห็นสำเร็จ',
           html: 'ขอบพระคุณสำหรับข้อเสนอแนะและคำติชมของท่าน',
           icon: 'success',
-          timer: 2000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-          customClass: {
-            popup:
-              'rounded-3xl border-2 border-stone-900 bg-white p-6 shadow-2xl',
-            title: 'text-sm font-bold text-stone-950 font-sans tracking-tight',
-            htmlContainer: 'text-xs text-stone-500 font-medium mt-1',
-            timerProgressBar: 'bg-stone-900',
-          },
         })
         resetForm()
         set({ commentError: '' })
@@ -565,23 +496,10 @@ export const useContentStore = create<ContentState>((set, get) => ({
         err instanceof Error
           ? err.message
           : 'ไม่สามารถเชื่อมต่อระบบเซิร์ฟเวอร์ได้ในขณะนี้ กรุณาลองใหม่ครับ'
-      Swal.fire({
+      toast.fire({
         icon: 'error',
-        iconColor: '#DC2626',
         title: 'เกิดข้อผิดพลาด',
         text: msg,
-        buttonsStyling: false,
-        confirmButtonText: 'ลองใหม่อีกครั้ง',
-        customClass: {
-          popup:
-            'rounded-3xl border-2 border-stone-900 bg-white p-6 shadow-2xl',
-          title:
-            'text-base font-bold text-stone-950 font-sans tracking-tight pt-2',
-          htmlContainer:
-            'text-xs text-stone-600 font-medium leading-relaxed mt-2 px-4',
-          confirmButton:
-            'bg-stone-900 hover:bg-black text-white text-xs font-bold px-6 py-2 rounded-xl transition-all duration-200 cursor-pointer shadow-sm active:scale-95 mt-3 outline-none',
-        },
       })
     } finally {
       set({ isSubmittingComment: false })

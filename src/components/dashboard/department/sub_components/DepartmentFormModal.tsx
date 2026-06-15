@@ -3,10 +3,10 @@ import { Edit2, ImageIcon, Plus, Video, X } from 'lucide-react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import ReactQuill from 'react-quill-new'
 import 'react-quill-new/dist/quill.snow.css'
-import Swal from 'sweetalert2'
 import { API_URL } from '../../../../config/constants'
 import { useDashboardStore } from '../../../../stores/useDashboardStore'
 import type { DepartmentItem, GalleryFile } from '../../../../type/department'
+import { swal, toast } from '../../../../utils/swalConfig'
 
 const quillModules = {
   toolbar: [
@@ -106,7 +106,7 @@ const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     const youtubeRegex =
       /(?:youtu\.be\/|youtube\.com\/(?:embed\/|watch\?v=|shorts\/))([^?&\s]{11})/
     if (!youtubeRegex.test(trimmed)) {
-      Swal.fire({
+      toast.fire({
         icon: 'warning',
         title: 'URL ไม่ถูกต้อง',
         text: 'กรุณาวางลิงก์วิดีโอ YouTube ที่ถูกต้อง',
@@ -166,7 +166,7 @@ const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
     async (e: React.FormEvent): Promise<void> => {
       e.preventDefault()
       if (!title.trim()) {
-        Swal.fire({
+        toast.fire({
           icon: 'warning',
           title: 'กรุณากรอกหัวข้อหน่วยงาน',
           confirmButtonColor: '#185FA5',
@@ -191,10 +191,10 @@ const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         newGalleryFiles.forEach(({ file }) => formData.append('gallery', file))
       }
 
-      Swal.fire({
+      swal.fire({
         title: 'กำลังบันทึกข้อมูล...',
         allowOutsideClick: false,
-        didOpen: () => Swal.showLoading(),
+        didOpen: () => swal.showLoading(),
       })
 
       let success = false
@@ -202,7 +202,7 @@ const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         success = await updateDepartment(department.id, formData)
       } else {
         if (!coverImageInputRef.current?.files?.[0]) {
-          Swal.fire({
+          toast.fire({
             icon: 'warning',
             title: 'กรุณาเลือกรูปภาพปกหน่วยงาน',
             confirmButtonColor: '#185FA5',
@@ -213,7 +213,7 @@ const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
       }
 
       if (success) {
-        Swal.fire({
+        toast.fire({
           icon: 'success',
           title: 'บันทึกข้อมูลเรียบร้อย',
           timer: 1500,
@@ -221,7 +221,7 @@ const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
         })
         onClose()
       } else {
-        Swal.fire({
+        toast.fire({
           icon: 'error',
           title: 'ล้มเหลว',
           text: 'เกิดข้อผิดพลาดในการติดต่อฐานข้อมูล',

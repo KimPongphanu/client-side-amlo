@@ -2,10 +2,10 @@ import { Grid, List } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 import ReactQuill from 'react-quill-new'
 import 'react-quill-new/dist/quill.snow.css'
-import Swal from 'sweetalert2'
 import { dashboardService } from '../../services/dashboardService'
 import { useDashboardStore } from '../../stores/useDashboardStore'
 import type { NewsItem } from '../../type'
+import { swal, toast } from '../../utils/swalConfig'
 
 type StatusFilter = 'all' | 'shown' | 'hidden'
 type SortOrder = 'newest' | 'oldest'
@@ -275,10 +275,10 @@ export default function NewsManagerDashboard() {
   }, [newsList, search, statusFilter, sortOrder])
 
   const handleToggleShow = async (id: number, currentShow: boolean) => {
-    Swal.fire({
+    swal.fire({
       title: 'กำลังเปลี่ยนสถานะการแสดงผล...',
       allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
+      didOpen: () => swal.showLoading(),
     })
     try {
       // เรียก API patch โดยตรง ไม่ผ่าน updateNews ที่มี Swal ซ้อน
@@ -286,7 +286,7 @@ export default function NewsManagerDashboard() {
       form.append('isShow', String(!currentShow))
       await dashboardService.updateNewsItem(id, form)
       await fetchNews() // refresh list
-      Swal.fire({
+      toast.fire({
         icon: 'success',
         title: !currentShow ? 'แสดงบนเว็บแล้ว' : 'ซ่อนแล้ว',
         timer: 1000,
@@ -298,7 +298,7 @@ export default function NewsManagerDashboard() {
           ? error.message
           : 'ไม่สามารถแก้ไขสถานะการแสดงผลได้'
 
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'เกิดข้อผิดพลาด',
         text: errorMessage,
@@ -343,57 +343,61 @@ export default function NewsManagerDashboard() {
   }
 
   const handleRefreshData = () => {
-    Swal.fire({
-      title: 'คืนค่าข้อมูลพิมพ์?',
-      text: 'ข้อมูลในฟอร์มปัจจุบันจะถูกรีเซ็ตกลับไปเป็นค่าตั้งต้นแรกสุด',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'ยืนยันรีเซ็ต',
-      cancelButtonText: 'ยกเลิก',
-      reverseButtons: true,
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setFormData(
-          activePost
-            ? { ...activePost }
-            : {
-                id: formData?.id || Date.now(),
-                type: 'NEWS',
-                title: '',
-                date: new Date().toISOString().split('T')[0],
-                image_src: '',
-                description: '',
-                content: '',
-                views: 0,
-                isShow: true,
-              },
-        )
-        setUploadFile(null)
-      }
-    })
+    swal
+      .fire({
+        title: 'คืนค่าข้อมูลพิมพ์?',
+        text: 'ข้อมูลในฟอร์มปัจจุบันจะถูกรีเซ็ตกลับไปเป็นค่าตั้งต้นแรกสุด',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยันรีเซ็ต',
+        cancelButtonText: 'ยกเลิก',
+        reverseButtons: true,
+      })
+      .then((result) => {
+        if (result.isConfirmed) {
+          setFormData(
+            activePost
+              ? { ...activePost }
+              : {
+                  id: formData?.id || Date.now(),
+                  type: 'NEWS',
+                  title: '',
+                  date: new Date().toISOString().split('T')[0],
+                  image_src: '',
+                  description: '',
+                  content: '',
+                  views: 0,
+                  isShow: true,
+                },
+          )
+          setUploadFile(null)
+        }
+      })
   }
 
   const handleClearAll = () => {
-    Swal.fire({
-      title: 'ล้างช่องข้อความทั้งหมด?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonText: 'ยกเลิก',
-      reverseButtons: true,
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setFormData({
-          ...formData!,
-          title: '',
-          image_src: '',
-          content: '',
-          description: '',
-          date: new Date().toISOString().split('T')[0],
-        })
-        setUploadFile(null)
-      }
-    })
+    swal
+      .fire({
+        title: 'ล้างช่องข้อความทั้งหมด?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonText: 'ยกเลิก',
+        reverseButtons: true,
+      })
+      .then((result) => {
+        if (result.isConfirmed) {
+          setFormData({
+            ...formData!,
+            title: '',
+            image_src: '',
+            content: '',
+            description: '',
+            date: new Date().toISOString().split('T')[0],
+          })
+          setUploadFile(null)
+        }
+      })
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -417,7 +421,7 @@ export default function NewsManagerDashboard() {
   const handleFileUpload = (file: File) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'รูปแบบไฟล์ไม่ถูกต้อง',
         text: 'รองรับไฟล์รูปภาพ .jpg, .png, .webp เท่านั้น',
@@ -425,7 +429,7 @@ export default function NewsManagerDashboard() {
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      Swal.fire({
+      toast.fire({
         icon: 'warning',
         title: 'ไฟล์มีขนาดใหญ่เกินไป',
         text: 'กรุณาอัปโหลดไฟล์รูปภาพขนาดไม่เกิน 5MB',
@@ -440,7 +444,7 @@ export default function NewsManagerDashboard() {
 
   const handleSave = async () => {
     if (!formData || !formData.title.trim()) {
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'กรอกข้อมูลไม่ครบถ้วน',
         text: 'กรุณากรอกหัวข้อประกาศกิจกรรมก่อนทำการบันทึก',
@@ -449,7 +453,7 @@ export default function NewsManagerDashboard() {
       return
     }
     if (activePost === null && !uploadFile) {
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'กรอกข้อมูลไม่ครบถ้วน',
         text: 'กรุณาทำการเลือกอัปโหลดรูปภาพปกกิจกรรมหลักด้วยค่ะ',

@@ -22,8 +22,15 @@ export interface AuditLogResponse {
 }
 
 export const auditService = {
-  getAuditLogs: async (limit: number = 100): Promise<AuditLogEntry[]> => {
+  getAuditLogs: async (_limit: number = 100): Promise<AuditLogEntry[]> => {
     const response = await api<AuditLogResponse>('/audit', {
+      method: 'GET',
+    })
+    return response.data || []
+  },
+
+  getLogs: async (userId: number | string): Promise<AuditLogEntry[]> => {
+    const response = await api<AuditLogResponse>(`/audit?userId=${userId}`, {
       method: 'GET',
     })
     return response.data || []

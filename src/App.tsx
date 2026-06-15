@@ -18,6 +18,14 @@ const Login = lazy(() => import('./pages/LoginPage'))
 const CommentForm = lazy(() => import('./components/CommentForm'))
 const ContactForm = lazy(() => import('./components/ContactForm'))
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const RecoveryLogin = lazy(() => import('./pages/RecoveryLogin'))
+const TwoFactorChallenge = lazy(() => import('./pages/TwoFactorChallenge'))
+const TwoFactorSetup = lazy(() => import('./pages/TwoFactorSetup'))
+const SupervisorRequests = lazy(() => import('./pages/SupervisorRequests'))
+const ForcePasswordResetPage = lazy(
+  () => import('./pages/ForcePasswordResetPage'),
+)
 
 function App() {
   const location = useLocation()
@@ -92,8 +100,36 @@ function App() {
           <Route
             path='/dashboard'
             element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
+              <ProtectedRoute allowedRoles={['ADMIN', 'SUPERVISOR']}>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route path='/2fa-challenge' element={<TwoFactorChallenge />} />
+          <Route
+            path='/2fa-setup'
+            element={
+              <ProtectedRoute allowedRoles={['SUPERVISOR']}>
+                <TwoFactorSetup />
+              </ProtectedRoute>
+            }
+          />
+          <Route path='/forgot-password' element={<ForgotPassword />} />
+          <Route path='/recovery-login' element={<RecoveryLogin />} />
+          <Route
+            path='/force-password-reset'
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN', 'SUPERVISOR', 'USER']}>
+                <ForcePasswordResetPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/supervisor-requests'
+            element={
+              <ProtectedRoute allowedRoles={['SUPERVISOR']}>
+                <SupervisorRequests />
               </ProtectedRoute>
             }
           />

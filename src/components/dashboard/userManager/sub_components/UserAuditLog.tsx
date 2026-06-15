@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from 'react'
-import { auditService, type AuditLogItem } from '../../../../services/auditService'
-import type { User } from '../UserManagerDashboard'
+import { useEffect, useState } from 'react'
+import {
+  auditService,
+  type AuditLogEntry,
+} from '../../../../services/auditService'
+import type { DashboardUser } from './BanModal'
 
 interface UserAuditLogProps {
-  user: User
+  user: DashboardUser
   onBack: () => void
 }
 
 const UserAuditLog: React.FC<UserAuditLogProps> = ({ user, onBack }) => {
-  const [logs, setLogs] = useState<AuditLogItem[]>([])
+  const [logs, setLogs] = useState<AuditLogEntry[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -18,11 +21,7 @@ const UserAuditLog: React.FC<UserAuditLogProps> = ({ user, onBack }) => {
         setIsLoading(true)
         setError(null)
         const response = await auditService.getLogs(user.id)
-        if (response.success) {
-          setLogs(response.data)
-        } else {
-          setError('ไม่สามารถดึงข้อมูลประวัติการทำงานได้')
-        }
+        setLogs(response)
       } catch (err) {
         setError('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์')
         console.error(err)
@@ -47,7 +46,6 @@ const UserAuditLog: React.FC<UserAuditLogProps> = ({ user, onBack }) => {
 
   return (
     <div className='flex flex-col h-[calc(100vh-320px)] bg-white shadow overflow-hidden sm:rounded-lg border border-gray-200'>
-      {/* Header Bar */}
       <div className='px-6 py-4 flex items-center bg-gray-50 border-b border-gray-200 shrink-0'>
         <button
           onClick={onBack}
@@ -76,7 +74,6 @@ const UserAuditLog: React.FC<UserAuditLogProps> = ({ user, onBack }) => {
         </h3>
       </div>
 
-      {/* Scrollable Log Container */}
       <div className='flex-1 overflow-y-auto p-0'>
         <table className='min-w-full divide-y divide-gray-200'>
           <thead className='bg-white sticky top-0 shadow-sm z-10'>
@@ -110,19 +107,28 @@ const UserAuditLog: React.FC<UserAuditLogProps> = ({ user, onBack }) => {
           <tbody className='bg-white divide-y divide-gray-100'>
             {isLoading ? (
               <tr>
-                <td colSpan={4} className='px-6 py-12 text-center text-sm text-gray-500'>
+                <td
+                  colSpan={4}
+                  className='px-6 py-12 text-center text-sm text-gray-500'
+                >
                   กำลังโหลดข้อมูล...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={4} className='px-6 py-12 text-center text-sm text-red-500'>
+                <td
+                  colSpan={4}
+                  className='px-6 py-12 text-center text-sm text-red-500'
+                >
                   {error}
                 </td>
               </tr>
             ) : logs.length === 0 ? (
               <tr>
-                <td colSpan={4} className='px-6 py-12 text-center text-sm text-gray-500'>
+                <td
+                  colSpan={4}
+                  className='px-6 py-12 text-center text-sm text-gray-500'
+                >
                   ไม่พบประวัติการทำงานของบัญชีนี้
                 </td>
               </tr>
@@ -132,8 +138,20 @@ const UserAuditLog: React.FC<UserAuditLogProps> = ({ user, onBack }) => {
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500'>
                     {formatDate(log.createdAt)}
                   </td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium'>
-                    {log.action}
+                  <td className='px-6 py-4 whitespace-nowrap'>
+                    <span
+                      className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        log.action.includes('FAILED') ||
+                        log.action.includes('BAN') ||
+                        log.action.includes('DELETE')
+                          ? 'text-red-700 bg-red-100'
+                          : log.action.includes('CREATE')
+                            ? 'text-green-700 bg-green-100'
+                            : 'text-gray-700 bg-gray-100'
+                      }`}
+                    >
+                      {log.action}
+                    </span>
                   </td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono'>
                     {log.ipAddress}

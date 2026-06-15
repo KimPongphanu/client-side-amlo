@@ -1,193 +1,69 @@
-import type React from 'react'
+// src/types/index.ts
+// ============================================
+// CENTRAL TYPE RE-EXPORT
+// ============================================
 
-// ---------------------------------------------------------
-// Authentication Types
-// ---------------------------------------------------------
-export interface UserProfile {
-  id: number
-  uuid: string
-  email: string
-  firstname: string
-  lastname: string
-  // 🌟 เพิ่มบรรทัดนี้เข้าไป เพื่อให้ตรงกับ Backend
-  role: 'USER' | 'ADMIN'
-  createdAt?: string
-  recentOnline?: string
-}
+// API Types
+export type { ApiResponseBase, PaginatedResponse, PaginationMeta } from './api'
 
-export interface LoginResponse extends ApiResponseBase {
-  user?: UserProfile // 🌟 เรียกใช้ UserProfile ตรงๆ เพื่อบังคับ Type ให้เหมือนกันทั้งโปรเจกต์
-}
+// Auth Types
+export type {
+  AdminActionResponse,
+  CreateAdminData,
+  CreateAdminResponse,
+  HeartbeatResponse,
+  LoginPayload,
+  LoginResponse,
+  TwoFactorMethod,
+  UpdateAdminData,
+  UserProfile,
+  UserRole,
+  ValidationError,
+} from './auth'
 
-// ---------------------------------------------------------
-// Content & Media Types
-// ---------------------------------------------------------
+// Content Types (News, Comments, Contacts - NO DepartmentItem)
+export type {
+  CommentFormData,
+  CommentItem,
+  ContactFormData,
+  ContactFormErrors,
+  ContactRequest,
+  NewsFormData,
+  NewsItem,
+  NewsType,
+  SliderImage,
+} from './content'
 
-/**
- * Structure representing general activity or public relations news announcement
- */
-export interface NewsItem {
-  id: number
-  type?: 'PR' | 'NEWS'
-  title: string
-  date: string
-  image_src: string
-  description: string
-  content?: string
-  views?: number
-  isShow?: boolean
-}
+// Department Types (SINGLE SOURCE - DepartmentItem is HERE only!)
+export type {
+  DepartmentItem,
+  DepartmentMutationResponse,
+  GalleryFile,
+  GalleryItem,
+  GalleryType,
+  ViewMode,
+} from './department'
 
-/**
- * Media item details embedded within organizational dynamic galleries
- */
-export interface GalleryItem {
-  type: 'image' | 'video'
-  url: string
-}
+// Dashboard Types
+export type {
+  AuthState,
+  ContactsGroup,
+  DashboardMenuId,
+  DashboardState,
+} from './dashboard'
 
-/**
- * Structure mapping specific organizational department details
- */
-export interface DepartmentItem {
-  id: number
-  title: string
-  cover_image: string
-  gallery: GalleryItem[]
-  content?: string
-}
+// Common Constants
+export {
+  COMMENT_CONSTRAINTS,
+  CONTACT_CONSTRAINTS,
+  CONTACT_STATUS,
+  FILE_CONSTRAINTS,
+  PASSWORD_CONSTRAINTS,
+  PREFERRED_CONTACT_METHODS,
+  SESSION_CONFIG,
+  THAI_DAYS,
+  THAI_MONTHS,
+  THAI_MONTHS_SHORT,
+} from './common'
 
-export interface NewsContextType {
-  newsList: NewsItem[]
-  prList: NewsItem[]
-  departmentList: DepartmentItem[]
-  isLoading: boolean
-  // 🌟 เพิ่ม 2 บรรทัดนี้
-  setPrList: React.Dispatch<React.SetStateAction<NewsItem[]>>
-  setNewsList: React.Dispatch<React.SetStateAction<NewsItem[]>>
-  setDepartmentList: React.Dispatch<React.SetStateAction<DepartmentItem[]>>
-}
-
-// ... โค้ดบรรทัดบนๆ เหมือนเดิม ...
-
-export interface DepartmentItem {
-  id: number
-  title: string
-  cover_image: string
-  gallery: GalleryItem[]
-  content?: string
-}
-
-// 🌟 1. เพิ่ม Interface สำหรับ Comment
-/**
- * Individual ratings and response comments given by website clients
- */
-export interface CommentItem {
-  id: string
-  msg: string
-  star: number
-  createdAt: string
-  isShow: boolean
-}
-
-/**
- * Form values used when managing or creating an activity or announcement entry
- */
-export interface NewsFormData {
-  id?: string | number
-  type?: 'PR' | 'NEWS'
-  title: string
-  date?: string
-  image_src?: string
-  description?: string
-  content?: string
-  views?: number
-  isShow?: boolean
-}
-
-// ---------------------------------------------------------
-// Dashboard & Communication Types
-// ---------------------------------------------------------
-
-/**
- * Structure mapping user information inquiries and feedback submissions
- */
-export interface ContactRequest {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  telNumber: string
-  preferredContact: string
-  message: string
-  status: string
-  createdAt: string
-  updatedAt: string
-}
-
-// ---------------------------------------------------------
-// API Response Base Types
-// ---------------------------------------------------------
-
-/**
- * Standard backend response payload configuration
- */
-export interface ApiResponseBase<T = unknown> {
-  success: boolean
-  message?: string
-  error?: string
-  data?: T
-}
-
-/**
- * Layout configuration parameters for legacy news content state wrappers
- */
-export interface NewsContextType {
-  newsList: NewsItem[]
-  prList: NewsItem[]
-  departmentList: DepartmentItem[]
-  commentList: CommentItem[]
-  isLoading: boolean
-  setPrList: React.Dispatch<React.SetStateAction<NewsItem[]>>
-  setNewsList: React.Dispatch<React.SetStateAction<NewsItem[]>>
-  setCommentList: React.Dispatch<React.SetStateAction<CommentItem[]>>
-  fetchComments?: () => Promise<void>
-}
-
-export interface ContactFormData {
-  firstName: string
-  lastName: string
-  email: string
-  telNumber: string
-  preferredContact: string
-  message: string
-  botField: string // 🌟 เพิ่ม Field สำหรับ Honeypot
-}
-
-export interface ContactFormErrors {
-  firstName?: string
-  lastName?: string
-  email?: string
-  telNumber?: string
-  preferredContact?: string
-  message?: string
-}
-
-export interface CommentFormData {
-  rating: number
-  content: string
-  botField: string
-}
-
-export interface DepartmentMutationResponse {
-  success: boolean
-  data?: DepartmentItem // กำหนดระบุโครงสร้าง DepartmentItem แทนการใช้ any
-  message?: string
-}
-
-export interface SliderImage {
-  id: number
-  image_url: string
-  order: number
-  createdAt: string
-}
+export type { ContactStatus, PreferredContactMethod } from './common'

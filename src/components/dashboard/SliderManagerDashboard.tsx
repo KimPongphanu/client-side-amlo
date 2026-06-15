@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Swal from 'sweetalert2'
 import { API_URL } from '../../config/constants'
 import type { SliderImage } from '../../type'
 import { api } from '../../utils/api'
+import { swal, toast } from '../../utils/swalConfig'
 
 // ─── Unified item type ────────────────────────────────────────────────────────
 // รวมทั้ง saved slides และ pending files ไว้ใน array เดียวกัน
@@ -202,7 +202,7 @@ export default function SliderManagerDashboard() {
     }
 
     // saved: ยืนยันก่อนลบ
-    const confirm = await Swal.fire({
+    const confirm = await swal.fire({
       title: 'ลบรูปภาพนี้?',
       text: 'รูปภาพจะถูกลบออกจาก Slider หน้าหลักทันที',
       icon: 'warning',
@@ -217,14 +217,14 @@ export default function SliderManagerDashboard() {
     try {
       await api(`/slider/${item.slide.id}`, { method: 'DELETE' })
       setOrderedItems((prev) => prev.filter((i) => i.tempId !== tempId))
-      Swal.fire({
+      toast.fire({
         icon: 'success',
         title: 'ลบสำเร็จ',
         timer: 1200,
         showConfirmButton: false,
       })
     } catch {
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'เกิดข้อผิดพลาด',
         text: 'ไม่สามารถลบรูปภาพได้',
@@ -316,7 +316,7 @@ export default function SliderManagerDashboard() {
       }
 
       setHasChanges(false)
-      Swal.fire({
+      toast.fire({
         icon: 'success',
         title: 'บันทึกสำเร็จ!',
         text: 'Slider หน้าหลักอัปเดตเรียบร้อยแล้ว',
@@ -324,7 +324,7 @@ export default function SliderManagerDashboard() {
         showConfirmButton: false,
       })
     } catch {
-      Swal.fire({
+      toast.fire({
         icon: 'error',
         title: 'เกิดข้อผิดพลาด',
         text: 'ไม่สามารถบันทึกข้อมูลได้',

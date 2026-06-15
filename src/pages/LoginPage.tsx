@@ -1,12 +1,13 @@
 // src/pages/LoginPage.tsx
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Swal from 'sweetalert2'
+import { authService } from '../services/authService'
 import { useAuthStore } from '../stores/useAuthStore'
+import { toast } from '../utils/swalConfig'
 
 const LoginPage = () => {
   const navigate = useNavigate()
-  const loginUser = useAuthStore((state) => state.loginUser)
+  const verifyUser = useAuthStore((state) => state.verifyUser)
 
   const [phase, setPhase] = useState<'zoom-in' | 'zoom-out' | 'done'>('zoom-in')
   const [email, setemail] = useState('')
@@ -41,17 +42,44 @@ const LoginPage = () => {
     setIsLoading(true)
 
     try {
-      const success = await loginUser({ email, password })
+      const response = await authService.login({ email, password })
 
-      if (success) {
+      // 🌟 Check if 2FA is required
+      if (response.requires2FA && response.user) {
+        setIsLoading(false)
+        navigate('/2fa-challenge', {
+          state: {
+            email: email,
+            twoFactorMethod: response.twoFactorMethod || 'AUTHENTICATOR',
+            uuid: response.user.uuid || '',
+          },
+          replace: true,
+        })
+        return
+      }
+
+      if (response.success) {
+        await verifyUser()
+        const currentUser = useAuthStore.getState().user
+
+        // Check if user needs to force reset password
+        if (currentUser?.forcePasswordReset) {
+          await toast.fire({
+            icon: 'warning',
+            title: 'ต้องเปลี่ยนรหัสผ่าน',
+            text: 'ผู้ดูแลระบบได้กำหนดให้คุณต้องเปลี่ยนรหัสผ่านก่อนเข้าใช้งาน',
+          })
+
+          setLoggedIn(true)
+          navigate('/force-password-reset', { replace: true })
+          return
+        }
+
         // 🌟 1. แสดงความสำเร็จให้เรียบร้อยในขณะที่หน้าจอ LoginPage ยังทำงานอยู่ 100%
-        await Swal.fire({
+        await toast.fire({
           icon: 'success',
           title: 'เข้าสู่ระบบสำเร็จ',
           text: 'ยินดีต้อนรับเข้าสู่ระบบจัดการภายใน',
-          timer: 1500,
-          showConfirmButton: false,
-          allowOutsideClick: false,
         })
 
         // 🌟 2. เมื่อ Swal ทำงานและปิดตัวลงเสร็จแล้ว ค่อยสั่งเปิดประตูผ่าน Zustand
@@ -67,13 +95,10 @@ const LoginPage = () => {
       const errorMessage =
         err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ'
 
-      await Swal.fire({
+      await toast.fire({
         icon: 'error',
         title: 'เข้าสู่ระบบล้มเหลว',
         text: errorMessage,
-        confirmButtonColor: '#185FA5',
-        confirmButtonText: 'ลองใหม่อีกครั้ง',
-        allowOutsideClick: false,
       })
       setError(errorMessage)
       setIsLoading(false) // คืนค่าปุ่มเฉพาะตอนล็อกอินพลาด
@@ -198,6 +223,23 @@ const LoginPage = () => {
             {isLoading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
           </button>
         </form>
+
+        <div className='mt-4 flex flex-col items-center gap-2'>
+          <button
+            type='button'
+            onClick={() => navigate('/forgot-password', { state: { email } })}
+            className='text-sm text-[#185FA5] hover:text-[#134b82] hover:underline font-medium cursor-pointer'
+          >
+            ลืมรหัสผ่าน?
+          </button>
+          <button
+            type='button'
+            onClick={() => navigate('/recovery-login', { state: { email } })}
+            className='text-xs text-slate-400 hover:text-slate-600 hover:underline cursor-pointer'
+          >
+            กู้คืนการเข้าสู่ระบบ (สำหรับ Supervisor)
+          </button>
+        </div>
 
         <p className='mt-6 text-center text-xs text-slate-400 font-medium'>
           สำนักงานป้องกันและปราบปรามการฟอกเงิน

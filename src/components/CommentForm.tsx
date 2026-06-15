@@ -1,17 +1,17 @@
+// src/components/CommentForm.tsx
 import React, { useEffect, useRef, useState } from 'react'
 import { useContentStore } from '../stores/useContentStore'
 import type { CommentFormData } from '../type'
+import { toast } from '../utils/swalConfig'
 
 const MAX_COMMENT_LENGTH = 500
 const MIN_COMMENT_LENGTH = 10
 
 const CommentForm = () => {
-  // Bind shared actions and layout validation markers from the central Zustand store
   const submitUserComment = useContentStore((state) => state.submitUserComment)
   const isSubmitting = useContentStore((state) => state.isSubmittingComment)
   const contentError = useContentStore((state) => state.commentError)
   const setCommentError = useContentStore((state) => state.setCommentError)
-  const fetchPublicData = useContentStore((state) => state.fetchPublicData)
 
   const [isOpen, setIsOpen] = useState(false)
 
@@ -57,7 +57,7 @@ const CommentForm = () => {
       setPosition((prevPos) => {
         const screenWidth = window.innerWidth
         const screenHeight = window.innerHeight
-        const iconSize = 56
+        const iconSize = 48
 
         let newX = prevPos.x
         let newY = prevPos.y
@@ -90,7 +90,7 @@ const CommentForm = () => {
 
     const screenWidth = window.innerWidth
     const screenHeight = window.innerHeight
-    const iconSize = 56
+    const iconSize = 48
 
     let snapX = position.x
     let snapY = position.y
@@ -136,6 +136,25 @@ const CommentForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (formData.rating === 0) {
+      toast.fire({
+        icon: 'warning',
+        title: 'กรุณาให้คะแนนความพึงพอใจ',
+        text: 'โปรดเลือกคะแนนดาวก่อนส่งข้อเสนอแนะ',
+      })
+      return
+    }
+
+    if (formData.content.trim().length < MIN_COMMENT_LENGTH) {
+      toast.fire({
+        icon: 'warning',
+        title: 'กรุณากรอกข้อความ',
+        text: `ความคิดเห็นต้องมีอย่างน้อย ${MIN_COMMENT_LENGTH} ตัวอักษร`,
+      })
+      return
+    }
+
     await submitUserComment(formData, resetForm, setIsOpen)
   }
 
@@ -150,201 +169,211 @@ const CommentForm = () => {
   }
 
   return (
-    <div
-      className='fixed top-0 left-0 z-[9999] font-sans touch-none'
-      style={{
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        transition: isDragging
-          ? 'none'
-          : 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-      }}
-    >
-      <div className='relative w-14 h-14'>
-        {/* ปุ่มลอยเรียกฟอร์ม: เน้นขอบเส้นสีเข้ม คมชัดเจน */}
-        {!isOpen && (
-          <button
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            onClick={handleOpenClick}
-            aria-label='เปิดฟอร์มแสดงความคิดเห็น'
-            className={`absolute bottom-0 right-0 w-14 h-14 bg-white text-stone-900 rounded-full border-2 border-stone-900 shadow-[0_10px_25px_rgba(0,0,0,0.15)] flex items-center justify-center transition-all duration-300 ${
-              isDragging
-                ? 'scale-105 cursor-grabbing bg-stone-100 border-stone-900'
-                : 'cursor-grab hover:scale-105 active:scale-95 hover:bg-stone-900 hover:text-white hover:border-stone-900'
+    <>
+      {/* FAB Container — fixed position with transform */}
+      <div
+        className='fixed top-0 left-0 z-[9999] touch-none'
+        style={{
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          transition: isDragging
+            ? 'none'
+            : 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
+      >
+        <div className='relative w-12 h-12'>
+          {/* FAB Button */}
+          {!isOpen && (
+            <button
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              onClick={handleOpenClick}
+              aria-label='แสดงความคิดเห็น'
+              className={`absolute bottom-0 right-0 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${
+                isDragging
+                  ? 'scale-105 cursor-grabbing shadow-xl'
+                  : 'cursor-grab hover:shadow-xl hover:scale-105 active:scale-95'
+              }`}
+            >
+              <svg
+                className='w-6 h-6 text-[#1a73e8]'
+                fill='none'
+                stroke='currentColor'
+                strokeWidth={2}
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  d='M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z'
+                />
+              </svg>
+            </button>
+          )}
+
+          {/* Form Card */}
+          <div
+            className={`absolute ${getFormPlacementClass()} transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              isOpen
+                ? 'scale-100 opacity-100 pointer-events-auto'
+                : 'scale-95 opacity-0 pointer-events-none'
             }`}
           >
-            <svg
-              className='w-6 h-6 stroke-[2]'
-              fill='none'
-              stroke='currentColor'
-              viewBox='0 0 24 24'
-            >
-              <path
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                d='M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z'
-              />
-            </svg>
-          </button>
-        )}
-
-        {/* ตัวกล่องฟอร์ม: พื้นขาวจ๋าตัดเส้นขอบสีเข้ม ตัวหนังสือเข้มจัดมองเห็นง่าย */}
-        <div
-          className={`absolute ${getFormPlacementClass()} transform transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-            isOpen
-              ? 'scale-100 opacity-100 pointer-events-auto'
-              : 'scale-95 opacity-0 pointer-events-none'
-          }`}
-        >
-          <div className='bg-white w-80 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.12)] border-2 border-stone-900 overflow-hidden'>
-            {/* ส่วนหัวกลุ่มข้อความ */}
-            <div className='px-5 pt-5 pb-1 flex justify-between items-center bg-stone-50 border-b border-stone-200'>
-              <span className='text-sm font-bold tracking-tight text-stone-900'>
-                ข้อเสนอแนะและรีวิว
-              </span>
-              <button
-                onClick={() => setIsOpen(false)}
-                aria-label='ปิดฟอร์ม'
-                className='text-stone-600 hover:text-stone-950 transition-colors p-1 rounded-md hover:bg-stone-200 border border-transparent hover:border-stone-300'
-              >
-                <svg
-                  className='w-4 h-4 stroke-[2.5]'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
+            <div className='bg-white w-[400px] rounded-xl shadow-xl border border-[#dadce0] overflow-hidden'>
+              {/* Header */}
+              <div className='px-6 pt-5 pb-3 flex justify-between items-center border-b border-[#e8eaed]'>
+                <span className='text-[16px] font-semibold text-[#202124]'>
+                  ข้อเสนอแนะและรีวิว
+                </span>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  aria-label='ปิด'
+                  className='w-8 h-8 rounded-full flex items-center justify-center text-[#5f6368] hover:bg-[#f1f3f4] transition-colors'
                 >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    d='M6 18L18 6M6 6l12 12'
+                  <svg
+                    className='w-5 h-5'
+                    fill='none'
+                    stroke='currentColor'
+                    strokeWidth={2}
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M6 18L18 6M6 6l12 12'
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className='p-6 flex flex-col gap-5'>
+                {/* Honeypot */}
+                <div
+                  className='absolute opacity-0 -z-10 h-0 w-0 overflow-hidden'
+                  aria-hidden='true'
+                >
+                  <input
+                    type='text'
+                    value={formData.botField}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        botField: e.target.value,
+                      }))
+                    }
+                    tabIndex={-1}
+                    autoComplete='off'
                   />
-                </svg>
-              </button>
-            </div>
+                </div>
 
-            <form onSubmit={handleSubmit} className='p-5 flex flex-col gap-5'>
-              {/* ดักบอท */}
-              <div
-                className='absolute opacity-0 -z-10 h-0 w-0 overflow-hidden'
-                aria-hidden='true'
-              >
-                <input
-                  type='text'
-                  value={formData.botField}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      botField: e.target.value,
-                    }))
-                  }
-                  tabIndex={-1}
-                  autoComplete='off'
-                />
-              </div>
-
-              {/* คะแนนความพึงพอใจ */}
-              <div>
-                <label className='text-xs font-bold uppercase tracking-wider text-stone-900'>
-                  คะแนนความพึงพอใจ
-                </label>
-                <div className='flex gap-1.5 mt-1.5'>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type='button'
-                      onClick={() =>
-                        setFormData((prev) => ({ ...prev, rating: star }))
-                      }
-                      aria-label={`ให้คะแนน ${star} ดาว`}
-                      className='text-2xl transition-all duration-150 transform active:scale-90'
-                    >
-                      <span
-                        className={`${
-                          star <= formData.rating
-                            ? 'text-amber-500 drop-shadow-[0_1px_2px_rgba(217,119,6,0.2)]'
-                            : 'text-stone-300 hover:text-stone-400'
-                        }`}
+                {/* Star Rating */}
+                <div>
+                  <label className='block text-sm font-medium text-[#5f6368] mb-2'>
+                    คะแนนความพึงพอใจ
+                  </label>
+                  <div className='flex gap-1'>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type='button'
+                        onClick={() =>
+                          setFormData((prev) => ({ ...prev, rating: star }))
+                        }
+                        aria-label={`ให้คะแนน ${star} ดาว`}
+                        className='text-2xl transition-all duration-150 hover:scale-110 active:scale-90'
                       >
-                        ★
+                        <span
+                          className={
+                            star <= formData.rating
+                              ? 'text-amber-500'
+                              : 'text-[#dadce0] hover:text-[#9aa0a6]'
+                          }
+                        >
+                          ★
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Content Textarea */}
+                <div>
+                  <label className='block text-sm font-medium text-[#5f6368] mb-2'>
+                    ความคิดเห็นของคุณ
+                  </label>
+                  <textarea
+                    value={formData.content}
+                    onChange={handleContentChange}
+                    placeholder='พิมพ์ข้อความแชร์ประสบการณ์ของคุณที่นี่...'
+                    required
+                    maxLength={MAX_COMMENT_LENGTH}
+                    className='w-full border border-[#dadce0] rounded-lg px-4 py-3 text-sm text-[#202124] placeholder-[#9aa0a6] focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:border-transparent resize-none h-28 transition-shadow'
+                  />
+                  <div className='flex justify-between items-center mt-1.5'>
+                    {contentError ? (
+                      <span className='text-xs text-[#d93025] font-medium'>
+                        {contentError}
                       </span>
-                    </button>
-                  ))}
+                    ) : (
+                      <span />
+                    )}
+                    <span className='text-xs text-[#5f6368] font-medium'>
+                      {formData.content.length}/{MAX_COMMENT_LENGTH}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              {/* ช่องป้อนความคิดเห็น */}
-              <div>
-                <label className='text-xs font-bold uppercase tracking-wider text-stone-900'>
-                  ความคิดเห็นของคุณ
-                </label>
-                <textarea
-                  value={formData.content}
-                  onChange={handleContentChange}
-                  placeholder='พิมพ์ข้อความแชร์ประสบการณ์ของคุณที่นี่...'
-                  required
-                  maxLength={MAX_COMMENT_LENGTH}
-                  className='w-full mt-1.5 bg-white border-2 border-stone-800 text-stone-950 font-medium rounded-xl p-3 text-xs focus:outline-none focus:ring-2 focus:ring-stone-900 focus:border-stone-900 h-24 resize-none placeholder-stone-500 shadow-sm transition-all'
-                />
-                <div className='flex justify-between items-center mt-1'>
-                  <span className='text-[11px] text-red-600 font-bold'>
-                    {contentError}
-                  </span>
-                  <span className='text-xs text-stone-700 font-semibold tracking-wide'>
-                    {formData.content.length}/{MAX_COMMENT_LENGTH}
-                  </span>
-                </div>
-              </div>
-
-              {/* ปุ่มส่ง */}
-              <button
-                type='submit'
-                disabled={
-                  isSubmitting ||
-                  formData.content.trim().length < MIN_COMMENT_LENGTH ||
-                  formData.rating === 0
-                }
-                className={`py-2.5 rounded-xl font-bold text-xs tracking-wider uppercase transition-all duration-200 text-white flex items-center justify-center gap-2 ${
-                  isSubmitting ||
-                  formData.content.trim().length < MIN_COMMENT_LENGTH ||
-                  formData.rating === 0
-                    ? 'bg-stone-300 border-2 border-stone-300 text-stone-500 cursor-not-allowed opacity-60'
-                    : 'bg-stone-900 border-2 border-stone-900 hover:bg-black hover:border-black active:scale-[0.98] shadow-[0_4px_12px_rgba(0,0,0,0.1)]'
-                }`}
-              >
-                {isSubmitting ? (
-                  <>
-                    <svg
-                      className='animate-spin h-3.5 w-3.5 text-white'
-                      fill='none'
-                      viewBox='0 0 24 24'
-                    >
-                      <circle
-                        className='opacity-25'
-                        cx='12'
-                        cy='12'
-                        r='10'
-                        stroke='currentColor'
-                        strokeWidth='4'
-                      ></circle>
-                      <path
-                        className='opacity-75'
-                        fill='currentColor'
-                        d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                      ></path>
-                    </svg>
-                    กำลังบันทึกข้อมูล...
-                  </>
-                ) : (
-                  'ส่งข้อเสนอแนะ'
-                )}
-              </button>
-            </form>
+                {/* Submit Button */}
+                <button
+                  type='submit'
+                  disabled={
+                    isSubmitting ||
+                    formData.content.trim().length < MIN_COMMENT_LENGTH ||
+                    formData.rating === 0
+                  }
+                  className={`w-full py-3 rounded-lg text-sm font-medium transition-all ${
+                    isSubmitting ||
+                    formData.content.trim().length < MIN_COMMENT_LENGTH ||
+                    formData.rating === 0
+                      ? 'bg-[#f1f3f4] text-[#9aa0a6] cursor-not-allowed'
+                      : 'bg-[#1a73e8] text-white hover:bg-[#1557b0] active:scale-[0.98] shadow-sm'
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <span className='flex items-center justify-center gap-2'>
+                      <svg
+                        className='animate-spin h-4 w-4'
+                        fill='none'
+                        viewBox='0 0 24 24'
+                      >
+                        <circle
+                          className='opacity-25'
+                          cx='12'
+                          cy='12'
+                          r='10'
+                          stroke='currentColor'
+                          strokeWidth='4'
+                        />
+                        <path
+                          className='opacity-75'
+                          fill='currentColor'
+                          d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                        />
+                      </svg>
+                      กำลังบันทึก...
+                    </span>
+                  ) : (
+                    'ส่งข้อเสนอแนะ'
+                  )}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 

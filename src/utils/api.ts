@@ -51,7 +51,9 @@ export const api = async <T = unknown>(
     if (
       window.location.pathname === '/login' ||
       endpoint.includes('/auth/login') ||
-      endpoint.includes('/auth/me') // ✨ เพิ่มบรรทัดนี้ เพื่อไม่ให้เด้งตอนโหลดหน้าแอปครั้งแรก
+      endpoint.includes('/auth/me') ||
+      endpoint.includes('/2fa/verify-login') ||
+      endpoint.includes('/2fa/recovery/use') // ✨ Recovery key: อย่า redirect กลับ login
     ) {
       throw new Error(message)
     }
