@@ -150,37 +150,20 @@ export default function OverviewDashboard() {
     <div className='max-w-6xl mx-auto space-y-8'>
       {/* ─── Slider Preview ─── */}
       {slides.length > 0 && (
-        <section className='hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200 p-5'>
-          <div className='flex items-center justify-between mb-4'>
-            <div className='flex items-center gap-3'>
-              <div className='w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center'>
-                <i className='fas fa-images text-gray-500 text-sm' />
-              </div>
-              <div>
-                <h2 className='text-sm font-bold text-gray-800'>
-                  Slider Preview
-                </h2>
-                <p className='text-[11px] text-gray-400'>
-                  ลำดับการแสดงผลบนหน้าแรก
-                </p>
-              </div>
-            </div>
-            <span className='text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg font-medium'>
-              {slides.length} รูป
-            </span>
-          </div>
-          <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2'>
+        <section className='hidden md:block w-full'>
+          <div className='flex flex-row w-full justify-between gap-2 overflow-hidden'>
             {slides.map((slide) => {
               const src = slide.image_url.startsWith('http')
                 ? slide.image_url
                 : `${API_URL}${slide.image_url}`
               return (
-                <img
-                  key={slide.id}
-                  src={src}
-                  alt='Slide'
-                  className='w-full h-auto aspect-video object-cover rounded-md'
-                />
+                <div key={slide.id} className='flex-1 min-w-0'>
+                  <img
+                    src={src}
+                    alt='Slide'
+                    className='w-full h-auto aspect-video object-cover rounded-md'
+                  />
+                </div>
               )
             })}
           </div>

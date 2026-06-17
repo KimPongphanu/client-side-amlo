@@ -127,6 +127,9 @@ export default function ProfileDashboard() {
               onChange={(e) => {
                 setFirstname(e.target.value)
                 setError('')
+                if (e.target.value.length >= 50) {
+                  toast.fire({ icon: 'warning', title: 'ความยาวชื่อเกินขีดจำกัด (สูงสุด 50 ตัวอักษร)', timer: 2000, showConfirmButton: false })
+                }
               }}
               placeholder='กรุณากรอกชื่อ'
               maxLength={50}
@@ -146,6 +149,9 @@ export default function ProfileDashboard() {
               onChange={(e) => {
                 setLastname(e.target.value)
                 setError('')
+                if (e.target.value.length >= 50) {
+                  toast.fire({ icon: 'warning', title: 'ความยาวนามสกุลเกินขีดจำกัด (สูงสุด 50 ตัวอักษร)', timer: 2000, showConfirmButton: false })
+                }
               }}
               placeholder='กรุณากรอกนามสกุล'
               maxLength={50}

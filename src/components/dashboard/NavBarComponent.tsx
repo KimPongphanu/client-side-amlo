@@ -343,11 +343,14 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
             className='flex items-center gap-x-3 cursor-pointer hover:opacity-80 transition-opacity outline-none'
             aria-label='User menu'
           >
-            <div className='text-right hidden sm:block'>
-              <h6 className='text-sm font-bold text-slate-800'>
+            <div 
+              className='hidden sm:flex flex-col items-center justify-center w-36 md:w-48'
+              title={fullName.length > 20 ? fullName : undefined}
+            >
+              <h6 className='text-sm font-bold text-slate-800 truncate w-full text-center'>
                 {currentUser.firstName} {currentUser.lastName}
               </h6>
-              <p className='text-xs text-slate-500'>{currentUser.role}</p>
+              <p className='text-xs text-slate-500 text-center'>{currentUser.role}</p>
             </div>
             <Avatar name={fullName} />
             <span
