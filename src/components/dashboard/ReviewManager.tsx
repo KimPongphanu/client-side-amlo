@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDashboardStore } from '../../stores/useDashboardStore'
 import { swal, toast } from '../../utils/swalConfig'
-
-// interface FilterState {
-//   startDate: string
-//   endDate: string
-// }
+import ExportExcelButton from '../common/ExportExcelButton'
 
 interface ToggleSwitchProps {
   checked: boolean
@@ -42,10 +38,8 @@ export default function ReviewManager() {
   )
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  // const [filter] = useState<FilterState>({ startDate: '', endDate: '' })
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState<'all' | 'published'>('all')
-
   const itemsPerPage = 12
 
   useEffect(() => {
@@ -61,7 +55,6 @@ export default function ReviewManager() {
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     e.stopPropagation()
-
     swal.fire({
       title: 'กำลังบันทึกสถานะ',
       html: 'ระบบกำลังดำเนินการสื่อสารกับฐานข้อมูลส่วนกลาง',
@@ -79,10 +72,8 @@ export default function ReviewManager() {
         swal.showLoading()
       },
     })
-
     try {
       await Promise.all([toggleCommentShow(id, currentShow), sleep(500)])
-
       toast.fire({
         title: 'บันทึกสถานะเรียบร้อย',
         icon: 'success',
@@ -125,7 +116,6 @@ export default function ReviewManager() {
 
   const handleBulkSetShow = async (show: boolean) => {
     if (selectedIds.size === 0) return
-
     swal.fire({
       title: `กำลังอัปเดตสถานะ ${selectedIds.size} รายการ`,
       html: 'ระบบกำลังดำเนินการส่งชุดข้อมูลแบบ Multitask ไปยังเซิร์ฟเวอร์ส่วนกลาง',
@@ -143,15 +133,12 @@ export default function ReviewManager() {
         swal.showLoading()
       },
     })
-
     try {
       await Promise.all([
         bulkToggleCommentShow(Array.from(selectedIds), show),
         sleep(800),
       ])
-
       setSelectedIds(new Set())
-
       toast.fire({
         title: 'อัปเดตกลุ่มสำเร็จเรียบร้อย',
         icon: 'success',
@@ -260,6 +247,19 @@ export default function ReviewManager() {
               )}
             </div>
           </div>
+          <ExportExcelButton
+            data={commentList as unknown as Record<string, unknown>[]}
+            filename='review_export'
+            columns={[
+              { key: 'star', label: 'คะแนน' },
+              { key: 'msg', label: 'ข้อความ' },
+              {
+                key: 'createdAt',
+                label: 'วันที่',
+                format: (v) => new Date(v as string).toLocaleString('th-TH'),
+              },
+            ]}
+          />
         </header>
 
         {/* Tabs & Select All */}
@@ -365,7 +365,6 @@ export default function ReviewManager() {
                 new Date(item.createdAt).toDateString() ===
                 new Date().toDateString()
               const displayIndex = (currentPage - 1) * itemsPerPage + index + 1
-
               return (
                 <div
                   key={item.id}
@@ -391,7 +390,6 @@ export default function ReviewManager() {
                       className='w-5 h-5 cursor-pointer accent-slate-600 border-slate-300 rounded'
                     />
                   </div>
-
                   <div className='flex gap-1 mb-3 text-orange-400 drop-shadow-sm'>
                     {[...Array(5)].map((_, i) => (
                       <svg
@@ -403,11 +401,9 @@ export default function ReviewManager() {
                       </svg>
                     ))}
                   </div>
-
                   <p className='text-slate-900 text-sm font-medium flex-1 mb-5 leading-relaxed bg-slate-50/60 p-3 rounded-xl border border-slate-100/70'>
                     {item.msg}
                   </p>
-
                   <div className='text-xs text-slate-400 font-semibold font-mono flex justify-end items-center border-t border-slate-100 pt-3 mt-auto mb-4'>
                     <span>
                       {new Date(item.createdAt).toLocaleDateString('th-TH')} •{' '}
@@ -418,7 +414,6 @@ export default function ReviewManager() {
                       น.
                     </span>
                   </div>
-
                   <div
                     className='bg-slate-50 border-t border-slate-100 px-5 py-3 -mx-5 -mb-5 flex justify-between items-center rounded-b-2xl'
                     onClick={(e) => e.stopPropagation()}

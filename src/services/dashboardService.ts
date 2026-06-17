@@ -11,9 +11,28 @@ import { api } from '../utils/api'
 export const dashboardService = {
   /**
    * ระบบรับเรื่องติดต่อกลับ (Contact Requests)
+   * แปลง snake_case จาก Backend → camelCase ให้ Frontend
    */
   getContacts: async (): Promise<ApiResponseBase<ContactRequest[]>> => {
-    return api<ApiResponseBase<ContactRequest[]>>('/contact', { method: 'GET' })
+    const response = await api<{
+      success: boolean
+      data?: Record<string, unknown>[]
+    }>('/contact', { method: 'GET' })
+    if (response?.data) {
+      response.data = response.data.map((item) => ({
+        id: item.id,
+        firstName: item.first_name,
+        lastName: item.last_name,
+        email: item.email,
+        telNumber: item.tel_number,
+        preferredContact: item.preferred_contact,
+        message: item.message,
+        status: item.status,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+      })) as unknown as Record<string, unknown>[]
+    }
+    return response as unknown as ApiResponseBase<ContactRequest[]>
   },
 
   updateContactStatus: async (
@@ -32,9 +51,12 @@ export const dashboardService = {
   getNewsList: async (
     type: 'NEWS' | 'PR',
   ): Promise<ApiResponseBase<NewsItem[]>> => {
-    return api<ApiResponseBase<NewsItem[]>>(`/news?type=${type}&limit=50&all=true`, {
-      method: 'GET',
-    })
+    return api<ApiResponseBase<NewsItem[]>>(
+      `/news?type=${type}&limit=50&all=true`,
+      {
+        method: 'GET',
+      },
+    )
   },
 
   createNewsItem: async (

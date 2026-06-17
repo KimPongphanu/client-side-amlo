@@ -1,7 +1,16 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { contentService } from '../../services/contentService'
 import { useAuthStore } from '../../stores/useAuthStore'
-import { useDashboardStore } from '../../stores/useDashboardStore'
+import type { CommentItem, ContactRequest } from '../../type'
+import { api } from '../../utils/api'
+
+const NOTIF_POLL_INTERVAL = 30000
+
+const getStartOfToday = (): number => {
+  const d = new Date()
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+}
 
 // ---------------------------------------------------------
 // ClockDisplay Component
@@ -24,12 +33,10 @@ const getThaiTime = (date: Date): string => {
 
 const ClockDisplay = () => {
   const [dateTime, setDateTime] = useState<Date>(new Date())
-
   useEffect(() => {
     const timer = setInterval(() => setDateTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
-
   return (
     <div className='hidden md:block'>
       <h6 className='text-sm md:text-base font-bold text-slate-800'>
@@ -63,7 +70,6 @@ const Avatar = ({
     .slice(0, 2)
     .join('')
     .toUpperCase()
-
   return (
     <div
       className={`${size} ${bgColor} rounded-full flex items-center justify-center text-white font-bold text-sm border border-slate-300 flex-shrink-0`}
@@ -80,21 +86,114 @@ interface NavBarProps {
 }
 
 const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
-  // =========================================================================
-  // STATES & REFS
-  // =========================================================================
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotifOpen, setIsNotifOpen] = useState(false)
   const [expandedNotifView, setExpandedNotifView] = useState<
-    'none' | 'contacts' | 'reviews'
+    'none' | 'contacts' | 'reviews' | 'requests'
   >('none')
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
 
   const { user } = useAuthStore()
-  // ดึงทั้ง contacts และ commentList ออกมาจาก Dashboard Store ส่วนกลางโดยตรง
-  const { contacts, commentList } = useDashboardStore()
+
+  const [contacts, setContacts] = useState<ContactRequest[]>([])
+  const [comments, setComments] = useState<CommentItem[]>([])
+  const [pendingRequests, setPendingRequests] = useState<unknown[]>([])
+
+  // ── Navigate to dashboard menu ──
+  const navigateTo = (menuId: string) => {
+    sessionStorage.setItem('activeDashboardMenu', menuId)
+    window.location.reload()
+  }
+
+  // ── Auto-fetch notifications ──
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const promises: Promise<unknown>[] = [
+        api<{ success: boolean; data?: ContactRequest[] }>('/contact', {
+          method: 'GET',
+        }).catch(() => ({ success: false })),
+        contentService.getComments(),
+      ]
+      // Supervisor: fetch pending requests
+      if (user?.role === 'SUPERVISOR') {
+        promises.push(
+          api<{ success: boolean; data?: unknown[] }>(
+            '/supervisor-request/pending',
+            { method: 'GET' },
+          ).catch(() => ({ success: false, data: [] })),
+        )
+      }
+      const [contactRes, commentRes, requestsRes] = await Promise.all(promises)
+
+      if (
+        contactRes &&
+        'data' in (contactRes as object) &&
+        (contactRes as { data?: ContactRequest[] }).data
+      )
+        setContacts((contactRes as { data: ContactRequest[] }).data)
+      const commentData = Array.isArray(commentRes)
+        ? commentRes
+        : ((commentRes as Record<string, unknown>)?.data as
+            | CommentItem[]
+            | undefined)
+      if (commentData) setComments(commentData)
+      if (
+        requestsRes &&
+        'data' in (requestsRes as object) &&
+        (requestsRes as { data?: unknown[] }).data
+      )
+        setPendingRequests((requestsRes as { data: unknown[] }).data)
+    } catch {
+      /* silent */
+    }
+  }, [user])
+
+  useEffect(() => {
+    fetchNotifications()
+    const interval = setInterval(fetchNotifications, NOTIF_POLL_INTERVAL)
+    return () => clearInterval(interval)
+  }, [fetchNotifications])
+
+  // ── Compute today's items ──
+  const startOfToday = getStartOfToday()
+
+  const todayContacts = useMemo(
+    () =>
+      contacts.filter((c) => new Date(c.createdAt).getTime() >= startOfToday),
+    [contacts, startOfToday],
+  )
+  const todayComments = useMemo(
+    () =>
+      comments.filter((c) => new Date(c.createdAt).getTime() >= startOfToday),
+    [comments, startOfToday],
+  )
+  const todayRequests = useMemo(
+    () =>
+      pendingRequests.filter(
+        (r: any) => new Date(r.createdAt || 0).getTime() >= startOfToday,
+      ),
+    [pendingRequests, startOfToday],
+  )
+
+  const totalNew =
+    todayContacts.length + todayComments.length + todayRequests.length
+  const hasAnyToday = totalNew > 0
+
+  // Sorted lists
+  const latestContacts = useMemo(
+    () =>
+      [...todayContacts].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
+    [todayContacts],
+  )
+  const latestReviews = useMemo(
+    () => [...todayComments].reverse(),
+    [todayComments],
+  )
 
   const currentUser = {
     firstName: user?.firstname || 'Guest',
@@ -103,42 +202,17 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
   }
   const fullName = `${currentUser.firstName} ${currentUser.lastName}`.trim()
 
-  // =========================================================================
-  // DATA MEMOIZATION (แก้ไขจุดบกพร่องเรื่องความเร็วและสิทธิ์ข้อมูล)
-  // =========================================================================
-  const latestReviews = useMemo(() => {
-    if (!commentList) return []
-    return [...commentList].reverse()
-  }, [commentList])
-
-  // จัดเรียงรายการติดต่อสอบถามตามเวลาล่าสุด (Clean & High Performance)
-  const latestContacts = useMemo(() => {
-    if (!contacts?.data) return []
-
-    const mappedContacts = contacts.data.map((item) => ({
-      ...item,
-      parsedTime: new Date(item.createdAt).getTime(),
-    }))
-
-    return mappedContacts.sort((a, b) => b.parsedTime - a.parsedTime)
-  }, [contacts]) // <-- ปรับเป็น contacts ทั้ง Object เพื่อให้ React Compiler ทำงานได้สมบูรณ์
-
-  // =========================================================================
-  // EFFECTS & HANDLERS
-  // =========================================================================
+  // ── Close on click outside ──
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const targetNode = e.target as Node
-
-      if (userMenuRef.current && !userMenuRef.current.contains(targetNode)) {
+      if (userMenuRef.current && !userMenuRef.current.contains(targetNode))
         setIsUserMenuOpen(false)
-      }
       if (notifRef.current && !notifRef.current.contains(targetNode)) {
         setIsNotifOpen(false)
         setExpandedNotifView('none')
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
@@ -148,12 +222,8 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
     await onLogout()
   }
 
-  // =========================================================================
-  // RENDER UI (คงสภาพเดิมร้อยเปอร์เซ็นต์ตามกฎเหล็ก)
-  // =========================================================================
   return (
     <header className='bg-white h-20 border-b border-slate-200 flex justify-between items-center px-4 md:px-6 sticky top-0 z-20'>
-      {/* ฝั่งซ้าย: โลโก้ และ ปุ่มสลับเมนูบนมือถือ */}
       <div className='flex items-center gap-x-4 md:gap-x-6'>
         <button
           onClick={toggleMobileMenu}
@@ -174,7 +244,6 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
             />
           </svg>
         </button>
-
         <Link to='/'>
           <img
             src='https://www.amlo.go.th/amlo-intranet/images/banners/logo-m.jpg'
@@ -182,153 +251,208 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
             className='h-12 w-auto object-contain'
           />
         </Link>
-
         <hr className='hidden md:block w-[2px] h-10 bg-slate-300 border-0' />
         <ClockDisplay />
       </div>
 
-      {/* ฝั่งขวา: กล่องการแจ้งเตือน และ โปรไฟล์ผู้ใช้งาน */}
       <div className='flex items-center gap-x-6'>
-        {/* แผงควบคุมระบบแจ้งเตือน (Notifications) */}
+        {/* Notifications */}
         <div className='relative' ref={notifRef}>
           <button
             className='relative cursor-pointer p-1 hover:bg-slate-100 rounded-full transition-colors'
             aria-label='Notifications'
             onClick={() => setIsNotifOpen(!isNotifOpen)}
           >
-            <svg
-              className='w-6 h-6 text-slate-700'
-              fill='none'
-              stroke='currentColor'
-              viewBox='0 0 24 24'
-            >
-              <path
-                strokeLinecap='square'
-                strokeLinejoin='miter'
-                strokeWidth='2'
-                d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9'
-              />
-            </svg>
-            <span className='absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full'></span>
+            <i className='fas fa-bell text-slate-700 text-xl' />
+            {totalNew > 0 && (
+              <span className='absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 border-2 border-white rounded-full text-[9px] font-bold text-white px-1'>
+                {totalNew > 99 ? '99+' : totalNew}
+              </span>
+            )}
           </button>
 
-          {/* เมนู Dropdown แจ้งเตือน */}
           <div
-            className={`absolute right-0 top-full mt-3 w-80 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden transition-all duration-200 ${
-              isNotifOpen
-                ? 'opacity-100 translate-y-0 pointer-events-auto'
-                : 'opacity-0 -translate-y-2 pointer-events-none'
-            }`}
+            className={`absolute right-0 top-full mt-3 w-80 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden transition-all duration-200 ${isNotifOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
           >
             <div className='px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center'>
               <h6 className='text-sm font-bold text-slate-800'>การแจ้งเตือน</h6>
               <span className='text-[10px] font-semibold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full'>
-                รวม {latestContacts.length + latestReviews.length}
+                วันนี้ {totalNew} · รวม{' '}
+                {contacts.length + comments.length + pendingRequests.length}
               </span>
             </div>
 
             <div className='max-h-96 overflow-y-auto p-2'>
-              {/* ส่วนแสดงรายการ: ติดต่อสอบถาม */}
-              {(expandedNotifView === 'none' ||
-                expandedNotifView === 'contacts') && (
-                <div className='mb-2'>
-                  <div className='px-2 py-1 flex items-center gap-2'>
-                    <span className='text-xs font-bold text-slate-500'>
-                      ติดต่อ
-                    </span>
-                    <hr className='flex-1 border-slate-200' />
-                  </div>
-                  {latestContacts
-                    .slice(0, expandedNotifView === 'contacts' ? 5 : 2)
-                    .map((item) => (
-                      <div
-                        key={item.id}
-                        className='px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors'
-                      >
-                        <p className='text-sm text-slate-800 truncate font-medium'>
-                          {item.message}
-                        </p>
-                        <p className='text-[10px] text-slate-400 mt-0.5'>
-                          {item.firstName} {item.lastName}
-                        </p>
-                      </div>
-                    ))}
-
-                  {expandedNotifView === 'none' &&
-                    latestContacts.length > 2 && (
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setExpandedNotifView('contacts')
-                        }}
-                        className='px-3 py-1.5 text-xs text-center text-blue-500 font-medium cursor-pointer hover:bg-blue-50 rounded-lg'
-                      >
-                        +{latestContacts.length - 2} เพิ่มเติม
+              {!hasAnyToday ? (
+                <div className='py-10 text-center text-slate-400'>
+                  <i className='fas fa-check-circle text-slate-300 text-3xl mb-3 block' />
+                  <p className='text-sm font-medium'>
+                    ไม่มีการแจ้งเตือนในวันนี้
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Contacts */}
+                  {(expandedNotifView === 'none' ||
+                    expandedNotifView === 'contacts') &&
+                    todayContacts.length > 0 && (
+                      <div className='mb-2'>
+                        <div className='px-2 py-1 flex items-center gap-2'>
+                          <span className='text-xs font-bold text-slate-500'>
+                            ติดต่อ
+                          </span>
+                          <hr className='flex-1 border-slate-200' />
+                        </div>
+                        {latestContacts
+                          .slice(0, expandedNotifView === 'contacts' ? 5 : 2)
+                          .map((item) => (
+                            <div
+                              key={item.id}
+                              onClick={() => navigateTo('contacts')}
+                              className='px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors'
+                            >
+                              <p className='text-sm text-slate-800 truncate font-medium'>
+                                {item.message}
+                              </p>
+                              <p className='text-[10px] text-slate-400 mt-0.5'>
+                                {item.firstName} {item.lastName}
+                              </p>
+                            </div>
+                          ))}
+                        {expandedNotifView === 'none' &&
+                          todayContacts.length > 2 && (
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setExpandedNotifView('contacts')
+                              }}
+                              className='px-3 py-1.5 text-xs text-center text-blue-500 font-medium cursor-pointer hover:bg-blue-50 rounded-lg'
+                            >
+                              +{todayContacts.length - 2} เพิ่มเติม
+                            </div>
+                          )}
+                        {expandedNotifView === 'contacts' && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedNotifView('none')
+                            }}
+                            className='px-3 py-1.5 text-xs text-center text-slate-500 font-medium cursor-pointer hover:bg-slate-100 rounded-lg'
+                          >
+                            แสดงน้อยลง
+                          </div>
+                        )}
                       </div>
                     )}
-                  {expandedNotifView === 'contacts' && (
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setExpandedNotifView('none')
-                      }}
-                      className='px-3 py-1.5 text-xs text-center text-slate-500 font-medium cursor-pointer hover:bg-slate-100 rounded-lg'
-                    >
-                      แสดงน้อยลง
-                    </div>
-                  )}
-                </div>
-              )}
 
-              {/* ส่วนแสดงรายการ: ความคิดเห็น (Reviews) */}
-              {(expandedNotifView === 'none' ||
-                expandedNotifView === 'reviews') && (
-                <div>
-                  <div className='px-2 py-1 flex items-center gap-2'>
-                    <span className='text-xs font-bold text-slate-500'>
-                      ความคิดเห็น
-                    </span>
-                    <hr className='flex-1 border-slate-200' />
-                  </div>
-                  {latestReviews
-                    .slice(0, expandedNotifView === 'reviews' ? 5 : 2)
-                    .map((item) => (
-                      <div
-                        key={item.id}
-                        className='px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors'
-                      >
-                        <p className='text-sm text-slate-800 truncate font-medium'>
-                          {item.msg}
-                        </p>
-                        <p className='text-[10px] text-slate-400 mt-0.5'>
-                          {item.star} ดาว
-                        </p>
+                  {/* Reviews */}
+                  {(expandedNotifView === 'none' ||
+                    expandedNotifView === 'reviews') &&
+                    todayComments.length > 0 && (
+                      <div className='mb-2'>
+                        <div className='px-2 py-1 flex items-center gap-2'>
+                          <span className='text-xs font-bold text-slate-500'>
+                            ความคิดเห็น
+                          </span>
+                          <hr className='flex-1 border-slate-200' />
+                        </div>
+                        {latestReviews
+                          .slice(0, expandedNotifView === 'reviews' ? 5 : 2)
+                          .map((item) => (
+                            <div
+                              key={item.id}
+                              onClick={() => navigateTo('reviews')}
+                              className='px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors'
+                            >
+                              <p className='text-sm text-slate-800 truncate font-medium'>
+                                {item.msg}
+                              </p>
+                              <p className='text-[10px] text-slate-400 mt-0.5'>
+                                {item.star} ดาว
+                              </p>
+                            </div>
+                          ))}
+                        {expandedNotifView === 'none' &&
+                          todayComments.length > 2 && (
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setExpandedNotifView('reviews')
+                              }}
+                              className='px-3 py-1.5 text-xs text-center text-blue-500 font-medium cursor-pointer hover:bg-blue-50 rounded-lg'
+                            >
+                              +{todayComments.length - 2} เพิ่มเติม
+                            </div>
+                          )}
+                        {expandedNotifView === 'reviews' && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedNotifView('none')
+                            }}
+                            className='px-3 py-1.5 text-xs text-center text-slate-500 font-medium cursor-pointer hover:bg-slate-100 rounded-lg'
+                          >
+                            แสดงน้อยลง
+                          </div>
+                        )}
                       </div>
-                    ))}
+                    )}
 
-                  {expandedNotifView === 'none' && latestReviews.length > 2 && (
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setExpandedNotifView('reviews')
-                      }}
-                      className='px-3 py-1.5 text-xs text-center text-blue-500 font-medium cursor-pointer hover:bg-blue-50 rounded-lg'
-                    >
-                      +{latestReviews.length - 2} เพิ่มเติม
-                    </div>
-                  )}
-                  {expandedNotifView === 'reviews' && (
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setExpandedNotifView('none')
-                      }}
-                      className='px-3 py-1.5 text-xs text-center text-slate-500 font-medium cursor-pointer hover:bg-slate-100 rounded-lg'
-                    >
-                      แสดงน้อยลง
-                    </div>
-                  )}
-                </div>
+                  {/* Supervisor Requests */}
+                  {user?.role === 'SUPERVISOR' &&
+                    (expandedNotifView === 'none' ||
+                      expandedNotifView === 'requests') &&
+                    todayRequests.length > 0 && (
+                      <div className='mb-2'>
+                        <div className='px-2 py-1 flex items-center gap-2'>
+                          <span className='text-xs font-bold text-slate-500'>
+                            📋 คำร้อง
+                          </span>
+                          <hr className='flex-1 border-slate-200' />
+                        </div>
+                        {todayRequests
+                          .slice(0, expandedNotifView === 'requests' ? 5 : 2)
+                          .map((item: any) => (
+                            <div
+                              key={item.id}
+                              onClick={() => navigateTo('requests')}
+                              className='px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors'
+                            >
+                              <p className='text-sm text-slate-800 truncate font-medium'>
+                                {item.actionType} — {item.reason}
+                              </p>
+                              <p className='text-[10px] text-slate-400 mt-0.5'>
+                                โดย {item.requester?.firstname}{' '}
+                                {item.requester?.lastname}
+                              </p>
+                            </div>
+                          ))}
+                        {expandedNotifView === 'none' &&
+                          todayRequests.length > 2 && (
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setExpandedNotifView('requests')
+                              }}
+                              className='px-3 py-1.5 text-xs text-center text-blue-500 font-medium cursor-pointer hover:bg-blue-50 rounded-lg'
+                            >
+                              +{todayRequests.length - 2} เพิ่มเติม
+                            </div>
+                          )}
+                        {expandedNotifView === 'requests' && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setExpandedNotifView('none')
+                            }}
+                            className='px-3 py-1.5 text-xs text-center text-slate-500 font-medium cursor-pointer hover:bg-slate-100 rounded-lg'
+                          >
+                            แสดงน้อยลง
+                          </div>
+                        )}
+                      </div>
+                    )}
+                </>
               )}
             </div>
           </div>
@@ -336,7 +460,7 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
 
         <hr className='w-[2px] h-8 bg-slate-200 border-0' />
 
-        {/* เมนูจัดการโปรไฟล์ผู้ใช้งาน (User Profile Menu) */}
+        {/* User Menu */}
         <div className='relative' ref={userMenuRef}>
           <button
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -357,13 +481,8 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
             </span>
           </button>
 
-          {/* เมนูย่อยใน Dropdown โปรไฟล์ */}
           <div
-            className={`absolute right-0 top-full mt-3 w-52 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden transition-all duration-200 ${
-              isUserMenuOpen
-                ? 'opacity-100 translate-y-0 pointer-events-auto'
-                : 'opacity-0 -translate-y-2 pointer-events-none'
-            }`}
+            className={`absolute right-0 top-full mt-3 w-52 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden transition-all duration-200 ${isUserMenuOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
           >
             <div className='px-4 py-3 border-b border-slate-100'>
               <p className='text-xs font-bold text-slate-800'>{fullName}</p>
@@ -371,7 +490,6 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
                 {currentUser.role}
               </p>
             </div>
-
             <button
               onClick={handleLogoutClick}
               className='flex items-center gap-2.5 w-full px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors cursor-pointer outline-none'
