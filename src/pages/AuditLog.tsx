@@ -79,7 +79,7 @@ export default function AuditLog() {
     setIsLoading(true)
     try {
       const data = await auditService.getAuditLogs(200)
-      setLogs(data)
+      setLogs(data.data)
     } catch (err) {
       setError('Failed to load audit logs')
       console.error(err)

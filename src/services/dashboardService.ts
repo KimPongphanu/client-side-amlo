@@ -16,22 +16,8 @@ export const dashboardService = {
   getContacts: async (): Promise<ApiResponseBase<ContactRequest[]>> => {
     const response = await api<{
       success: boolean
-      data?: Record<string, unknown>[]
+      data?: ContactRequest[]
     }>('/contact', { method: 'GET' })
-    if (response?.data) {
-      response.data = response.data.map((item) => ({
-        id: item.id,
-        firstName: item.first_name,
-        lastName: item.last_name,
-        email: item.email,
-        telNumber: item.tel_number,
-        preferredContact: item.preferred_contact,
-        message: item.message,
-        status: item.status,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at,
-      })) as unknown as Record<string, unknown>[]
-    }
     return response as unknown as ApiResponseBase<ContactRequest[]>
   },
 

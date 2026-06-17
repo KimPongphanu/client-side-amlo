@@ -40,7 +40,7 @@ const Footer = () => {
 
             <div className='pt-2'>
               <Link
-                to='#'
+                to='/contactform'
                 className='inline-block px-6 py-2 rounded-full border border-slate-600 text-slate-300 hover:bg-white hover:text-slate-900 transition-colors font-medium text-sm'
               >
                 ติดต่อเรา

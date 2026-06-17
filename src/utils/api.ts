@@ -1,8 +1,9 @@
 // src/utils/api.ts
 
 // Clean the slash from .env URL and attach the /api prefix automatically
-const ENV_URL: string = import.meta.env.VITE_API_URL || 'http://localhost:8080'
-const BASE_URL: string = `${ENV_URL.replace(/\/$/, '')}/api`
+// If VITE_API_URL is empty, use relative path (/api) — Nginx proxy handles it
+const rawUrl: string | undefined = import.meta.env.VITE_API_URL
+const BASE_URL: string = rawUrl ? `${rawUrl.replace(/\/$/, '')}/api` : '/api'
 
 // 🔒 บังคับใช้ unknown แทน any เพื่อความปลอดภัยสูงสุดตามกฎห้ามใช้ any
 interface FetchOptions extends Omit<RequestInit, 'body'> {

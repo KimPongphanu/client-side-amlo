@@ -12,6 +12,30 @@ const getStartOfToday = (): number => {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 }
 
+// ── LocalStorage helpers for "seen" notifications ──
+const LS_KEY = 'amlo_seen_notifications'
+
+interface SeenData {
+  seenComments: string[]
+  seenContacts: string[]
+  seenRequests: string[]
+}
+
+const loadSeen = (): SeenData => {
+  try {
+    const raw = localStorage.getItem(LS_KEY)
+    return raw
+      ? JSON.parse(raw)
+      : { seenComments: [], seenContacts: [], seenRequests: [] }
+  } catch {
+    return { seenComments: [], seenContacts: [], seenRequests: [] }
+  }
+}
+
+const saveSeen = (data: SeenData) => {
+  localStorage.setItem(LS_KEY, JSON.stringify(data))
+}
+
 // ---------------------------------------------------------
 // ClockDisplay Component
 // ---------------------------------------------------------
@@ -100,6 +124,16 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
   const [contacts, setContacts] = useState<ContactRequest[]>([])
   const [comments, setComments] = useState<CommentItem[]>([])
   const [pendingRequests, setPendingRequests] = useState<unknown[]>([])
+  const [seen, setSeen] = useState<SeenData>(loadSeen)
+
+  // ── Persist seen to localStorage ──
+  const updateSeen = (updater: (prev: SeenData) => SeenData) => {
+    setSeen((prev) => {
+      const next = updater(prev)
+      saveSeen(next)
+      return next
+    })
+  }
 
   // ── Navigate to dashboard menu ──
   const navigateTo = (menuId: string) => {
@@ -177,9 +211,28 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
     [pendingRequests, startOfToday],
   )
 
+  // ── Unseen counts (excluding seen) ──
+  const unreadComments = useMemo(
+    () => todayComments.filter((c) => !seen.seenComments.includes(c.id)),
+    [todayComments, seen.seenComments],
+  )
+  const unreadContacts = useMemo(
+    () => todayContacts.filter((c) => !seen.seenContacts.includes(c.id)),
+    [todayContacts, seen.seenContacts],
+  )
+  const unreadRequests = useMemo(
+    () =>
+      todayRequests.filter(
+        (r: unknown) =>
+          !seen.seenRequests.includes((r as { id: number }).id.toString()),
+      ),
+    [todayRequests, seen.seenRequests],
+  )
+
   const totalNew =
-    todayContacts.length + todayComments.length + todayRequests.length
-  const hasAnyToday = totalNew > 0
+    unreadComments.length + unreadContacts.length + unreadRequests.length
+  const hasAnyToday =
+    todayContacts.length + todayComments.length + todayRequests.length > 0
 
   // Sorted lists
   const latestContacts = useMemo(
@@ -261,7 +314,19 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
           <button
             className='relative cursor-pointer p-1 hover:bg-slate-100 rounded-full transition-colors'
             aria-label='Notifications'
-            onClick={() => setIsNotifOpen(!isNotifOpen)}
+            onClick={() => {
+              setIsNotifOpen(!isNotifOpen)
+              // Flow 1: เปิด bell → mark ความคิดเห็นทั้งหมดว่าอ่านแล้ว
+              if (!isNotifOpen && unreadComments.length > 0) {
+                updateSeen((prev) => ({
+                  ...prev,
+                  seenComments: [
+                    ...prev.seenComments,
+                    ...unreadComments.map((c) => c.id),
+                  ],
+                }))
+              }
+            }}
           >
             <i className='fas fa-bell text-slate-700 text-xl' />
             {totalNew > 0 && (
@@ -308,7 +373,18 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
                           .map((item) => (
                             <div
                               key={item.id}
-                              onClick={() => navigateTo('contacts')}
+                              onClick={() => {
+                                // Flow 2: คลิก item → mark รายการนี้ว่าอ่านแล้ว
+                                updateSeen((prev) => ({
+                                  ...prev,
+                                  seenContacts: prev.seenContacts.includes(
+                                    item.id,
+                                  )
+                                    ? prev.seenContacts
+                                    : [...prev.seenContacts, item.id],
+                                }))
+                                navigateTo('contacts')
+                              }}
                               className='px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors'
                             >
                               <p className='text-sm text-slate-800 truncate font-medium'>
@@ -412,21 +488,45 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
                         </div>
                         {todayRequests
                           .slice(0, expandedNotifView === 'requests' ? 5 : 2)
-                          .map((item: any) => (
-                            <div
-                              key={item.id}
-                              onClick={() => navigateTo('requests')}
-                              className='px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors'
-                            >
-                              <p className='text-sm text-slate-800 truncate font-medium'>
-                                {item.actionType} — {item.reason}
-                              </p>
-                              <p className='text-[10px] text-slate-400 mt-0.5'>
-                                โดย {item.requester?.firstname}{' '}
-                                {item.requester?.lastname}
-                              </p>
-                            </div>
-                          ))}
+                          .map((item: unknown) => {
+                            const req = item as {
+                              id: number
+                              actionType: string
+                              reason: string
+                              requester?: {
+                                firstname: string
+                                lastname: string
+                              }
+                            }
+                            return (
+                              <div
+                                key={req.id}
+                                onClick={() => {
+                                  updateSeen((prev) => ({
+                                    ...prev,
+                                    seenRequests: prev.seenRequests.includes(
+                                      req.id.toString(),
+                                    )
+                                      ? prev.seenRequests
+                                      : [
+                                          ...prev.seenRequests,
+                                          req.id.toString(),
+                                        ],
+                                  }))
+                                  navigateTo('requests')
+                                }}
+                                className='px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors'
+                              >
+                                <p className='text-sm text-slate-800 truncate font-medium'>
+                                  {req.actionType} — {req.reason}
+                                </p>
+                                <p className='text-[10px] text-slate-400 mt-0.5'>
+                                  โดย {req.requester?.firstname}{' '}
+                                  {req.requester?.lastname}
+                                </p>
+                              </div>
+                            )
+                          })}
                         {expandedNotifView === 'none' &&
                           todayRequests.length > 2 && (
                             <div
@@ -467,14 +567,16 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
             className='flex items-center gap-x-3 cursor-pointer hover:opacity-80 transition-opacity outline-none'
             aria-label='User menu'
           >
-            <div 
+            <div
               className='hidden sm:flex flex-col items-center justify-center w-36 md:w-48'
               title={fullName.length > 20 ? fullName : undefined}
             >
               <h6 className='text-sm font-bold text-slate-800 truncate w-full text-center'>
                 {currentUser.firstName} {currentUser.lastName}
               </h6>
-              <p className='text-xs text-slate-500 text-center'>{currentUser.role}</p>
+              <p className='text-xs text-slate-500 text-center'>
+                {currentUser.role}
+              </p>
             </div>
             <Avatar name={fullName} />
             <span
