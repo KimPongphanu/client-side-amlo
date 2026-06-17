@@ -40,6 +40,8 @@ export default function ReviewManager() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState<'all' | 'published'>('all')
+  const [starFilter, setStarFilter] = useState<number | 'all'>('all')
+  const [hoveredStar, setHoveredStar] = useState<number | null>(null)
   const itemsPerPage = 12
 
   useEffect(() => {
@@ -181,11 +183,14 @@ export default function ReviewManager() {
     let filtered = [...commentList]
     if (viewMode === 'published')
       filtered = filtered.filter((item) => item.isShow)
+    if (starFilter !== 'all') {
+      filtered = filtered.filter((item) => item.star === starFilter)
+    }
     return filtered.sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
-  }, [commentList, viewMode])
+  }, [commentList, viewMode, starFilter])
 
   const totalPages = Math.ceil(processedData.length / itemsPerPage)
   const currentItems = processedData.slice(
@@ -264,19 +269,63 @@ export default function ReviewManager() {
 
         {/* Tabs & Select All */}
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-200 pb-2 gap-4'>
-          <div className='flex gap-6'>
-            <button
-              onClick={() => handleTabChange('all')}
-              className={`pb-2 text-sm font-bold border-b-2 transition-colors ${viewMode === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-            >
-              ข้อมูลทั้งหมด
-            </button>
-            <button
-              onClick={() => handleTabChange('published')}
-              className={`pb-2 text-sm font-bold border-b-2 transition-colors ${viewMode === 'published' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-            >
-              แสดงผลหน้าเว็บ
-            </button>
+          <div className='flex items-center gap-6 flex-wrap'>
+            <div className='flex gap-6'>
+              <button
+                onClick={() => handleTabChange('all')}
+                className={`pb-2 text-sm font-bold border-b-2 transition-colors ${viewMode === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+              >
+                ข้อมูลทั้งหมด
+              </button>
+              <button
+                onClick={() => handleTabChange('published')}
+                className={`pb-2 text-sm font-bold border-b-2 transition-colors ${viewMode === 'published' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+              >
+                แสดงผลหน้าเว็บ
+              </button>
+            </div>
+            <div className='flex items-center pb-2 gap-3 flex-wrap'>
+              <button
+                onClick={() => {
+                  setStarFilter('all')
+                  setCurrentPage(1)
+                  setSelectedIds(new Set())
+                }}
+                className={`px-4 py-1.5 text-sm font-bold border rounded-full transition-colors whitespace-nowrap ${starFilter === 'all' ? 'border-blue-500 text-blue-700 bg-blue-50 shadow-sm' : 'border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 bg-white'}`}
+              >
+                ทั้งหมด
+              </button>
+              <div 
+                className='flex items-center gap-1 bg-white border border-slate-200 px-3 py-1.5 rounded-full shadow-sm' 
+                onMouseLeave={() => setHoveredStar(null)}
+              >
+                {[1, 2, 3, 4, 5].map((star) => {
+                  const isFilled = hoveredStar !== null 
+                    ? star <= hoveredStar 
+                    : starFilter !== 'all' && star <= starFilter;
+                  return (
+                    <button
+                      key={star}
+                      onMouseEnter={() => setHoveredStar(star)}
+                      onClick={() => {
+                        setStarFilter(star)
+                        setCurrentPage(1)
+                        setSelectedIds(new Set())
+                      }}
+                      className='focus:outline-none transition-transform hover:scale-110'
+                      title={`ดูรีวิว ${star} ดาว`}
+                    >
+                      <svg 
+                        className={`w-6 h-6 transition-colors ${isFilled ? 'text-orange-400 fill-current drop-shadow-sm' : 'text-slate-200 fill-current'}`}
+                        viewBox='0 0 20 20'
+                      >
+                        <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
+                      </svg>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           </div>
           <button
             onClick={handleSelectAll}
