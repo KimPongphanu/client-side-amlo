@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import AuditLogDashboard from '../components/dashboard/AuditLogDashboard'
+import BackupDashboard from '../components/dashboard/BackupDashboard'
 import ContactRequestManager from '../components/dashboard/ContactRequestManager'
 import DepartmentManagerDashboard from '../components/dashboard/department/DepartmentManagerDashboard'
 import NavBar from '../components/dashboard/NavBarComponent'
@@ -29,6 +30,7 @@ type MenuId =
   | 'slider'
   | 'requests'
   | 'audit-logs'
+  | 'backup'
 
 // ---------------------------------------------------------
 // Mockup Components
@@ -80,6 +82,7 @@ const allCategories: MenuCategory[] = [
       { id: 'user-manage', label: 'จัดการสมาชิก', icon: 'fa-users-cog' },
       { id: 'requests', label: 'คำร้อง', icon: 'fa-file-alt' },
       { id: 'audit-logs', label: 'Audit Logs', icon: 'fa-history' },
+      { id: 'backup', label: 'Backup', icon: 'fa-database' },
       { id: 'settings', label: 'ตั้งค่าระบบ', icon: 'fa-cog' },
     ],
   },
@@ -373,6 +376,12 @@ const DashboardPage = () => {
         return <SupervisorRequests />
       case 'audit-logs':
         return <AuditLogDashboard />
+      case 'backup':
+        return user?.role === 'SUPERVISOR' ? (
+          <BackupDashboard />
+        ) : (
+          <div className='p-6 text-center text-red-600'>ไม่มีสิทธิ์เข้าถึง</div>
+        )
       default:
         return <div className='p-6'>อยู่ระหว่างการพัฒนา...</div>
     }
