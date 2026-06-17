@@ -168,7 +168,7 @@ const YouTubeSlide = ({
             e.target.setVolume(50)
             e.target.playVideo()
           },
-          onStateChange: (e: { data: number }) => {
+          onStateChange: (e: { data: number; target: YouTubePlayer }) => {
             if (cancelled) return
             const S = window.YT.PlayerState
 

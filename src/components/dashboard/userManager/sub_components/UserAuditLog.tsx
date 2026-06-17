@@ -20,7 +20,7 @@ const UserAuditLog: React.FC<UserAuditLogProps> = ({ user, onBack }) => {
       try {
         setIsLoading(true)
         setError(null)
-        const response = await auditService.getLogs(user.id)
+        const response = await auditService.getLogs(user.uuid)
         setLogs(response)
       } catch (err) {
         setError('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์')
@@ -31,7 +31,7 @@ const UserAuditLog: React.FC<UserAuditLogProps> = ({ user, onBack }) => {
     }
 
     fetchLogs()
-  }, [user.id])
+  }, [user.uuid])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

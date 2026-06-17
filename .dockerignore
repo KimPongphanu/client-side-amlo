@@ -7,4 +7,3 @@ dist
 .gitignore
 *.md
 tests/
-node_modules/
