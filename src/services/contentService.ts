@@ -121,13 +121,11 @@ export const contentService = {
    * Fetch organizational departments list
    */
   getDepartments: async (): Promise<DepartmentItem[]> => {
-    // 🌟 ปรับ Generic Type ให้รับค่าเป็น Array ของ DepartmentItem ตรงๆ
-    const res = await api<DepartmentItem[]>('/departments', {
+    const res = await api<{ data?: DepartmentItem[] }>('/departments', {
       method: 'GET',
     })
 
-    // 🌟 คืนค่า res กลับไปตรงๆ (หาก res ไม่มีค่าให้ fallback เป็น Array ว่าง)
-    return res || []
+    return res?.data || []
   },
 
   /**
