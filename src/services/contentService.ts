@@ -121,11 +121,11 @@ export const contentService = {
    * Fetch organizational departments list
    */
   getDepartments: async (): Promise<DepartmentItem[]> => {
-    const res = await api<{ data?: DepartmentItem[] }>('/departments', {
+    const res = await api<DepartmentItem[]>('/departments', {
       method: 'GET',
     })
 
-    return res?.data || []
+    return res || []
   },
 
   /**

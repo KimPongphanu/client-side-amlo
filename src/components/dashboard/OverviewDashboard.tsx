@@ -15,6 +15,7 @@ import { contentService } from '../../services/contentService'
 import { useAuthStore } from '../../stores/useAuthStore'
 import type { SliderImage } from '../../type'
 import { api } from '../../utils/api'
+import DashboardCharts from './DashboardCharts'
 
 interface OverviewStats {
   newsCount: number
@@ -268,6 +269,9 @@ export default function OverviewDashboard() {
           </div>
         ))}
       </section>
+
+      {/* ─── Echarts Dashboard Charts ─── */}
+      <DashboardCharts stats={stats} />
 
       {/* ─── Recent Activity ─── */}
       <section className='grid grid-cols-1 lg:grid-cols-2 gap-6'>

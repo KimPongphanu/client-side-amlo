@@ -74,7 +74,7 @@ const HomePage2 = () => {
         )
         break
       case 'copy':
-        navigator.clipboard.writeText(url)
+        navigator.clipboard.writeText(url).catch((err) => console.error('Failed to copy', err))
         break
     }
     setShowShareMenu(false)

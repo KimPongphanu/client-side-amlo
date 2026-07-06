@@ -3,17 +3,21 @@ import { API_URL } from '../../config/constants'
 import { contentService } from '../../services/contentService'
 
 export default function SplashPopup() {
-  // Check localStorage once outside effect
-  const today = new Date().toISOString().slice(0, 10)
-  const alreadySeen = !!localStorage.getItem(`splash_seen_${today}`)
-
   const [popup, setPopup] = useState<{
     image_url: string
     title: string
   } | null>(null)
-  const [dismissed, setDismissed] = useState(alreadySeen)
+  const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
+    const currentToday = new Date().toISOString().slice(0, 10)
+    const hasSeenToday = !!localStorage.getItem(`splash_seen_${currentToday}`)
+    
+    if (hasSeenToday) {
+      setDismissed(true)
+      return
+    }
+
     if (dismissed) return
 
     contentService

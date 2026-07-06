@@ -29,7 +29,7 @@ const TwoFactorChallenge = () => {
     if (!state) {
       navigate('/login', { replace: true })
     }
-  }, [])
+  }, [navigate, state])
 
   const handleVerify = async (e?: React.FormEvent | string) => {
     // Support direct OTP value from onComplete callback

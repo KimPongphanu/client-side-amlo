@@ -6,7 +6,7 @@ import NewsSection from '../components/homepage/NewsSection'
 import Slider from '../components/homepage/Slider'
 import { contentService } from '../services/contentService'
 import { useContentStore } from '../stores/useContentStore'
-import type { BannerImage } from '../type'
+import type { SliderImage } from '../type'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -14,25 +14,24 @@ const HomePage = () => {
   const { prList, newsList, commentList, isLoading, fetchPublicData } =
     useContentStore()
 
-  const [bannerImages, setBannerImages] = useState<BannerImage[]>([])
+  const [sliderImages, setSliderImages] = useState<SliderImage[]>([])
 
   useEffect(() => {
     fetchPublicData()
-    contentService.getBanners().then((data) => setBannerImages(data))
+    contentService.getSlider().then((data) => setSliderImages(data))
   }, [fetchPublicData])
 
   return (
     <div className='bg-slate-50 min-h-screen pt-0 w-full'>
-      {/* Main Banner Slider */}
-      {bannerImages.length > 0 && (
+      {/* Main Slider */}
+      {sliderImages.length > 0 && (
         <div className='pt-16 lg:pt-0 pb-10 bg-slate-50'>
           <Slider
-            slides={bannerImages.map((banner) => ({
-              id: banner.id,
-              image: banner.image_url.startsWith('http')
-                ? banner.image_url
-                : `${API_URL}${banner.image_url}`,
-              link: banner.link_url || undefined,
+            slides={sliderImages.map((slide) => ({
+              id: slide.id,
+              image: slide.image_url.startsWith('http')
+                ? slide.image_url
+                : `${API_URL}${slide.image_url}`,
             }))}
           />
         </div>

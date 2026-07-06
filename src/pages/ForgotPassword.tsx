@@ -65,6 +65,12 @@ const ForgotPassword = () => {
         return
       }
 
+      if (!res.role) {
+        setError('ไม่สามารถระบุสิทธิ์ของผู้ใช้งานได้')
+        setIsLoading(false)
+        return
+      }
+
       setRole(res.role as Role)
 
       // Auto-send OTP for Admin only (Supervisor uses 2FA)

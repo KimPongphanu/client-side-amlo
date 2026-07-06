@@ -13,6 +13,7 @@ import { dashboardService } from '../../services/dashboardService'
 import { useDashboardStore } from '../../stores/useDashboardStore'
 import type { NewsItem } from '../../type'
 import { swal, toast } from '../../utils/swalConfig'
+import DOMPurify from 'dompurify'
 
 type StatusFilter = 'all' | 'shown' | 'hidden'
 type SortOrder = 'newest' | 'oldest'
@@ -58,7 +59,7 @@ const MiniAdvertisePreview = ({ data }: { data: NewsItem | null }) => {
         <div
           className='text-slate-600 text-sm leading-relaxed ql-rendered'
           dangerouslySetInnerHTML={{
-            __html: data.content || data.description || 'พิมพ์เนื้อหาประกาศ...',
+            __html: DOMPurify.sanitize(data.content || data.description || 'พิมพ์เนื้อหาประกาศ...'),
           }}
         />
       </div>
@@ -489,7 +490,7 @@ export default function NewsManagerDashboard() {
 
       handleCloseModal()
     } catch {
-      console.log('[Component Action] Operation halted due to store error.')
+      // ไม่ต้องเขียนระบบแสดงผลผิดพลาดซ้ำซ้อน เพราะฝั่ง Store จัดการยิง SWAL แดงให้เสร็จเรียบร้อยแล้วครับ
     }
   }
 

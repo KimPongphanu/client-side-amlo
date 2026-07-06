@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import AuditLogDashboard from '../components/dashboard/AuditLogDashboard'
 import BackupDashboard from '../components/dashboard/BackupDashboard'
-import BannerManagerDashboard from '../components/dashboard/BannerManagerDashboard'
+import SliderManagerDashboard from '../components/dashboard/SliderManagerDashboard'
 import ContactRequestManager from '../components/dashboard/ContactRequestManager'
 import DepartmentManagerDashboard from '../components/dashboard/department/DepartmentManagerDashboard'
 import FooterManagerDashboard from '../components/dashboard/FooterManagerDashboard'
@@ -73,7 +73,7 @@ const allCategories: MenuCategory[] = [
       { id: 'news', label: 'กิจกรรมและประกาศ', icon: 'fa-newspaper' },
       { id: 'advertises', label: 'ประชาสัมพันธ์', icon: 'fa-bullhorn' },
       { id: 'departments', label: 'จัดการหน่วยงาน', icon: 'fa-building' },
-      { id: 'slider', label: 'Banner หน้าหลัก', icon: 'fa-image' },
+      { id: 'slider', label: 'Slider หน้าหลัก', icon: 'fa-image' },
       { id: 'footer-settings', label: 'จัดการ Footer', icon: 'fa-copyright' },
       {
         id: 'splash-popup',
@@ -381,7 +381,7 @@ const DashboardPage = () => {
       case 'departments':
         return <DepartmentManagerDashboard />
       case 'slider':
-        return <BannerManagerDashboard />
+        return <SliderManagerDashboard />
       case 'footer-settings':
         return <FooterManagerDashboard />
       case 'splash-popup':
