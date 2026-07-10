@@ -1,5 +1,6 @@
 import type {
   ApiResponseBase,
+  BannerImage,
   CommentItem,
   ContactRequest,
   DepartmentItem,
@@ -120,12 +121,10 @@ export const contentService = {
    * Fetch organizational departments list
    */
   getDepartments: async (): Promise<DepartmentItem[]> => {
-    // 🌟 ปรับ Generic Type ให้รับค่าเป็น Array ของ DepartmentItem ตรงๆ
     const res = await api<DepartmentItem[]>('/departments', {
       method: 'GET',
     })
 
-    // 🌟 คืนค่า res กลับไปตรงๆ (หาก res ไม่มีค่าให้ fallback เป็น Array ว่าง)
     return res || []
   },
 
@@ -138,5 +137,143 @@ export const contentService = {
       { method: 'GET' },
     )
     return res?.data || []
+  },
+
+  // ── Banner API ──────────────────────────────────────────────────────────
+
+  /**
+   * Fetch banners (public: only isShow=true, admin: use ?all=true)
+   */
+  getBanners: async (all = false): Promise<BannerImage[]> => {
+    const url = all ? '/banners?all=true' : '/banners'
+    const res = await api<{ success: boolean; data: BannerImage[] }>(url, {
+      method: 'GET',
+    })
+    return res?.data || []
+  },
+
+  /**
+   * Create a new banner (multipart form)
+   */
+  createBanner: async (formData: FormData): Promise<ApiResponseBase> => {
+    return await api('/banners', { method: 'POST', body: formData })
+  },
+
+  /**
+   * Update banner (title, link_url)
+   */
+  updateBanner: async (
+    id: number,
+    data: { title?: string; link_url?: string },
+  ): Promise<ApiResponseBase> => {
+    return await api(`/banners/${id}`, {
+      method: 'PUT',
+      body: data,
+    })
+  },
+
+  /**
+   * Reorder banners
+   */
+  reorderBanners: async (orderedIds: number[]): Promise<ApiResponseBase> => {
+    return await api('/banners/reorder', {
+      method: 'PUT',
+      body: { orderedIds },
+    })
+  },
+
+  /**
+   * Delete a banner
+   */
+  deleteBanner: async (id: number): Promise<ApiResponseBase> => {
+    return await api(`/banners/${id}`, { method: 'DELETE' })
+  },
+
+  /**
+   * Toggle banner visibility (isShow)
+   */
+  toggleBannerVisibility: async (id: number): Promise<ApiResponseBase> => {
+    return await api(`/banners/${id}/toggle`, { method: 'PATCH' })
+  },
+
+  // ── Splash Popup API ─────────────────────────────────────────────────
+
+  /**
+   * Fetch active splash popup (public)
+   */
+  getActiveSplashPopup: async (): Promise<{
+    image_url: string
+    title: string
+  } | null> => {
+    const res = await api<{
+      success: boolean
+      data: {
+        id: number
+        image_url: string
+        title: string
+        isActive: boolean
+      } | null
+    }>('/splash-popups/active', { method: 'GET' })
+    return res?.data || null
+  },
+
+  /**
+   * Fetch all splash popups (admin)
+   */
+  getAllSplashPopups: async (): Promise<any[]> => {
+    const res = await api<{ success: boolean; data: any[] }>('/splash-popups', {
+      method: 'GET',
+    })
+    return res?.data || []
+  },
+
+  /**
+   * Create splash popup (admin)
+   */
+  createSplashPopup: async (formData: FormData): Promise<any> => {
+    return await api('/splash-popups', { method: 'POST', body: formData })
+  },
+
+  /**
+   * Update splash popup (admin)
+   */
+  updateSplashPopup: async (
+    id: number,
+    data: { title?: string; isActive?: boolean },
+  ): Promise<any> => {
+    return await api(`/splash-popups/${id}`, { method: 'PUT', body: data })
+  },
+
+  /**
+   * Delete splash popup (admin)
+   */
+  deleteSplashPopup: async (id: number): Promise<any> => {
+    return await api(`/splash-popups/${id}`, { method: 'DELETE' })
+  },
+
+  // ── Site Settings API ─────────────────────────────────────────────────
+
+  /**
+   * Fetch all site settings (footer, policies, social)
+   */
+  getSiteSettings: async (): Promise<Record<string, string>> => {
+    const res = await api<{ success: boolean; data: Record<string, string> }>(
+      '/settings',
+      { method: 'GET' },
+    )
+    return res?.data || {}
+  },
+
+  /**
+   * Update site settings (admin only)
+   */
+  updateSiteSettings: async (
+    settings: { key: string; value: string }[],
+  ): Promise<Record<string, string>> => {
+    const res = await api<{ success: boolean; data: Record<string, string> }>(
+      '/settings',
+      { method: 'PUT', body: { settings } },
+    )
+    return res?.data || {}
   },
 }

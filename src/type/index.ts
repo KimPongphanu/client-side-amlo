@@ -23,6 +23,7 @@ export type {
 
 // Content Types (News, Comments, Contacts - NO DepartmentItem)
 export type {
+  BannerImage,
   CommentFormData,
   CommentItem,
   ContactFormData,

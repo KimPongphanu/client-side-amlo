@@ -111,3 +111,16 @@ export interface SliderImage {
   order: number
   createdAt: string
 }
+
+/**
+ * Banner image for homepage carousel
+ */
+export interface BannerImage {
+  id: number
+  image_url: string
+  title: string
+  link_url: string
+  order: number
+  isShow: boolean
+  createdAt: string
+}

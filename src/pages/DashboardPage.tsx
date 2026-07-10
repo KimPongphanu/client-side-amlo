@@ -3,15 +3,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import AuditLogDashboard from '../components/dashboard/AuditLogDashboard'
 import BackupDashboard from '../components/dashboard/BackupDashboard'
+import SliderManagerDashboard from '../components/dashboard/SliderManagerDashboard'
 import ContactRequestManager from '../components/dashboard/ContactRequestManager'
 import DepartmentManagerDashboard from '../components/dashboard/department/DepartmentManagerDashboard'
+import FooterManagerDashboard from '../components/dashboard/FooterManagerDashboard'
 import NavBar from '../components/dashboard/NavBarComponent'
 import NewsManagerDashboard from '../components/dashboard/NewsManagerDashboard'
 import OverviewDashboard from '../components/dashboard/OverviewDashboard'
 import PRManagerDashboard from '../components/dashboard/PRManagerDashboard'
 import ProfileDashboard from '../components/dashboard/ProfileDashboard'
 import ReviewManager from '../components/dashboard/ReviewManager'
-import SliderManagerDashboard from '../components/dashboard/SliderManagerDashboard'
+import SplashPopupManager from '../components/dashboard/SplashPopupManager'
 import UserManagerDashboard from '../components/dashboard/userManager/UserManagerDashboard'
 import { useAuthStore } from '../stores/useAuthStore'
 import SupervisorRequests from './SupervisorRequests'
@@ -28,6 +30,8 @@ type MenuId =
   | 'news'
   | 'departments'
   | 'slider'
+  | 'footer-settings'
+  | 'splash-popup'
   | 'requests'
   | 'audit-logs'
   | 'backup'
@@ -69,7 +73,13 @@ const allCategories: MenuCategory[] = [
       { id: 'news', label: 'กิจกรรมและประกาศ', icon: 'fa-newspaper' },
       { id: 'advertises', label: 'ประชาสัมพันธ์', icon: 'fa-bullhorn' },
       { id: 'departments', label: 'จัดการหน่วยงาน', icon: 'fa-building' },
-      { id: 'slider', label: 'Slider หน้าหลัก', icon: 'fa-images' },
+      { id: 'slider', label: 'Slider หน้าหลัก', icon: 'fa-image' },
+      { id: 'footer-settings', label: 'จัดการ Footer', icon: 'fa-copyright' },
+      {
+        id: 'splash-popup',
+        label: 'Popup เปิดหน้า',
+        icon: 'fa-window-maximize',
+      },
       { id: 'reviews', label: 'รีวิว/ความคิดเห็น', icon: 'fa-star' },
       { id: 'contacts', label: 'การติดต่อ', icon: 'fa-envelope' },
     ],
@@ -372,6 +382,10 @@ const DashboardPage = () => {
         return <DepartmentManagerDashboard />
       case 'slider':
         return <SliderManagerDashboard />
+      case 'footer-settings':
+        return <FooterManagerDashboard />
+      case 'splash-popup':
+        return <SplashPopupManager />
       case 'requests':
         return <SupervisorRequests />
       case 'audit-logs':
@@ -412,6 +426,7 @@ const DashboardPage = () => {
           setActiveMenu={(id: MenuId) => {
             setActiveMenu(id)
             setIsMobileOpen(false)
+            window.scrollTo({ top: 0, behavior: 'smooth' })
           }}
           isMobileOpen={isMobileOpen}
           categories={filteredCategories}

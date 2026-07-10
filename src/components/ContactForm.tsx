@@ -1,25 +1,20 @@
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+  FaEnvelope,
+  FaLightbulb,
+  FaPenAlt,
+  FaPhone,
+  FaQuestionCircle,
+  FaSpinner,
+  FaTimes,
+  FaUser,
+} from 'react-icons/fa'
 import { useContentStore } from '../stores/useContentStore'
 import type { ContactFormData } from '../type'
 
-const ClearIcon = () => (
-  <svg
-    xmlns='http://www.w3.org/2000/svg'
-    width='18'
-    height='18'
-    viewBox='0 0 24 24'
-    fill='none'
-    stroke='currentColor'
-    strokeWidth='2'
-    strokeLinecap='round'
-    strokeLinejoin='round'
-  >
-    <line x1='18' y1='6' x2='6' y2='18'></line>
-    <line x1='6' y1='6' x2='18' y2='18'></line>
-  </svg>
-)
-
 export default function ContactForm() {
+  const { t } = useTranslation()
   // Bind centralized layout state parameters and triggers from content store
   const submitContactForm = useContentStore((state) => state.submitContactForm)
   const isSubmitting = useContentStore((state) => state.isSubmittingContact)
@@ -27,6 +22,8 @@ export default function ContactForm() {
   const clearContactErrors = useContentStore(
     (state) => state.clearContactErrors,
   )
+
+  const [showTips, setShowTips] = useState(false)
 
   const cardStyle =
     'w-full max-w-[600px] bg-white rounded-2xl m-10 p-8 border border-gray-200 shadow-lg mx-auto mt-25'
@@ -107,9 +104,7 @@ export default function ContactForm() {
           className='absolute opacity-0 -z-10 h-0 w-0 overflow-hidden'
           aria-hidden='true'
         >
-          <label htmlFor='botField'>
-            กรุณาปล่อยช่องนี้ว่างไว้หากคุณเป็นมนุษย์
-          </label>
+          <label htmlFor='botField'>{t('contact.failed')}</label>
           <input
             type='text'
             name='botField'
@@ -121,14 +116,24 @@ export default function ContactForm() {
           />
         </div>
 
-        <p className='text-center text-xl font-bold text-gray-800 mb-6'>
-          ฝากข้อความถึงเรา
-        </p>
+        <div className='flex items-center justify-center gap-2 mb-6'>
+          <p className='text-xl font-bold text-gray-800'>
+            {t('contact.title')}
+          </p>
+          <button
+            type='button'
+            onClick={() => setShowTips(true)}
+            aria-label='ดูวิธีการใช้งาน'
+            className='w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors'
+          >
+            <FaQuestionCircle className='w-5 h-5' />
+          </button>
+        </div>
 
         <div className='grid grid-cols-12 gap-5'>
           <div className='col-span-12 md:col-span-6'>
             <label htmlFor='firstName' className={requireStyle}>
-              ชื่อจริง
+              {t('contact.firstName')}
             </label>
             <div className='relative mt-1'>
               <input
@@ -147,7 +152,7 @@ export default function ContactForm() {
                   onClick={() => handleClear('firstName')}
                   className='absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 focus:outline-none rounded-full hover:bg-gray-100 transition-colors'
                 >
-                  <ClearIcon />
+                  <FaTimes />
                 </button>
               )}
             </div>
@@ -158,7 +163,7 @@ export default function ContactForm() {
 
           <div className='col-span-12 md:col-span-6'>
             <label htmlFor='lastName' className={requireStyle}>
-              นามสกุล
+              {t('contact.lastName')}
             </label>
             <div className='relative mt-1'>
               <input
@@ -177,7 +182,7 @@ export default function ContactForm() {
                   onClick={() => handleClear('lastName')}
                   className='absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 focus:outline-none rounded-full hover:bg-gray-100 transition-colors'
                 >
-                  <ClearIcon />
+                  <FaTimes />
                 </button>
               )}
             </div>
@@ -188,7 +193,7 @@ export default function ContactForm() {
 
           <div className='col-span-12 md:col-span-6'>
             <label htmlFor='email' className={requireStyle}>
-              อีเมล
+              {t('contact.email')}
             </label>
             <div className='relative mt-1'>
               <input
@@ -207,7 +212,7 @@ export default function ContactForm() {
                   onClick={() => handleClear('email')}
                   className='absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 focus:outline-none rounded-full hover:bg-gray-100 transition-colors'
                 >
-                  <ClearIcon />
+                  <FaTimes />
                 </button>
               )}
             </div>
@@ -218,7 +223,7 @@ export default function ContactForm() {
 
           <div className='col-span-12 md:col-span-6'>
             <label htmlFor='telNumber' className={requireStyle}>
-              เบอร์โทรศัพท์
+              {t('contact.phone')}
             </label>
             <div className='relative mt-1'>
               <input
@@ -238,7 +243,7 @@ export default function ContactForm() {
                   onClick={() => handleClear('telNumber')}
                   className='absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 focus:outline-none rounded-full hover:bg-gray-100 transition-colors'
                 >
-                  <ClearIcon />
+                  <FaTimes />
                 </button>
               )}
             </div>
@@ -248,7 +253,9 @@ export default function ContactForm() {
           </div>
 
           <div className='col-span-12'>
-            <p className={requireStyle}>สะดวกให้เราติดต่อกลับทางไหน?</p>
+            <p className={requireStyle}>
+              {t('contact.preferredContactQuestion')}
+            </p>
             <div className='flex gap-x-6 mt-2'>
               <label
                 className={`flex items-center gap-x-2 ${isSubmitting ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
@@ -262,7 +269,9 @@ export default function ContactForm() {
                   className='w-4 h-4 text-blue-600'
                   disabled={isSubmitting}
                 />
-                <span className='text-gray-700'>อีเมล</span>
+                <span className='text-gray-700'>
+                  {t('contact.contactByEmail')}
+                </span>
               </label>
               <label
                 className={`flex items-center gap-x-2 ${isSubmitting ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
@@ -276,7 +285,9 @@ export default function ContactForm() {
                   className='w-4 h-4 text-blue-600'
                   disabled={isSubmitting}
                 />
-                <span className='text-gray-700'>เบอร์โทรศัพท์</span>
+                <span className='text-gray-700'>
+                  {t('contact.contactByPhone')}
+                </span>
               </label>
             </div>
             {errors.preferredContact && (
@@ -291,7 +302,7 @@ export default function ContactForm() {
               htmlFor='message'
               className='text-sm font-medium text-gray-700'
             >
-              พิมพ์ข้อความของคุณที่นี่...
+              {t('contact.message')}
             </label>
             <div className='relative mt-1'>
               <textarea
@@ -299,7 +310,7 @@ export default function ContactForm() {
                 id='message'
                 value={formData.message}
                 onChange={handleChange}
-                placeholder='พิมพ์ข้อความของคุณที่นี่...'
+                placeholder={t('contact.messagePlaceholder')}
                 className={`h-[150px] resize-none pr-10 ${getInputStyle(!!errors.message, true)}`}
                 maxLength={maxLength}
                 disabled={isSubmitting}
@@ -310,7 +321,7 @@ export default function ContactForm() {
                   onClick={() => handleClear('message')}
                   className='absolute right-2 top-2 p-1 text-gray-400 hover:text-gray-600 focus:outline-none rounded-full hover:bg-gray-100 transition-colors'
                 >
-                  <ClearIcon />
+                  <FaTimes />
                 </button>
               )}
             </div>
@@ -333,36 +344,122 @@ export default function ContactForm() {
               className={`w-[300px] font-medium p-3 rounded-md transition-colors shadow-sm flex items-center justify-center gap-2 ${isSubmitting ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
             >
               {isSubmitting ? (
-                <>
-                  <svg
-                    className='animate-spin h-5 w-5 text-white'
-                    xmlns='http://www.w3.org/2000/svg'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                  >
-                    <circle
-                      className='opacity-25'
-                      cx='12'
-                      cy='12'
-                      r='10'
-                      stroke='currentColor'
-                      strokeWidth='4'
-                    ></circle>
-                    <path
-                      className='opacity-75'
-                      fill='currentColor'
-                      d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
-                    ></path>
-                  </svg>
-                  กำลังส่งข้อความ...
-                </>
+                <span className='flex items-center justify-center gap-2'>
+                  <FaSpinner className='animate-spin h-5 w-5' />
+                  {t('contact.sending')}
+                </span>
               ) : (
-                'ส่งข้อความ'
+                t('contact.send')
               )}
             </button>
           </div>
         </div>
       </form>
+
+      {/* Tips Popup — Material-style Dialog */}
+      {showTips && (
+        <div
+          className='fixed inset-0 z-[99999] flex items-center justify-center bg-black/40'
+          onClick={() => setShowTips(false)}
+        >
+          <div
+            className='bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden animate-[scaleIn_0.2s_ease-out]'
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className='flex items-center justify-between px-6 pt-5 pb-3 border-b border-[#e8eaed]'>
+              <div className='flex items-center gap-2'>
+                <FaLightbulb className='text-xl text-amber-500' />
+                <span className='text-[16px] font-semibold text-[#202124]'>
+                  Tips การกรอกข้อมูล
+                </span>
+              </div>
+              <button
+                onClick={() => setShowTips(false)}
+                aria-label='ปิด Tips'
+                className='w-8 h-8 rounded-full flex items-center justify-center text-[#5f6368] hover:bg-[#f1f3f4] transition-colors'
+              >
+                <FaTimes className='w-5 h-5' />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className='px-6 py-4 flex flex-col gap-4'>
+              {/* Tip: Name */}
+              <div className='flex gap-3'>
+                <FaUser className='text-lg shrink-0 mt-0.5 text-blue-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>
+                    ชื่อ-นามสกุล
+                  </p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    กรอกชื่อจริงและนามสกุลของคุณ
+                  </p>
+                </div>
+              </div>
+
+              {/* Tip: Email */}
+              <div className='flex gap-3'>
+                <FaEnvelope className='text-lg shrink-0 mt-0.5 text-gray-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>อีเมล</p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    กรอกอีเมลที่สามารถติดต่อกลับได้
+                  </p>
+                </div>
+              </div>
+
+              {/* Tip: Phone */}
+              <div className='flex gap-3'>
+                <FaPhone className='text-lg shrink-0 mt-0.5 text-green-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>
+                    เบอร์โทรศัพท์
+                  </p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    กรอกเบอร์โทรศัพท์ 10 หลัก (0XX XXX XXXX)
+                  </p>
+                </div>
+              </div>
+
+              {/* Tip: Message */}
+              <div className='flex gap-3'>
+                <FaPenAlt className='text-lg shrink-0 mt-0.5 text-[#1a73e8]' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>ข้อความ</p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    พิมพ์รายละเอียดข้อความของคุณ สูงสุด {maxLength} ตัวอักษร
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className='px-6 pb-4 pt-2 flex justify-end'>
+              <button
+                onClick={() => setShowTips(false)}
+                className='px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.97] transition-all shadow-sm'
+              >
+                ตกลง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Keyframes for scaleIn animation */}
+      <style>{`
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      `}</style>
     </article>
   )
 }

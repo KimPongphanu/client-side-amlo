@@ -1,11 +1,19 @@
 import { Grid, List } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
+import {
+  FaEye,
+  FaLightbulb,
+  FaNewspaper,
+  FaQuestionCircle,
+  FaTimes,
+} from 'react-icons/fa'
 import ReactQuill from 'react-quill-new'
 import 'react-quill-new/dist/quill.snow.css'
 import { dashboardService } from '../../services/dashboardService'
 import { useDashboardStore } from '../../stores/useDashboardStore'
 import type { NewsItem } from '../../type'
 import { swal, toast } from '../../utils/swalConfig'
+import DOMPurify from 'dompurify'
 
 type StatusFilter = 'all' | 'shown' | 'hidden'
 type SortOrder = 'newest' | 'oldest'
@@ -51,7 +59,7 @@ const MiniAdvertisePreview = ({ data }: { data: NewsItem | null }) => {
         <div
           className='text-slate-600 text-sm leading-relaxed ql-rendered'
           dangerouslySetInnerHTML={{
-            __html: data.content || data.description || 'พิมพ์เนื้อหาประกาศ...',
+            __html: DOMPurify.sanitize(data.content || data.description || 'พิมพ์เนื้อหาประกาศ...'),
           }}
         />
       </div>
@@ -243,6 +251,7 @@ export default function NewsManagerDashboard() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
   const [viewMode, setViewMode] = useState<ViewMode>('card')
 
+  const [showTips, setShowTips] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
   const [activePost, setActivePost] = useState<NewsItem | null>(null)
   const [formData, setFormData] = useState<NewsItem | null>(null)
@@ -481,7 +490,7 @@ export default function NewsManagerDashboard() {
 
       handleCloseModal()
     } catch {
-      console.log('[Component Action] Operation halted due to store error.')
+      // ไม่ต้องเขียนระบบแสดงผลผิดพลาดซ้ำซ้อน เพราะฝั่ง Store จัดการยิง SWAL แดงให้เสร็จเรียบร้อยแล้วครับ
     }
   }
 
@@ -490,9 +499,19 @@ export default function NewsManagerDashboard() {
       {/* --- Page Header --- */}
       <div className='max-w-7xl mx-auto mb-5 flex flex-col md:flex-row justify-between items-start md:items-end gap-4'>
         <div>
-          <h1 className='text-2xl font-bold mb-2 tracking-tight text-slate-900'>
-            จัดการคลังประกาศกิจกรรม (News Manager)
-          </h1>
+          <div className='flex items-center gap-2'>
+            <h1 className='text-2xl font-bold mb-2 tracking-tight text-slate-900'>
+              จัดการคลังประกาศกิจกรรม (News Manager)
+            </h1>
+            <button
+              type='button'
+              onClick={() => setShowTips(true)}
+              aria-label='ดูวิธีการใช้งาน'
+              className='w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors mb-2'
+            >
+              <FaQuestionCircle className='w-5 h-5' />
+            </button>
+          </div>
           <div className='flex items-center gap-4 text-sm font-medium'>
             <span className='text-slate-600'>
               {' '}
@@ -853,6 +872,68 @@ export default function NewsManagerDashboard() {
         </div>
       )}
 
+      {/* Tips Popup */}
+      {showTips && (
+        <div
+          className='fixed inset-0 z-[99999] flex items-center justify-center bg-black/40'
+          onClick={() => setShowTips(false)}
+        >
+          <div
+            className='bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden animate-[scaleIn_0.2s_ease-out]'
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className='flex items-center justify-between px-6 pt-5 pb-3 border-b border-[#e8eaed]'>
+              <div className='flex items-center gap-2'>
+                <FaLightbulb className='text-xl text-amber-500' />
+                <span className='text-[16px] font-semibold text-[#202124]'>
+                  Tips การใช้งาน
+                </span>
+              </div>
+              <button
+                onClick={() => setShowTips(false)}
+                aria-label='ปิด Tips'
+                className='w-8 h-8 rounded-full flex items-center justify-center text-[#5f6368] hover:bg-[#f1f3f4] transition-colors'
+              >
+                <FaTimes className='w-5 h-5' />
+              </button>
+            </div>
+            <div className='px-6 py-4 flex flex-col gap-4'>
+              <div className='flex gap-3'>
+                <FaNewspaper className='text-lg shrink-0 mt-0.5 text-blue-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>
+                    การจัดการประกาศ
+                  </p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    สร้าง แก้ไข จัดการประกาศกิจกรรม โดยคลิกที่รายการเพื่อแก้ไข
+                    หรือสร้างใหม่
+                  </p>
+                </div>
+              </div>
+              <div className='flex gap-3'>
+                <FaEye className='text-lg shrink-0 mt-0.5 text-emerald-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>
+                    การแสดงผล
+                  </p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    Toggle สวิตช์เพื่อแสดงหรือซ่อนประกาศบนหน้าเว็บไซต์
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className='px-6 pb-4 pt-2 flex justify-end'>
+              <button
+                onClick={() => setShowTips(false)}
+                className='px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.97] transition-all shadow-sm'
+              >
+                ตกลง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -860,6 +941,10 @@ export default function NewsManagerDashboard() {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .animate-fade-in { animation: modalFadeIn 0.2s ease-out; }
         @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
       `}</style>
     </div>
   )

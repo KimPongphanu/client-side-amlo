@@ -27,11 +27,11 @@ const HomePage = () => {
       {sliderImages.length > 0 && (
         <div className='pt-16 lg:pt-0 pb-10 bg-slate-50'>
           <Slider
-            slides={sliderImages.map((img) => ({
-              id: img.id,
-              image: img.image_url.startsWith('http')
-                ? img.image_url
-                : `${API_URL}${img.image_url}`,
+            slides={sliderImages.map((slide) => ({
+              id: slide.id,
+              image: slide.image_url.startsWith('http')
+                ? slide.image_url
+                : `${API_URL}${slide.image_url}`,
             }))}
           />
         </div>
@@ -67,7 +67,9 @@ const HomePage = () => {
           </div>
 
           {/* Comment Slider */}
-          <CommentSlider comments={commentList} />
+          <div className='w-full bg-gray-200 m-2'>
+            <CommentSlider comments={commentList} />
+          </div>
         </>
       )}
     </div>

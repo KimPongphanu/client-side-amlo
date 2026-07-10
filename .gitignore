@@ -13,6 +13,8 @@ dist
 dist-ssr
 *.local
 repomix-output.xml
+repomix-react.xml
+et --hard ORIG_HEAD
 
 # Editor directories and files
 .vscode/*

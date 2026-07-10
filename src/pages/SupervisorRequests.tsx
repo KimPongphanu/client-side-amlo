@@ -42,7 +42,7 @@ const SupervisorRequests = () => {
       return
     }
     loadData()
-  }, [])
+  }, [user, navigate])
 
   const loadData = async () => {
     setIsLoading(true)

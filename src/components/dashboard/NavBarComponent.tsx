@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FaBell, FaCheckCircle } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
 import { contentService } from '../../services/contentService'
 import { useAuthStore } from '../../stores/useAuthStore'
@@ -328,7 +329,7 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
               }
             }}
           >
-            <i className='fas fa-bell text-slate-700 text-xl' />
+            <FaBell className='text-slate-700 text-xl' />
             {totalNew > 0 && (
               <span className='absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 border-2 border-white rounded-full text-[9px] font-bold text-white px-1'>
                 {totalNew > 99 ? '99+' : totalNew}
@@ -350,7 +351,7 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
             <div className='max-h-96 overflow-y-auto p-2'>
               {!hasAnyToday ? (
                 <div className='py-10 text-center text-slate-400'>
-                  <i className='fas fa-check-circle text-slate-300 text-3xl mb-3 block' />
+                  <FaCheckCircle className='text-slate-300 text-3xl mb-3 block mx-auto' />
                   <p className='text-sm font-medium'>
                     ไม่มีการแจ้งเตือนในวันนี้
                   </p>

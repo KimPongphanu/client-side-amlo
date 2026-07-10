@@ -4,9 +4,11 @@ import ScrollToTop from './pages/ScrollToTop'
 import ProtectedRoute from './routes/ProtectedRoute'
 import PublicRoute from './routes/PublicRoute'
 import { useAuthStore } from './stores/useAuthStore'
+import { useSiteStore } from './stores/useSiteStore'
 import { initGA, logPageView } from './utils/analytics'
 
 const Home = lazy(() => import('./pages/homePage'))
+const HomeV2 = lazy(() => import('./pages/homePage2'))
 const MainLayout = lazy(() => import('./components/layout/MainLayout'))
 const NewsDetailPage = lazy(() => import('./pages/NewsDetailPage'))
 const DepartmentDetailPage = lazy(() => import('./pages/DepartDetailPage'))
@@ -19,7 +21,6 @@ const CommentForm = lazy(() => import('./components/CommentForm'))
 const ContactForm = lazy(() => import('./components/ContactForm'))
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
-const RecoveryLogin = lazy(() => import('./pages/RecoveryLogin'))
 const TwoFactorChallenge = lazy(() => import('./pages/TwoFactorChallenge'))
 const TwoFactorSetup = lazy(() => import('./pages/TwoFactorSetup'))
 const SupervisorRequests = lazy(() => import('./pages/SupervisorRequests'))
@@ -31,6 +32,16 @@ function App() {
   const location = useLocation()
   const verifyUser = useAuthStore((state) => state.verifyUser)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+
+  // Sync font size to <html> element (CSS variable approach)
+  const fontSize = useSiteStore((state) => state.fontSize)
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.remove('font-small', 'font-medium', 'font-large')
+    if (fontSize === 'small') root.classList.add('font-small')
+    else if (fontSize === 'large') root.classList.add('font-large')
+    else root.classList.add('font-medium')
+  }, [fontSize])
 
   // 1. รันระบบ GA4 ครั้งแรกครั้งเดียวตอนเปิดเว็บ
   useEffect(() => {
@@ -83,6 +94,7 @@ function App() {
         <Routes>
           <Route element={<MainLayout />}>
             <Route path='/' element={<Home />} />
+            <Route path='/v2' element={<HomeV2 />} />
             <Route path='/news' element={<News />} />
             <Route path='/news/:id' element={<NewsDetailPage />} />
             <Route path='/department/:id' element={<DepartmentDetailPage />} />
@@ -121,7 +133,6 @@ function App() {
             }
           />
           <Route path='/forgot-password' element={<ForgotPassword />} />
-          <Route path='/recovery-login' element={<RecoveryLogin />} />
           <Route
             path='/force-password-reset'
             element={

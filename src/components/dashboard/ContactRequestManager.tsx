@@ -1,5 +1,30 @@
 // src/components/dashboard/ContactRequestManager.tsx
 import { useEffect, useMemo, useState } from 'react'
+import {
+  FaCalendarAlt,
+  FaCheck,
+  FaCheckCircle,
+  FaChevronDown,
+  FaCircle,
+  FaClock,
+  FaCommentDots,
+  FaComments,
+  FaEdit,
+  FaEnvelope,
+  FaHashtag,
+  FaInbox,
+  FaLightbulb,
+  FaList,
+  FaPaperPlane,
+  FaPhone,
+  FaPhoneAlt,
+  FaQuestionCircle,
+  FaSearch,
+  FaSpinner,
+  FaTimes,
+  FaUndo,
+  FaUser,
+} from 'react-icons/fa'
 import { useDashboardStore } from '../../stores/useDashboardStore'
 import type { ContactRequest } from '../../type'
 import ExportExcelButton from '../common/ExportExcelButton'
@@ -22,6 +47,7 @@ export default function ContactRequestManager() {
   >('ทั้งหมด')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set())
+  const [showTips, setShowTips] = useState(false)
 
   const groupedData = useMemo<GroupedContacts[]>(() => {
     const groups: Record<string, ContactRequest[]> = {}
@@ -40,382 +66,397 @@ export default function ContactRequestManager() {
       if (!groups[key]) groups[key] = []
       groups[key].push(item)
     })
-    return Object.entries(groups)
-      .map(([key, items]) => ({
-        key,
-        items: items.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        ),
-      }))
-      .sort(
+    return Object.entries(groups).map(([key, items]) => ({
+      key,
+      items: items.sort(
         (a, b) =>
-          new Date(b.items[0].createdAt).getTime() -
-          new Date(a.items[0].createdAt).getTime(),
-      )
+          new Date(b.createdAt || 0).getTime() -
+          new Date(a.createdAt || 0).getTime(),
+      ),
+    }))
   }, [contacts.data, searchTerm, statusFilter])
 
-  const toggleGroup = (key: string): void => {
-    const newSet = new Set<string>(expandedGroups)
-    if (newSet.has(key)) newSet.delete(key)
-    else newSet.add(key)
-    setExpandedGroups(newSet)
+  const toggleGroup = (key: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
   }
 
-  const toggleDetail = (id: string): void => {
-    const newSet = new Set<string>(expandedDetails)
-    if (newSet.has(id)) newSet.delete(id)
-    else newSet.add(id)
-    setExpandedDetails(newSet)
+  const toggleDetail = (id: string) => {
+    setExpandedDetails((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const handleReplyToggle = async (
+    id: string,
+    currentStatus: string,
+  ): Promise<void> => {
+    const { swal } = await import('../../utils/swalConfig')
+    const newStatus =
+      currentStatus === 'ตอบกลับแล้ว' ? 'ยังไม่ตอบกลับ' : 'ตอบกลับแล้ว'
+    const confirm = await swal.fire({
+      title: `เปลี่ยนสถานะเป็น "${newStatus}"?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยัน',
+      cancelButtonText: 'ยกเลิก',
+    })
+    if (!confirm.isConfirmed) return
+    try {
+      const { api } = await import('../../utils/api')
+      const res = await api<{ success: boolean }>(`/contact/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus }),
+      })
+      if (res?.success) {
+        await fetchAllContacts()
+      }
+    } catch {
+      /* silent */
+    }
+  }
+
+  const renderDetailView = (item: ContactRequest) => {
+    const isExpanded = expandedDetails.has(item.id)
+    const isGroupItem =
+      item.preferredContact === 'email' || item.preferredContact === 'tel'
+    return (
+      <div
+        key={item.id}
+        className={`border border-slate-100 rounded-xl overflow-hidden transition-all duration-200 ${isExpanded ? 'shadow-sm' : ''}`}
+      >
+        <div
+          className='flex items-start gap-3 p-4 cursor-pointer hover:bg-slate-50 transition-colors'
+          onClick={() => toggleDetail(item.id)}
+        >
+          <div className='w-10 h-10 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center shrink-0 border border-blue-200'>
+            <FaEnvelope className='text-blue-500 text-sm' />
+          </div>
+          <div className='flex-1 min-w-0'>
+            <p className='text-xs text-slate-400 font-medium mt-0.5'>
+              <FaUser className='text-slate-300 mr-1 inline' />
+              {item.firstName} {item.lastName}
+              {(isGroupItem || item.email) && (
+                <>
+                  <FaCircle className='text-[4px] text-slate-300 mx-1.5 align-middle inline' />
+                  <FaPhone className='text-slate-300 mr-1 inline' />
+                  {item.telNumber}
+                </>
+              )}
+            </p>
+            <span className='bg-blue-50 text-blue-700 text-[10px] px-2 py-1 rounded-md font-extrabold uppercase tracking-wide border border-blue-100 inline-flex items-center gap-1 mt-1'>
+              <FaComments className='text-[9px]' />
+              {groupedData.find((g) => g.items.some((i) => i.id === item.id))
+                ?.items.length || 0}
+            </span>
+          </div>
+          <FaChevronDown
+            className={`text-slate-400 transition-transform duration-200 shrink-0 mt-1 ${isExpanded ? 'rotate-180' : ''}`}
+          />
+        </div>
+
+        {isExpanded && (
+          <div className='px-4 pb-4 space-y-3 border-t border-slate-100 pt-3'>
+            <div className='flex flex-wrap gap-4 text-xs'>
+              <span className='text-xs font-bold text-slate-500 whitespace-nowrap font-mono bg-white border border-slate-200 px-2 py-0.5 rounded inline-flex items-center gap-1'>
+                <FaCalendarAlt className='text-slate-300' />
+                {new Date(item.createdAt || '').toLocaleDateString('th-TH', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </span>
+              <span className='text-[10px] text-slate-400 font-mono uppercase font-semibold shrink-0 select-all inline-flex items-center gap-1'>
+                <FaHashtag className='text-[8px]' />
+                {item.id.slice(0, 8)}
+              </span>
+            </div>
+
+            <div className='flex gap-2'>
+              <div className='w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center'>
+                <FaUser className='text-blue-500 text-xs' />
+              </div>
+              <div className='w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center'>
+                <FaPhone className='text-emerald-500 text-xs' />
+              </div>
+            </div>
+
+            <div className='flex gap-3 text-xs'>
+              {item.preferredContact === 'email' && (
+                <span className='inline-flex items-center gap-1 text-blue-600 font-medium'>
+                  <FaEnvelope className='text-blue-400' />
+                  อีเมล
+                </span>
+              )}
+              {item.preferredContact === 'tel' && (
+                <span className='inline-flex items-center gap-1 text-emerald-600 font-medium'>
+                  <FaPhoneAlt className='text-emerald-400' />
+                  โทรศัพท์
+                </span>
+              )}
+            </div>
+
+            <div>
+              <div className='w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center'>
+                <FaCommentDots className='text-amber-500 text-xs' />
+              </div>
+              <p className='mt-1 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap'>
+                {item.message}
+              </p>
+              <p className='flex items-center gap-1.5 text-xs text-slate-400 mt-2'>
+                <FaPaperPlane className='text-slate-300' />
+                ส่งเมื่อ:{' '}
+                {new Date(item.createdAt || '').toLocaleString('th-TH', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+              {item.updatedAt && (
+                <p className='flex items-center gap-1.5 text-xs text-slate-400 mt-1'>
+                  <FaEdit className='text-slate-300' />
+                  แก้ไขล่าสุด:{' '}
+                  {new Date(item.updatedAt).toLocaleString('th-TH', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </p>
+              )}
+            </div>
+
+            <div className='pt-1'>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleReplyToggle(item.id, item.status)
+                }}
+                className={`text-xs font-bold px-4 py-2 rounded-lg border transition-colors inline-flex items-center gap-1.5 ${
+                  item.status === 'ตอบกลับแล้ว'
+                    ? 'text-amber-600 border-amber-200 bg-amber-50 hover:bg-amber-100'
+                    : 'text-emerald-600 border-emerald-200 bg-emerald-50 hover:bg-emerald-100'
+                }`}
+              >
+                {item.status === 'ตอบกลับแล้ว' ? (
+                  <>
+                    <FaUndo /> เปลี่ยนเป็นยังไม่ตอบ
+                  </>
+                ) : (
+                  <>
+                    <FaCheck /> บันทึก "ตอบกลับแล้ว"
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
-    <div className='bg-slate-50 min-h-screen p-4 md:p-8 font-sans antialiased text-slate-800'>
-      <div className='max-w-4xl mx-auto space-y-6'>
-        {/* Header & Action */}
-        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-5'>
-          <div>
-            <h1 className='text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2'>
-              <i className='fas fa-inbox text-blue-600' />
-              รายการข้อความติดต่อกลับ
-            </h1>
-            <p className='text-sm text-slate-500 mt-1'>
-              ตรวจสอบ ตรวจตรา และบันทึกสถานะการติดต่อกับประชาชนผู้ฝากข้อความ
-            </p>
-          </div>
-          <div className='flex items-center gap-2'>
-            <ExportExcelButton
-              data={contacts.data as unknown as Record<string, unknown>[]}
-              filename='contact_export'
-              columns={[
-                { key: 'firstName', label: 'ชื่อ' },
-                { key: 'lastName', label: 'นามสกุล' },
-                { key: 'email', label: 'อีเมล' },
-                { key: 'telNumber', label: 'เบอร์โทร', fallback: '-' },
-                {
-                  key: 'preferredContact',
-                  label: 'ช่องทาง',
-                  format: (v) => (v === 'email' ? 'อีเมล' : 'โทรศัพท์'),
-                },
-                { key: 'message', label: 'ข้อความ' },
-                { key: 'status', label: 'สถานะ' },
-                {
-                  key: 'createdAt',
-                  label: 'วันที่ส่ง',
-                  format: (v) => new Date(v as string).toLocaleString('th-TH'),
-                },
-              ]}
-            />
-            <button
-              onClick={contacts.fetchAll}
-              disabled={contacts.loading}
-              className='bg-white border border-slate-300 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 active:scale-95 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer'
-            >
-              <i
-                className={`fas fa-sync-alt ${contacts.loading ? 'fa-spin' : ''}`}
-              />
-              รีเฟรชข้อมูล
-            </button>
-          </div>
-        </div>
-
-        {/* Stats Bars */}
-        <div className='grid grid-cols-3 gap-0 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm'>
-          <div className='flex items-center justify-between px-5 py-3 border-r border-slate-100'>
-            <span className='text-xs font-semibold text-slate-400 flex items-center gap-1.5'>
-              <i className='fas fa-list text-slate-300' /> ทั้งหมด
-            </span>
-            <span className='text-xl font-black text-slate-800 tabular-nums'>
-              {contacts.total}
-            </span>
-          </div>
-          <div className='flex items-center justify-between px-5 py-3 border-r border-slate-100'>
-            <span className='text-xs font-semibold text-slate-500 flex items-center gap-1.5'>
-              <i className='fas fa-check-circle text-emerald-400' /> ตอบกลับแล้ว
-            </span>
-            <span className='text-xl font-black text-emerald-600 tabular-nums'>
-              {contacts.total - contacts.pending}
-            </span>
-          </div>
-          <div className='flex items-center justify-between px-5 py-3'>
-            <span className='text-xs font-semibold text-slate-500 flex items-center gap-1.5'>
-              <i className='fas fa-clock text-amber-400' /> ค้างตอบ
-            </span>
-            <span className='text-xl font-black text-amber-500 tabular-nums'>
-              {contacts.pending}
-            </span>
-          </div>
-        </div>
-
-        {/* Filter Bar */}
-        <div className='bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between'>
-          <div className='relative w-full md:w-80'>
-            <i className='fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm' />
-            <input
-              type='text'
-              placeholder='ค้นหาด้วยชื่อ, อีเมล หรือข้อความ...'
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className='w-full pl-9 pr-4 py-2.5 border border-slate-200 bg-slate-50 text-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all'
-            />
-          </div>
-          <div className='flex rounded-xl bg-slate-100 p-1 w-full md:w-auto text-xs font-bold'>
-            {(['ทั้งหมด', 'ยังไม่ตอบกลับ', 'ตอบกลับแล้ว'] as const).map(
-              (tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setStatusFilter(tab)}
-                  className={`flex-1 md:flex-none px-4 py-2 rounded-lg transition-all cursor-pointer ${
-                    statusFilter === tab
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ),
-            )}
-          </div>
-        </div>
-
-        {/* List Container */}
-        <div className='bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm'>
-          <div className='max-h-[600px] overflow-y-auto custom-scrollbar divide-y divide-slate-100'>
-            {contacts.loading ? (
-              <div className='p-12 text-center text-slate-500 font-medium flex flex-col items-center justify-center gap-3'>
-                <i className='fas fa-spinner fa-spin text-blue-600 text-2xl' />
-                กำลังดึงข้อมูลความคืบหน้าล่าสุด...
-              </div>
-            ) : groupedData.length === 0 ? (
-              <div className='p-12 text-center text-slate-400 font-medium'>
-                <i className='fas fa-inbox text-slate-300 text-3xl mb-3 block' />
-                ไม่พบข้อมูลรายการข้อความที่ระบุตามเงื่อนไขในขณะนี้
-              </div>
-            ) : (
-              groupedData.map((group) => {
-                const hasMultiple = group.items.length > 1
-                const isGroupExpanded = expandedGroups.has(group.key)
-                return (
-                  <div
-                    key={group.key}
-                    className='transition-colors duration-150'
-                  >
-                    {/* Group Header */}
-                    <div
-                      onClick={() => toggleGroup(group.key)}
-                      data-testid='contact-group-row'
-                      data-group-key={group.key}
-                      className={`p-4 hover:bg-slate-50 cursor-pointer flex justify-between items-center transition-colors select-none ${isGroupExpanded ? 'bg-slate-50/50' : ''}`}
-                    >
-                      <div className='flex items-center gap-4 min-w-0'>
-                        <div className='w-10 h-10 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center shrink-0 border border-blue-200'>
-                          <i className='fas fa-envelope text-blue-500 text-sm' />
-                        </div>
-                        <div className='min-w-0'>
-                          <p className='font-bold text-slate-900 truncate'>
-                            {group.key}
-                          </p>
-                          <p className='text-xs text-slate-400 font-medium mt-0.5'>
-                            <i className='fas fa-user text-slate-300 mr-1' />
-                            {group.items[0].firstName} {group.items[0].lastName}
-                            {group.items[0].telNumber && (
-                              <>
-                                <i className='fas fa-circle text-[4px] text-slate-300 mx-1.5 align-middle' />
-                                <i className='fas fa-phone text-slate-300 mr-1' />
-                                {group.items[0].telNumber}
-                              </>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                      <div className='flex items-center gap-3 ml-4 shrink-0'>
-                        {hasMultiple && (
-                          <span className='bg-blue-50 text-blue-700 text-[10px] px-2 py-1 rounded-md font-extrabold uppercase tracking-wide border border-blue-100 flex items-center gap-1'>
-                            <i className='fas fa-comments text-[9px]' />
-                            {group.items.length}
-                          </span>
-                        )}
-                        <i
-                          className={`fas fa-chevron-down text-slate-400 transition-transform duration-200 ${isGroupExpanded ? 'rotate-180' : ''}`}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Expanded Group List */}
-                    {isGroupExpanded && (
-                      <div className='bg-slate-50/40 border-t border-slate-100 divide-y divide-slate-100/70 shadow-inner'>
-                        {group.items.map((item: ContactRequest) => {
-                          const isDetailExpanded = expandedDetails.has(item.id)
-                          return (
-                            <div
-                              key={item.id}
-                              className='transition-all duration-200'
-                            >
-                              {/* Entry Summary */}
-                              <div
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  toggleDetail(item.id)
-                                }}
-                                data-testid='contact-item-row'
-                                data-status={item.status}
-                                className={`px-6 py-3.5 hover:bg-slate-100/80 cursor-pointer flex justify-between items-center ${isDetailExpanded ? 'bg-slate-100/50' : ''}`}
-                              >
-                                <div className='flex items-center gap-3 min-w-0 pr-4'>
-                                  <span
-                                    className={`w-2 h-2 rounded-full shrink-0 ${item.status === 'ตอบกลับแล้ว' ? 'bg-emerald-500' : 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.5)] animate-pulse'}`}
-                                  />
-                                  <span className='text-xs font-bold text-slate-500 whitespace-nowrap font-mono bg-white border border-slate-200 px-2 py-0.5 rounded flex items-center gap-1'>
-                                    <i className='fas fa-calendar-alt text-slate-300' />
-                                    {new Date(
-                                      item.createdAt,
-                                    ).toLocaleDateString('th-TH', {
-                                      day: 'numeric',
-                                      month: 'short',
-                                      year: '2-digit',
-                                    })}
-                                  </span>
-                                  <p className='text-sm text-slate-600 truncate italic font-medium'>
-                                    "{item.message}"
-                                  </p>
-                                </div>
-                                <span className='text-[10px] text-slate-400 font-mono uppercase font-semibold shrink-0 select-all flex items-center gap-1'>
-                                  <i className='fas fa-hashtag text-[8px]' />
-                                  {item.id.slice(0, 8)}
-                                </span>
-                              </div>
-
-                              {/* Full Detail (Expanded) */}
-                              {isDetailExpanded && (
-                                <div className='px-6 md:px-10 py-5 bg-white border-y border-slate-100 space-y-4 animate-fade-in'>
-                                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                    <div className='bg-white rounded-xl border border-slate-200 p-4 shadow-sm'>
-                                      <div className='flex items-center gap-2 mb-3'>
-                                        <div className='w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center'>
-                                          <i className='fas fa-user text-blue-500 text-xs' />
-                                        </div>
-                                        <span className='text-xs font-bold text-slate-400 uppercase tracking-wide'>
-                                          ผู้ติดต่อ
-                                        </span>
-                                      </div>
-                                      <p className='text-sm font-bold text-slate-800'>
-                                        {item.firstName} {item.lastName}
-                                      </p>
-                                      <p className='text-xs text-slate-400 mt-0.5'>
-                                        {item.email}
-                                      </p>
-                                    </div>
-                                    <div className='bg-white rounded-xl border border-slate-200 p-4 shadow-sm'>
-                                      <div className='flex items-center gap-2 mb-3'>
-                                        <div className='w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center'>
-                                          <i className='fas fa-phone text-emerald-500 text-xs' />
-                                        </div>
-                                        <span className='text-xs font-bold text-slate-400 uppercase tracking-wide'>
-                                          ช่องทางติดต่อ
-                                        </span>
-                                      </div>
-                                      <p className='text-sm font-bold text-slate-800'>
-                                        {item.telNumber || '-'}
-                                      </p>
-                                      <p className='text-xs text-slate-400 mt-0.5'>
-                                        {item.preferredContact === 'email' ? (
-                                          <>
-                                            <i className='fas fa-envelope text-blue-400 mr-1' />
-                                            อีเมล
-                                          </>
-                                        ) : (
-                                          <>
-                                            <i className='fas fa-phone-alt text-emerald-400 mr-1' />
-                                            โทรศัพท์
-                                          </>
-                                        )}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  <div className='bg-white rounded-xl border border-slate-200 p-4 shadow-sm'>
-                                    <div className='flex items-center gap-2 mb-3'>
-                                      <div className='w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center'>
-                                        <i className='fas fa-comment-dots text-amber-500 text-xs' />
-                                      </div>
-                                      <span className='text-xs font-bold text-slate-400 uppercase tracking-wide'>
-                                        ข้อความ
-                                      </span>
-                                    </div>
-                                    <div className='bg-slate-50 p-4 rounded-lg text-sm leading-relaxed text-slate-700 border border-slate-100 whitespace-pre-wrap'>
-                                      {item.message}
-                                    </div>
-                                  </div>
-
-                                  <div className='flex flex-col sm:flex-row justify-between sm:items-center gap-4 pt-2 border-t border-slate-100'>
-                                    <div className='text-xs text-slate-400 space-y-1'>
-                                      <p className='flex items-center gap-1.5'>
-                                        <i className='fas fa-paper-plane text-slate-300' />
-                                        ส่งเมื่อ:{' '}
-                                        {new Date(
-                                          item.createdAt,
-                                        ).toLocaleString('th-TH')}
-                                      </p>
-                                      {item.updatedAt &&
-                                        item.updatedAt !== item.createdAt && (
-                                          <p className='flex items-center gap-1.5'>
-                                            <i className='fas fa-edit text-slate-300' />
-                                            แก้ไขล่าสุด:{' '}
-                                            {new Date(
-                                              item.updatedAt,
-                                            ).toLocaleString('th-TH')}
-                                          </p>
-                                        )}
-                                    </div>
-                                    <button
-                                      onClick={() =>
-                                        contacts.updateStatus(
-                                          item.id,
-                                          item.status,
-                                        )
-                                      }
-                                      data-testid='contact-update-btn'
-                                      className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-all shadow-sm border active:scale-95 cursor-pointer flex items-center gap-1.5 ${
-                                        item.status === 'ตอบกลับแล้ว'
-                                          ? 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
-                                          : 'bg-[#185FA5] text-white border-[#185FA5] hover:bg-[#134b82]'
-                                      }`}
-                                    >
-                                      {item.status === 'ตอบกลับแล้ว' ? (
-                                        <>
-                                          <i className='fas fa-undo' />{' '}
-                                          เปลี่ยนเป็นยังไม่ตอบ
-                                        </>
-                                      ) : (
-                                        <>
-                                          <i className='fas fa-check' /> บันทึก
-                                          "ตอบกลับแล้ว"
-                                        </>
-                                      )}
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )
-              })
-            )}
-          </div>
-        </div>
+    <div className='max-w-5xl mx-auto space-y-6'>
+      {/* ---- Header ---- */}
+      <div className='flex items-center justify-between gap-4 flex-wrap'>
+        <h1 className='text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2'>
+          <FaInbox className='text-blue-600' />
+          รายการข้อความติดต่อกลับ
+        </h1>
+        <button
+          type='button'
+          onClick={() => setShowTips(true)}
+          aria-label='ดูวิธีการใช้งาน'
+          className='w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors'
+        >
+          <FaQuestionCircle className='w-5 h-5' />
+        </button>
       </div>
 
+      {/* ---- Filters ---- */}
+      <div className='flex items-center gap-3 flex-wrap'>
+        <div className='inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 bg-white shadow-sm'>
+          {['ทั้งหมด', 'ตอบกลับแล้ว', 'ยังไม่ตอบกลับ'].map((status) => (
+            <button
+              key={status}
+              onClick={() => setStatusFilter(status as typeof statusFilter)}
+              className={`text-xs font-semibold px-3 py-1 rounded-md transition-colors cursor-pointer ${
+                statusFilter === status
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-500 hover:bg-slate-100'
+              }`}
+            >
+              {status === 'ทั้งหมด' && <FaList className='inline mr-1' />}
+              {status === 'ตอบกลับแล้ว' && (
+                <FaCheckCircle className='inline mr-1' />
+              )}
+              {status === 'ยังไม่ตอบกลับ' && (
+                <FaClock className='inline mr-1' />
+              )}
+              {status}
+            </button>
+          ))}
+        </div>
+
+        <div className='relative w-full md:w-80'>
+          <FaSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm' />
+          <input
+            type='text'
+            placeholder='ค้นหาชื่อ อีเมล หรือข้อความ...'
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className='w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+          />
+        </div>
+
+        <ExportExcelButton
+          data={contacts.data as any}
+          filename='contact_requests'
+        />
+      </div>
+
+      {/* ---- Loading ---- */}
+      {contacts.loading && (
+        <div className='p-12 text-center text-slate-500 font-medium flex flex-col items-center justify-center gap-3'>
+          <FaSpinner className='animate-spin text-blue-600 text-2xl' />
+          กำลังดึงข้อมูลความคืบหน้าล่าสุด...
+        </div>
+      )}
+
+      {/* ---- Empty ---- */}
+      {!contacts.loading && groupedData.length === 0 && (
+        <div className='p-12 text-center text-slate-400 font-medium'>
+          <FaInbox className='text-slate-300 text-3xl mb-3 block mx-auto' />
+          ไม่พบข้อมูลรายการข้อความที่ระบุตามเงื่อนไขในขณะนี้
+        </div>
+      )}
+
+      {/* ---- Groups ---- */}
+      {!contacts.loading &&
+        groupedData.map((group) => {
+          const isGroupExpanded = expandedGroups.has(group.key)
+          return (
+            <div
+              key={group.key}
+              className='bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden'
+            >
+              <div
+                className='flex items-center justify-between px-5 py-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 cursor-pointer hover:bg-slate-100/50 transition-colors'
+                onClick={() => toggleGroup(group.key)}
+              >
+                <div className='flex items-center gap-3'>
+                  <div className='w-10 h-10 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center shrink-0 border border-blue-200'>
+                    <FaEnvelope className='text-blue-500 text-sm' />
+                  </div>
+                  <div>
+                    <p className='text-sm font-bold text-slate-800'>
+                      {group.items[0].firstName} {group.items[0].lastName}
+                    </p>
+                    <p className='text-xs text-slate-400 font-medium mt-0.5'>
+                      <FaUser className='text-slate-300 mr-1 inline' />
+                      {group.items[0].firstName} {group.items[0].lastName}
+                      <FaCircle className='text-[4px] text-slate-300 mx-1.5 align-middle inline' />
+                      <FaPhone className='text-slate-300 mr-1 inline' />
+                      {group.items[0].telNumber}
+                    </p>
+                  </div>
+                </div>
+                <div className='flex items-center gap-3'>
+                  <span className='bg-blue-50 text-blue-700 text-[10px] px-2 py-1 rounded-md font-extrabold uppercase tracking-wide border border-blue-100 inline-flex items-center gap-1'>
+                    <FaComments className='text-[9px]' />
+                    {group.items.length}
+                  </span>
+                  <FaChevronDown
+                    className={`text-slate-400 transition-transform duration-200 ${isGroupExpanded ? 'rotate-180' : ''}`}
+                  />
+                </div>
+              </div>
+              {isGroupExpanded && (
+                <div className='p-4 space-y-3'>
+                  {group.items.map((item) => renderDetailView(item))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+      {/* Tips Popup */}
+      {showTips && (
+        <div
+          className='fixed inset-0 z-[99999] flex items-center justify-center bg-black/40'
+          onClick={() => setShowTips(false)}
+        >
+          <div
+            className='bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden animate-[scaleIn_0.2s_ease-out]'
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className='flex items-center justify-between px-6 pt-5 pb-3 border-b border-[#e8eaed]'>
+              <div className='flex items-center gap-2'>
+                <FaLightbulb className='text-xl text-amber-500' />
+                <span className='text-[16px] font-semibold text-[#202124]'>
+                  Tips การใช้งาน
+                </span>
+              </div>
+              <button
+                onClick={() => setShowTips(false)}
+                aria-label='ปิด Tips'
+                className='w-8 h-8 rounded-full flex items-center justify-center text-[#5f6368] hover:bg-[#f1f3f4] transition-colors'
+              >
+                <FaTimes className='w-5 h-5' />
+              </button>
+            </div>
+            <div className='px-6 py-4 flex flex-col gap-4'>
+              <div className='flex gap-3'>
+                <FaEnvelope className='text-lg shrink-0 mt-0.5 text-blue-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>
+                    การจัดกลุ่ม
+                  </p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    ข้อความจะถูกจัดกลุ่มตามอีเมลผู้ส่งเพื่อให้ติดตามประวัติได้ง่าย
+                  </p>
+                </div>
+              </div>
+              <div className='flex gap-3'>
+                <FaCheckCircle className='text-lg shrink-0 mt-0.5 text-emerald-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>
+                    การตอบกลับ
+                  </p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    คลิกที่รายการเพื่อดูรายละเอียด จากนั้นกด "บันทึก"
+                    เพื่อเปลี่ยนสถานะ
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className='px-6 pb-4 pt-2 flex justify-end'>
+              <button
+                onClick={() => setShowTips(false)}
+                className='px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.97] transition-all shadow-sm'
+              >
+                ตกลง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .animate-fade-in { animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
       `}</style>
     </div>
   )

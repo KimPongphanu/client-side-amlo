@@ -171,19 +171,6 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     } catch (error: unknown) {
       const msg =
         error instanceof Error ? error.message : 'ไม่สามารถจัดเก็บข้อมูลได้'
-      // 🛡️ ดักจับเคสกรณี Backend ส่งสัญญานสำเร็จแต่ติด Error ตัวกลาง
-      if (
-        msg.includes('สำเร็จ') ||
-        msg.includes('success') ||
-        msg.includes('Success')
-      ) {
-        await get().fetchPRs()
-        toast.fire({
-          icon: 'success',
-          title: 'บันทึกข้อมูลสำเร็จ',
-        })
-        return
-      }
       toast.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: msg })
       throw error // โยนต่อเพื่อให้ component รู้ว่าแครช ห้ามปิด modal
     }
@@ -204,18 +191,6 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     } catch (error: unknown) {
       const msg =
         error instanceof Error ? error.message : 'ไม่สามารถจัดเก็บข้อมูลได้'
-      if (
-        msg.includes('สำเร็จ') ||
-        msg.includes('success') ||
-        msg.includes('Success')
-      ) {
-        await get().fetchPRs()
-        toast.fire({
-          icon: 'success',
-          title: 'บันทึกข้อมูลสำเร็จ',
-        })
-        return
-      }
       toast.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: msg })
       throw error
     }
@@ -251,18 +226,6 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     } catch (error: unknown) {
       const msg =
         error instanceof Error ? error.message : 'ไม่สามารถจัดเก็บข้อมูลได้'
-      if (
-        msg.includes('สำเร็จ') ||
-        msg.includes('success') ||
-        msg.includes('Success')
-      ) {
-        await get().fetchNews()
-        toast.fire({
-          icon: 'success',
-          title: 'บันทึกข้อมูลสำเร็จ',
-        })
-        return
-      }
       toast.fire({
         icon: 'error',
         title: 'เกิดข้อผิดพลาดในการบันทึก',
@@ -287,18 +250,6 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     } catch (error: unknown) {
       const msg =
         error instanceof Error ? error.message : 'ไม่สามารถจัดเก็บข้อมูลได้'
-      if (
-        msg.includes('สำเร็จ') ||
-        msg.includes('success') ||
-        msg.includes('Success')
-      ) {
-        await get().fetchNews()
-        toast.fire({
-          icon: 'success',
-          title: 'บันทึกข้อมูลสำเร็จ',
-        })
-        return
-      }
       toast.fire({
         icon: 'error',
         title: 'เกิดข้อผิดพลาดในการบันทึก',

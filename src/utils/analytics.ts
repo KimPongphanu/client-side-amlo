@@ -7,7 +7,7 @@ export const initGA = (): void => {
   if (import.meta.env.PROD && trackingId) {
     ReactGA.initialize(trackingId)
   } else {
-    console.log('GA4: Deactivated on Localhost')
+    // Development fallback
   }
 }
 
@@ -15,6 +15,6 @@ export const logPageView = (path: string): void => {
   if (import.meta.env.PROD) {
     ReactGA.send({ hitType: 'pageview', page: path })
   } else {
-    console.log(`GA4 Virtual Pageview: ${path}`)
+    // Development fallback
   }
 }

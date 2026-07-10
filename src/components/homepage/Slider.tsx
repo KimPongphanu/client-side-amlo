@@ -7,18 +7,27 @@ import { Swiper, SwiperSlide } from 'swiper/react'
 export interface Slide {
   id: number
   image: string
+  link?: string
 }
 
 interface SliderProps {
   slides: Slide[]
+  containerClassName?: string
 }
 
-export default function Slider({ slides }: SliderProps) {
+export default function Slider({ slides, containerClassName }: SliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
 
+  const handleSlideClick = (link?: string) => {
+    if (link && link.trim()) {
+      window.open(link, '_blank', 'noopener,noreferrer')
+    }
+  }
+
   return (
-    // 🌟 1. ลบ h-screen ออก แล้วเปลี่ยนเป็นความสูงที่เหมาะสมตามขนาดจอ
-    <div className='w-full h-[250px] md:h-[450px] lg:h-[calc(100vh-96px)] xl:h-screen relative group'>
+    <div
+      className={`w-full relative group ${containerClassName || 'h-[250px] md:h-[450px] lg:h-[calc(100vh-96px)] xl:h-screen'}`}
+    >
       <div className='w-full h-full overflow-hidden relative shadow-md bg-slate-900'>
         <Swiper
           modules={[Autoplay, Navigation]}
@@ -36,13 +45,17 @@ export default function Slider({ slides }: SliderProps) {
         >
           {slides.map((slide) => (
             <SwiperSlide key={slide.id}>
-              {/* object-cover จะทำงานได้สมบูรณ์แบบก็ต่อเมื่อกล่องมีความสูงที่สมมาตรครับ */}
-              <img
-                src={slide.image}
-                className='w-full h-full object-cover'
-                alt={`Slide ${slide.id}`}
-                loading='lazy'
-              />
+              <div
+                onClick={() => handleSlideClick(slide.link)}
+                className={`w-full h-full ${slide.link ? 'cursor-pointer' : ''}`}
+              >
+                <img
+                  src={slide.image}
+                  className='w-full h-full object-cover'
+                  alt={`Slide ${slide.id}`}
+                  loading='lazy'
+                />
+              </div>
             </SwiperSlide>
           ))}
         </Swiper>

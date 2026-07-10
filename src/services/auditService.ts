@@ -6,6 +6,8 @@ export type AuditLogEntry = {
   userId: number | null
   action: string
   ipAddress: string
+  serverIp: string
+  region: string | null
   userAgent: string
   details: string | null
   createdAt: string
@@ -33,6 +35,23 @@ export interface AuditLogPaginatedResponse extends AuditLogResponse {
 }
 
 export const auditService = {
+  fetchRaw: async (
+    url: string,
+  ): Promise<{ data: AuditLogEntry[]; pagination: AuditLogPagination }> => {
+    const response = await api<AuditLogPaginatedResponse>(url, {
+      method: 'GET',
+    })
+    return {
+      data: response.data || [],
+      pagination: response.pagination || {
+        page: 1,
+        limit: 50,
+        total: 0,
+        totalPages: 0,
+      },
+    }
+  },
+
   getAuditLogs: async (
     page = 1,
     limit = 50,
@@ -59,10 +78,13 @@ export const auditService = {
     }
   },
 
-  getLogs: async (userId: number | string): Promise<AuditLogEntry[]> => {
-    const response = await api<AuditLogResponse>(`/audit?userId=${userId}`, {
-      method: 'GET',
-    })
+  getLogs: async (userUuid: string): Promise<AuditLogEntry[]> => {
+    const response = await api<AuditLogResponse>(
+      `/audit?uuid=${encodeURIComponent(userUuid)}`,
+      {
+        method: 'GET',
+      },
+    )
     return response.data || []
   },
 }

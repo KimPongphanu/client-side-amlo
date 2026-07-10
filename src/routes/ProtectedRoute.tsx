@@ -14,17 +14,11 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const user = useAuthStore((state) => state.user)
   const location = useLocation()
 
-  // 🌟 ถ้ากำลัง Logout อยู่ — รอ Hard Redirect อย่างเดียว ไม่ Navigate ซ้ำ
   if (isLoggingOut) {
     return null
   }
 
-  console.log('[ProtectedRoute] isLoggedIn:', isLoggedIn)
-  console.log('[ProtectedRoute] user:', user)
-  console.log('[ProtectedRoute] allowedRoles:', allowedRoles)
-
   if (!isLoggedIn || !user) {
-    console.log('[ProtectedRoute] Not logged in, redirect to /login')
     return <Navigate to='/login' replace />
   }
 
@@ -34,7 +28,6 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     user.forcePasswordReset &&
     location.pathname !== '/force-password-reset'
   ) {
-    console.log('[ProtectedRoute] Force password reset required, redirecting')
     return <Navigate to='/force-password-reset' replace />
   }
 
@@ -44,7 +37,6 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     !user.twoFactorEnabled &&
     location.pathname !== '/2fa-setup'
   ) {
-    console.log('[ProtectedRoute] SUPERVISOR must setup 2FA, redirecting')
     return <Navigate to='/2fa-setup' replace />
   }
 
@@ -52,28 +44,14 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     const userRole = user.role
     const hasAllowedRole = allowedRoles.some((role) => {
       const match = role === userRole
-      console.log(
-        `[ProtectedRoute] Comparing: "${role}" === "${userRole}" => ${match}`,
-      )
       return match
     })
 
-    console.log(
-      '[ProtectedRoute] user.role:',
-      user.role,
-      'typeof:',
-      typeof user.role,
-    )
-    console.log('[ProtectedRoute] allowedRoles:', allowedRoles)
-    console.log('[ProtectedRoute] hasAllowedRole:', hasAllowedRole)
-
     if (!hasAllowedRole) {
-      console.log('[ProtectedRoute] Role not allowed, redirect to /')
       return <Navigate to='/' replace />
     }
   }
 
-  console.log('[ProtectedRoute] Access granted')
   return <>{children}</>
 }
 

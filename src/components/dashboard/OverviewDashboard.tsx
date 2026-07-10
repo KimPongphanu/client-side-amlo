@@ -1,10 +1,21 @@
 // src/components/dashboard/OverviewDashboard.tsx
 import { useEffect, useState } from 'react'
+import {
+  FaBuilding,
+  FaBullhorn,
+  FaEnvelope,
+  FaLightbulb,
+  FaNewspaper,
+  FaQuestionCircle,
+  FaStar,
+  FaTimes,
+} from 'react-icons/fa'
 import { API_URL } from '../../config/constants'
 import { contentService } from '../../services/contentService'
 import { useAuthStore } from '../../stores/useAuthStore'
 import type { SliderImage } from '../../type'
 import { api } from '../../utils/api'
+import DashboardCharts from './DashboardCharts'
 
 interface OverviewStats {
   newsCount: number
@@ -20,12 +31,20 @@ interface RecentItem {
   text: string
   detail: string
   time: string
-  icon: string
+  iconType: 'star' | 'envelope'
   color: string
   user?: string
 }
 
 type SliderState = SliderImage[]
+
+const iconMap: Record<string, React.ReactNode> = {
+  'fa-newspaper': <FaNewspaper className='text-white text-lg' />,
+  'fa-bullhorn': <FaBullhorn className='text-white text-lg' />,
+  'fa-building': <FaBuilding className='text-white text-lg' />,
+  'fa-star': <FaStar className='text-white text-lg' />,
+  'fa-envelope': <FaEnvelope className='text-white text-lg' />,
+}
 
 export default function OverviewDashboard() {
   const user = useAuthStore((state) => state.user)
@@ -41,6 +60,7 @@ export default function OverviewDashboard() {
   const [recentContacts, setRecentContacts] = useState<RecentItem[]>([])
   const [slides, setSlides] = useState<SliderState>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showTips, setShowTips] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,7 +110,7 @@ export default function OverviewDashboard() {
             text: c.msg || '',
             detail: `${'⭐'.repeat(c.star || 0)}`,
             time: timeAgo(c.createdAt),
-            icon: 'fa-star',
+            iconType: 'star' as const,
             color: c.star >= 4 ? 'text-amber-500' : 'text-gray-400',
           })),
         )
@@ -120,7 +140,7 @@ export default function OverviewDashboard() {
             text: `${c.first_name || ''} ${c.last_name || ''}`,
             detail: c.message || '',
             time: timeAgo(c.created_at),
-            icon: 'fa-envelope',
+            iconType: 'envelope' as const,
             color: 'text-blue-500',
           })),
         )
@@ -145,6 +165,39 @@ export default function OverviewDashboard() {
       </div>
     )
   }
+
+  const statCards = [
+    {
+      icon: 'fa-newspaper',
+      label: 'ข่าว/กิจกรรม',
+      value: stats.newsCount,
+      gradient: 'from-blue-500 to-blue-600',
+    },
+    {
+      icon: 'fa-bullhorn',
+      label: 'ประชาสัมพันธ์',
+      value: stats.prCount,
+      gradient: 'from-violet-500 to-violet-600',
+    },
+    {
+      icon: 'fa-building',
+      label: 'หน่วยงาน',
+      value: stats.departmentCount,
+      gradient: 'from-indigo-500 to-indigo-600',
+    },
+    {
+      icon: 'fa-star',
+      label: 'รีวิว',
+      value: stats.commentCount,
+      gradient: 'from-amber-500 to-amber-600',
+    },
+    {
+      icon: 'fa-envelope',
+      label: 'ติดต่อ',
+      value: stats.contactCount,
+      gradient: 'from-emerald-500 to-emerald-600',
+    },
+  ]
 
   return (
     <div className='max-w-6xl mx-auto space-y-8'>
@@ -172,11 +225,21 @@ export default function OverviewDashboard() {
 
       {/* ─── Welcome ─── */}
       <section>
-        <div className='flex items-center gap-3 mb-1'>
-          <h1 className='text-2xl font-bold text-gray-900'>ภาพรวมระบบ</h1>
-          <span className='px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100'>
-            {user?.role === 'SUPERVISOR' ? 'Supervisor' : 'Admin'}
-          </span>
+        <div className='flex items-center justify-between gap-3 mb-1'>
+          <div className='flex items-center gap-3'>
+            <h1 className='text-2xl font-bold text-gray-900'>ภาพรวมระบบ</h1>
+            <span className='px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100'>
+              {user?.role === 'SUPERVISOR' ? 'Supervisor' : 'Admin'}
+            </span>
+          </div>
+          <button
+            type='button'
+            onClick={() => setShowTips(true)}
+            aria-label='ดูวิธีการใช้งาน'
+            className='w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors'
+          >
+            <FaQuestionCircle className='w-5 h-5' />
+          </button>
         </div>
         <p className='text-sm text-gray-500'>
           สวัสดี{' '}
@@ -187,38 +250,7 @@ export default function OverviewDashboard() {
 
       {/* ─── Stat Cards ─── */}
       <section className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4'>
-        {[
-          {
-            icon: 'fa-newspaper',
-            label: 'ข่าว/กิจกรรม',
-            value: stats.newsCount,
-            gradient: 'from-blue-500 to-blue-600',
-          },
-          {
-            icon: 'fa-bullhorn',
-            label: 'ประชาสัมพันธ์',
-            value: stats.prCount,
-            gradient: 'from-violet-500 to-violet-600',
-          },
-          {
-            icon: 'fa-building',
-            label: 'หน่วยงาน',
-            value: stats.departmentCount,
-            gradient: 'from-indigo-500 to-indigo-600',
-          },
-          {
-            icon: 'fa-star',
-            label: 'รีวิว',
-            value: stats.commentCount,
-            gradient: 'from-amber-500 to-amber-600',
-          },
-          {
-            icon: 'fa-envelope',
-            label: 'ติดต่อ',
-            value: stats.contactCount,
-            gradient: 'from-emerald-500 to-emerald-600',
-          },
-        ].map((card) => (
+        {statCards.map((card) => (
           <div
             key={card.label}
             className='bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5'
@@ -226,7 +258,7 @@ export default function OverviewDashboard() {
             <div
               className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.gradient} shadow-sm flex items-center justify-center shrink-0`}
             >
-              <i className={`fas ${card.icon} text-white text-lg`} />
+              {iconMap[card.icon]}
             </div>
             <div>
               <p className='text-2xl font-bold text-gray-900'>{card.value}</p>
@@ -238,6 +270,9 @@ export default function OverviewDashboard() {
         ))}
       </section>
 
+      {/* ─── Echarts Dashboard Charts ─── */}
+      <DashboardCharts stats={stats} />
+
       {/* ─── Recent Activity ─── */}
       <section className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
         {/* Comments */}
@@ -245,7 +280,7 @@ export default function OverviewDashboard() {
           <div className='px-5 py-4 border-b border-gray-50 flex items-center justify-between'>
             <div className='flex items-center gap-2.5'>
               <div className='w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center'>
-                <i className='fas fa-star text-amber-500 text-xs' />
+                <FaStar className='text-amber-500 text-xs' />
               </div>
               <span className='text-sm font-bold text-gray-800'>
                 รีวิวล่าสุด
@@ -268,9 +303,7 @@ export default function OverviewDashboard() {
                 >
                   <div className='flex items-start gap-3'>
                     <div className='w-7 h-7 rounded-full bg-amber-50 flex items-center justify-center shrink-0 mt-0.5'>
-                      <i
-                        className={`fas ${item.icon} ${item.color} text-[10px]`}
-                      />
+                      <FaStar className={`${item.color} text-[10px]`} />
                     </div>
                     <div className='min-w-0 flex-1'>
                       <p className='text-sm text-gray-700 line-clamp-2 leading-snug'>
@@ -295,7 +328,7 @@ export default function OverviewDashboard() {
           <div className='px-5 py-4 border-b border-gray-50 flex items-center justify-between'>
             <div className='flex items-center gap-2.5'>
               <div className='w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center'>
-                <i className='fas fa-envelope text-blue-500 text-xs' />
+                <FaEnvelope className='text-blue-500 text-xs' />
               </div>
               <span className='text-sm font-bold text-gray-800'>
                 ติดต่อล่าสุด
@@ -318,9 +351,7 @@ export default function OverviewDashboard() {
                 >
                   <div className='flex items-start gap-3'>
                     <div className='w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center shrink-0 mt-0.5'>
-                      <i
-                        className={`fas ${item.icon} ${item.color} text-[10px]`}
-                      />
+                      <FaEnvelope className={`${item.color} text-[10px]`} />
                     </div>
                     <div className='min-w-0 flex-1'>
                       <p className='text-sm font-medium text-gray-700 truncate'>
@@ -354,6 +385,74 @@ export default function OverviewDashboard() {
           </span>
         </p>
       </div>
+
+      {/* Tips Popup */}
+      {showTips && (
+        <div
+          className='fixed inset-0 z-[99999] flex items-center justify-center bg-black/40'
+          onClick={() => setShowTips(false)}
+        >
+          <div
+            className='bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden animate-[scaleIn_0.2s_ease-out]'
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className='flex items-center justify-between px-6 pt-5 pb-3 border-b border-[#e8eaed]'>
+              <div className='flex items-center gap-2'>
+                <FaLightbulb className='text-xl text-amber-500' />
+                <span className='text-[16px] font-semibold text-[#202124]'>
+                  Tips การใช้งาน
+                </span>
+              </div>
+              <button
+                onClick={() => setShowTips(false)}
+                aria-label='ปิด Tips'
+                className='w-8 h-8 rounded-full flex items-center justify-center text-[#5f6368] hover:bg-[#f1f3f4] transition-colors'
+              >
+                <FaTimes className='w-5 h-5' />
+              </button>
+            </div>
+            <div className='px-6 py-4 flex flex-col gap-4'>
+              <div className='flex gap-3'>
+                <FaStar className='text-lg shrink-0 mt-0.5 text-amber-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>
+                    ภาพรวมระบบ
+                  </p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    แสดงสถิติและข้อมูลล่าสุดของเนื้อหาทั้งหมดในระบบ
+                  </p>
+                </div>
+              </div>
+              <div className='flex gap-3'>
+                <FaEnvelope className='text-lg shrink-0 mt-0.5 text-blue-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>
+                    กิจกรรมล่าสุด
+                  </p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    ดูรีวิวและข้อความติดต่อล่าสุดที่เข้ามาในระบบ
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className='px-6 pb-4 pt-2 flex justify-end'>
+              <button
+                onClick={() => setShowTips(false)}
+                className='px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.97] transition-all shadow-sm'
+              >
+                ตกลง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   )
 }

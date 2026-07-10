@@ -15,7 +15,7 @@ interface ExportExcelButtonProps {
   /** Array of row data objects */
   data: Record<string, unknown>[]
   /** Column definitions: key + label + optional format/fallback */
-  columns: Column[]
+  columns?: Column[]
   /** Output filename (without extension) */
   filename?: string
   /** Button text */
@@ -31,6 +31,17 @@ export default function ExportExcelButton({
   buttonText = 'Export Excel',
   className = '',
 }: ExportExcelButtonProps) {
+  // Auto-generate columns from data keys if not provided
+  const resolvedColumns: Column[] =
+    columns ??
+    (data.length > 0
+      ? Object.keys(data[0]).map((key) => ({
+          key,
+          label: key,
+          fallback: '',
+          format: undefined,
+        }))
+      : [])
   const handleExport = () => {
     if (data.length === 0) {
       toast.fire({ icon: 'info', title: 'ไม่มีข้อมูลสำหรับ Export' })
@@ -40,7 +51,7 @@ export default function ExportExcelButton({
     // Map rows using column definitions
     const rows = data.map((row) => {
       const mapped: Record<string, string | number> = {}
-      for (const col of columns) {
+      for (const col of resolvedColumns) {
         let value: string | number =
           (row[col.key] as string | number) ?? col.fallback ?? ''
         if (col.format) {
@@ -55,7 +66,7 @@ export default function ExportExcelButton({
     const ws = XLSX.utils.json_to_sheet(rows)
 
     // Auto-size column widths based on header length + data length
-    const colWidths = columns.map((col) => ({
+    const colWidths = resolvedColumns.map((col) => ({
       wch: Math.max(
         col.label.length * 2,
         ...data.map((r) => {

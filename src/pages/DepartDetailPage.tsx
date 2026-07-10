@@ -58,8 +58,12 @@ declare global {
 // ════════════════════════════════════════════════════════════
 //  SECTION 2 — โหลด YouTube IFrame API script
 // ════════════════════════════════════════════════════════════
-const loadYTScript = () =>
-  new Promise<void>((resolve) => {
+let ytScriptPromise: Promise<void> | null = null
+
+const loadYTScript = () => {
+  if (ytScriptPromise) return ytScriptPromise
+
+  ytScriptPromise = new Promise<void>((resolve) => {
     if (window.YT && window.YT.Player) {
       resolve()
       return
@@ -75,6 +79,9 @@ const loadYTScript = () =>
       resolve()
     }
   })
+
+  return ytScriptPromise
+}
 
 const FALLBACK_MS = 15000
 

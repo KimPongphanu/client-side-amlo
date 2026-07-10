@@ -1,4 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
+import {
+  FaEye,
+  FaLightbulb,
+  FaQuestionCircle,
+  FaStar,
+  FaTimes,
+} from 'react-icons/fa'
 import { useDashboardStore } from '../../stores/useDashboardStore'
 import { swal, toast } from '../../utils/swalConfig'
 import ExportExcelButton from '../common/ExportExcelButton'
@@ -37,6 +44,7 @@ export default function ReviewManager() {
     (state) => state.bulkToggleCommentShow,
   )
 
+  const [showTips, setShowTips] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(1)
   const [viewMode, setViewMode] = useState<'all' | 'published'>('all')
@@ -234,9 +242,19 @@ export default function ReviewManager() {
         {/* Header */}
         <header className='flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 pb-4'>
           <div className='w-full lg:w-auto'>
-            <h1 className='text-2xl font-bold mb-3 md:mb-2'>
-              จัดการความคิดเห็น
-            </h1>
+            <div className='flex items-center gap-2'>
+              <h1 className='text-2xl font-bold mb-3 md:mb-2'>
+                จัดการความคิดเห็น
+              </h1>
+              <button
+                type='button'
+                onClick={() => setShowTips(true)}
+                aria-label='ดูวิธีการใช้งาน'
+                className='w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors mb-3 md:mb-2'
+              >
+                <FaQuestionCircle className='w-5 h-5' />
+              </button>
+            </div>
             <div className='flex flex-wrap gap-2 md:gap-4'>
               <div className='bg-white border border-slate-300 px-4 py-2 flex items-center gap-3 flex-1 sm:flex-none justify-center rounded-lg shadow-sm'>
                 <span className='text-slate-500 text-sm'>ทั้งหมด</span>
@@ -295,14 +313,15 @@ export default function ReviewManager() {
               >
                 ทั้งหมด
               </button>
-              <div 
-                className='flex items-center gap-1 bg-white border border-slate-200 px-3 py-1.5 rounded-full shadow-sm' 
+              <div
+                className='flex items-center gap-1 bg-white border border-slate-200 px-3 py-1.5 rounded-full shadow-sm'
                 onMouseLeave={() => setHoveredStar(null)}
               >
                 {[1, 2, 3, 4, 5].map((star) => {
-                  const isFilled = hoveredStar !== null 
-                    ? star <= hoveredStar 
-                    : starFilter !== 'all' && star <= starFilter;
+                  const isFilled =
+                    hoveredStar !== null
+                      ? star <= hoveredStar
+                      : starFilter !== 'all' && star <= starFilter
                   return (
                     <button
                       key={star}
@@ -315,7 +334,7 @@ export default function ReviewManager() {
                       className='focus:outline-none transition-transform hover:scale-110'
                       title={`ดูรีวิว ${star} ดาว`}
                     >
-                      <svg 
+                      <svg
                         className={`w-6 h-6 transition-colors ${isFilled ? 'text-orange-400 fill-current drop-shadow-sm' : 'text-slate-200 fill-current'}`}
                         viewBox='0 0 20 20'
                       >
@@ -499,6 +518,76 @@ export default function ReviewManager() {
           </div>
         )}
       </div>
+
+      {/* Tips Popup */}
+      {showTips && (
+        <div
+          className='fixed inset-0 z-[99999] flex items-center justify-center bg-black/40'
+          onClick={() => setShowTips(false)}
+        >
+          <div
+            className='bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden animate-[scaleIn_0.2s_ease-out]'
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className='flex items-center justify-between px-6 pt-5 pb-3 border-b border-[#e8eaed]'>
+              <div className='flex items-center gap-2'>
+                <FaLightbulb className='text-xl text-amber-500' />
+                <span className='text-[16px] font-semibold text-[#202124]'>
+                  Tips การใช้งาน
+                </span>
+              </div>
+              <button
+                onClick={() => setShowTips(false)}
+                aria-label='ปิด Tips'
+                className='w-8 h-8 rounded-full flex items-center justify-center text-[#5f6368] hover:bg-[#f1f3f4] transition-colors'
+              >
+                <FaTimes className='w-5 h-5' />
+              </button>
+            </div>
+            <div className='px-6 py-4 flex flex-col gap-4'>
+              <div className='flex gap-3'>
+                <FaStar className='text-lg shrink-0 mt-0.5 text-amber-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>
+                    การจัดการความคิดเห็น
+                  </p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    ดูและจัดการความคิดเห็นของผู้ใช้งาน
+                    กรองตามคะแนนและสถานะการแสดงผล
+                  </p>
+                </div>
+              </div>
+              <div className='flex gap-3'>
+                <FaEye className='text-lg shrink-0 mt-0.5 text-emerald-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>
+                    การแสดงผล
+                  </p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    Toggle แสดง/ซ่อนความคิดเห็นบนหน้าเว็บไซต์
+                    หรือจัดการทีละหลายรายการ
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className='px-6 pb-4 pt-2 flex justify-end'>
+              <button
+                onClick={() => setShowTips(false)}
+                className='px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.97] transition-all shadow-sm'
+              >
+                ตกลง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   )
 }

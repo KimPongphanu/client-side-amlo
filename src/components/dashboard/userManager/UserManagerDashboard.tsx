@@ -1,6 +1,12 @@
 // src/components/dashboard/UserProfileManagerDashboard.tsx
 
 import React, { useEffect, useMemo, useState } from 'react'
+import {
+  FaLightbulb,
+  FaQuestionCircle,
+  FaTimes,
+  FaUsersCog,
+} from 'react-icons/fa'
 import { authService, type UserItem } from '../../../services/authService'
 import { useAuthStore } from '../../../stores/useAuthStore'
 import { api } from '../../../utils/api'
@@ -27,6 +33,7 @@ const UserProfileManagerDashboard: React.FC = () => {
   const [users, setUsers] = useState<DashboardUser[]>([])
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  const [showTips, setShowTips] = useState(false)
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('ALL')
 
@@ -271,9 +278,19 @@ const UserProfileManagerDashboard: React.FC = () => {
         <div className='max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8'>
           <div className='flex items-center justify-between'>
             <div>
-              <h1 className='text-2xl font-bold text-gray-900 font-sans'>
-                จัดการข้อมูลสมาชิก (Supervisor Only)
-              </h1>
+              <div className='flex items-center gap-2'>
+                <h1 className='text-2xl font-bold text-gray-900 font-sans'>
+                  จัดการข้อมูลสมาชิก (Supervisor Only)
+                </h1>
+                <button
+                  type='button'
+                  onClick={() => setShowTips(true)}
+                  aria-label='ดูวิธีการใช้งาน'
+                  className='w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors'
+                >
+                  <FaQuestionCircle className='w-5 h-5' />
+                </button>
+              </div>
               <p className='mt-1 text-sm text-gray-500'>
                 สิทธิ์สำหรับผู้ดูแลระบบสูงสุดในการควบคุม ตรวจสอบ
                 และบริหารจัดการบัญชีผู้ใช้ทั้งหมดในระบบ
@@ -502,6 +519,64 @@ const UserProfileManagerDashboard: React.FC = () => {
           </>
         )}
       </main>
+
+      {/* Tips Popup */}
+      {showTips && (
+        <div
+          className='fixed inset-0 z-[99999] flex items-center justify-center bg-black/40'
+          onClick={() => setShowTips(false)}
+        >
+          <div
+            className='bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden animate-[scaleIn_0.2s_ease-out]'
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className='flex items-center justify-between px-6 pt-5 pb-3 border-b border-[#e8eaed]'>
+              <div className='flex items-center gap-2'>
+                <FaLightbulb className='text-xl text-amber-500' />
+                <span className='text-[16px] font-semibold text-[#202124]'>
+                  Tips การใช้งาน
+                </span>
+              </div>
+              <button
+                onClick={() => setShowTips(false)}
+                aria-label='ปิด Tips'
+                className='w-8 h-8 rounded-full flex items-center justify-center text-[#5f6368] hover:bg-[#f1f3f4] transition-colors'
+              >
+                <FaTimes className='w-5 h-5' />
+              </button>
+            </div>
+            <div className='px-6 py-4 flex flex-col gap-4'>
+              <div className='flex gap-3'>
+                <FaUsersCog className='text-lg shrink-0 mt-0.5 text-blue-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>
+                    การจัดการสมาชิก
+                  </p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    จัดการบัญชีผู้ใช้ทั้งหมดในระบบ ดูรายละเอียด แบน หรือสร้าง
+                    Admin ใหม่
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className='px-6 pb-4 pt-2 flex justify-end'>
+              <button
+                onClick={() => setShowTips(false)}
+                className='px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.97] transition-all shadow-sm'
+              >
+                ตกลง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
 
       <CreateAdminModal
         isOpen={isCreateAdminModalOpen}

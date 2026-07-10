@@ -1,5 +1,18 @@
 // src/components/dashboard/ProfileDashboard.tsx
 import { useState } from 'react'
+import {
+  FaEnvelope,
+  FaExclamationCircle,
+  FaInfoCircle,
+  FaLightbulb,
+  FaQuestionCircle,
+  FaSave,
+  FaSpinner,
+  FaTimes,
+  FaUndo,
+  FaUser,
+  FaUserCircle,
+} from 'react-icons/fa'
 import { authService } from '../../services/authService'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { toast } from '../../utils/swalConfig'
@@ -18,6 +31,7 @@ export default function ProfileDashboard() {
   const [lastname, setLastname] = useState(user?.lastname || '')
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
+  const [showTips, setShowTips] = useState(false)
 
   const avatarChar = (user?.firstname?.charAt(0) || '?').toUpperCase()
   const roleInfo = user
@@ -70,10 +84,20 @@ export default function ProfileDashboard() {
       <div className='bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden'>
         {/* Header */}
         <div className='px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white'>
-          <h1 className='text-2xl font-bold text-gray-800 flex items-center gap-2'>
-            <i className='fas fa-user-circle text-blue-600' />
-            ข้อมูลส่วนตัว
-          </h1>
+          <div className='flex items-center justify-between'>
+            <h1 className='text-2xl font-bold text-gray-800 flex items-center gap-2'>
+              <FaUserCircle className='text-blue-600' />
+              ข้อมูลส่วนตัว
+            </h1>
+            <button
+              type='button'
+              onClick={() => setShowTips(true)}
+              aria-label='ดูวิธีการใช้งาน'
+              className='w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors'
+            >
+              <FaQuestionCircle className='w-5 h-5' />
+            </button>
+          </div>
           <p className='text-sm text-gray-500 mt-1'>
             จัดการข้อมูลส่วนตัวของคุณ
           </p>
@@ -104,7 +128,7 @@ export default function ProfileDashboard() {
           {/* Email (readonly) */}
           <div>
             <label className='block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5'>
-              <i className='fas fa-envelope text-gray-400 mr-1.5' />
+              <FaEnvelope className='text-gray-400 mr-1.5 inline' />
               อีเมล
             </label>
             <input
@@ -118,7 +142,7 @@ export default function ProfileDashboard() {
           {/* Firstname */}
           <div>
             <label className='block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5'>
-              <i className='fas fa-user text-gray-400 mr-1.5' />
+              <FaUser className='text-gray-400 mr-1.5 inline' />
               ชื่อ <span className='text-red-500'>*</span>
             </label>
             <input
@@ -128,7 +152,12 @@ export default function ProfileDashboard() {
                 setFirstname(e.target.value)
                 setError('')
                 if (e.target.value.length >= 50) {
-                  toast.fire({ icon: 'warning', title: 'ความยาวชื่อเกินขีดจำกัด (สูงสุด 50 ตัวอักษร)', timer: 2000, showConfirmButton: false })
+                  toast.fire({
+                    icon: 'warning',
+                    title: 'ความยาวชื่อเกินขีดจำกัด (สูงสุด 50 ตัวอักษร)',
+                    timer: 2000,
+                    showConfirmButton: false,
+                  })
                 }
               }}
               placeholder='กรุณากรอกชื่อ'
@@ -140,7 +169,7 @@ export default function ProfileDashboard() {
           {/* Lastname */}
           <div>
             <label className='block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5'>
-              <i className='fas fa-user text-gray-400 mr-1.5' />
+              <FaUser className='text-gray-400 mr-1.5 inline' />
               นามสกุล <span className='text-red-500'>*</span>
             </label>
             <input
@@ -150,7 +179,12 @@ export default function ProfileDashboard() {
                 setLastname(e.target.value)
                 setError('')
                 if (e.target.value.length >= 50) {
-                  toast.fire({ icon: 'warning', title: 'ความยาวนามสกุลเกินขีดจำกัด (สูงสุด 50 ตัวอักษร)', timer: 2000, showConfirmButton: false })
+                  toast.fire({
+                    icon: 'warning',
+                    title: 'ความยาวนามสกุลเกินขีดจำกัด (สูงสุด 50 ตัวอักษร)',
+                    timer: 2000,
+                    showConfirmButton: false,
+                  })
                 }
               }}
               placeholder='กรุณากรอกนามสกุล'
@@ -161,8 +195,8 @@ export default function ProfileDashboard() {
 
           {/* Error */}
           {error && (
-            <div className='p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg'>
-              <i className='fas fa-exclamation-circle mr-1.5' />
+            <div className='p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg flex items-center gap-1.5'>
+              <FaExclamationCircle className='shrink-0' />
               {error}
             </div>
           )}
@@ -172,24 +206,24 @@ export default function ProfileDashboard() {
             <button
               onClick={handleReset}
               disabled={isSaving || !hasChanges}
-              className='px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition-colors'
+              className='px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-40 transition-colors inline-flex items-center gap-1.5'
             >
-              <i className='fas fa-undo mr-1.5' />
+              <FaUndo />
               รีเซ็ต
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving || !hasChanges}
-              className='px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm'
+              className='px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm inline-flex items-center gap-1.5'
             >
               {isSaving ? (
                 <>
-                  <i className='fas fa-spinner fa-spin mr-1.5' />
+                  <FaSpinner className='animate-spin' />
                   กำลังบันทึก...
                 </>
               ) : (
                 <>
-                  <i className='fas fa-save mr-1.5' />
+                  <FaSave />
                   บันทึก
                 </>
               )}
@@ -199,13 +233,109 @@ export default function ProfileDashboard() {
 
         {/* Info Footer */}
         <div className='px-8 py-4 bg-gray-50 border-t border-gray-200'>
-          <p className='text-xs text-gray-400'>
-            <i className='fas fa-info-circle mr-1' />
+          <p className='text-xs text-gray-400 flex items-center gap-1'>
+            <FaInfoCircle className='shrink-0' />
             เฉพาะชื่อและนามสกุลเท่านั้นที่แก้ไขได้
             หากต้องการเปลี่ยนอีเมลหรือรหัสผ่าน กรุณาติดต่อ Supervisor
           </p>
         </div>
       </div>
+
+      {/* Tips Popup — Material-style Dialog */}
+      {showTips && (
+        <div
+          className='fixed inset-0 z-[99999] flex items-center justify-center bg-black/40'
+          onClick={() => setShowTips(false)}
+        >
+          <div
+            className='bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden animate-[scaleIn_0.2s_ease-out]'
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className='flex items-center justify-between px-6 pt-5 pb-3 border-b border-[#e8eaed]'>
+              <div className='flex items-center gap-2'>
+                <FaLightbulb className='text-xl text-amber-500' />
+                <span className='text-[16px] font-semibold text-[#202124]'>
+                  Tips การใช้งาน
+                </span>
+              </div>
+              <button
+                onClick={() => setShowTips(false)}
+                aria-label='ปิด Tips'
+                className='w-8 h-8 rounded-full flex items-center justify-center text-[#5f6368] hover:bg-[#f1f3f4] transition-colors'
+              >
+                <FaTimes className='w-5 h-5' />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className='px-6 py-4 flex flex-col gap-4'>
+              {/* Tip: Name */}
+              <div className='flex gap-3'>
+                <FaUser className='text-lg shrink-0 mt-0.5 text-blue-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>
+                    ชื่อ-นามสกุล
+                  </p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    สามารถแก้ไขชื่อและนามสกุลได้ สูงสุด 50 ตัวอักษร
+                  </p>
+                </div>
+              </div>
+
+              {/* Tip: Save */}
+              <div className='flex gap-3'>
+                <FaSave className='text-lg shrink-0 mt-0.5 text-green-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>
+                    การบันทึก
+                  </p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    กด "บันทึก" เพื่ออัปเดตข้อมูล หรือ "รีเซ็ต"
+                    เพื่อยกเลิกการเปลี่ยนแปลง
+                  </p>
+                </div>
+              </div>
+
+              {/* Tip: Limitations */}
+              <div className='flex gap-3'>
+                <FaInfoCircle className='text-lg shrink-0 mt-0.5 text-[#5f6368]' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>ข้อจำกัด</p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    เฉพาะชื่อและนามสกุลเท่านั้นที่แก้ไขได้
+                    อีเมลและรหัสผ่านต้องติดต่อ Supervisor
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className='px-6 pb-4 pt-2 flex justify-end'>
+              <button
+                onClick={() => setShowTips(false)}
+                className='px-6 py-2.5 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.97] transition-all shadow-sm'
+              >
+                ตกลง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Keyframes for scaleIn animation */}
+      <style>{`
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      `}</style>
     </div>
   )
 }

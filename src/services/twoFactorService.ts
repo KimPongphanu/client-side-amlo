@@ -34,6 +34,13 @@ export interface RegenerateKeysResponse {
   }
 }
 
+export interface CheckEmailResponse {
+  success?: boolean
+  found: boolean
+  role?: 'ADMIN' | 'SUPERVISOR' | 'USER'
+  message?: string
+}
+
 export const twoFactorService = {
   setup2FA: async (): Promise<TwoFactorSetupResponse> => {
     return await api<TwoFactorSetupResponse>('/2fa/setup', {
@@ -119,6 +126,13 @@ export const twoFactorService = {
     }>('/2fa/recovery/use', {
       method: 'POST',
       body: { email, recoveryKey },
+    })
+  },
+
+  checkEmail: async (email: string): Promise<CheckEmailResponse> => {
+    return await api<CheckEmailResponse>('/auth/check-email', {
+      method: 'POST',
+      body: { email },
     })
   },
 }
