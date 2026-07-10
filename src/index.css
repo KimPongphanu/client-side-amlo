@@ -123,3 +123,30 @@ html {
 .ql-rendered table tr:nth-child(even) {
   background-color: #f8fafc;
 }
+
+/* ── Theme Modes ── */
+html.theme-grayscale {
+  filter: grayscale(100%);
+}
+
+html.theme-high-contrast {
+  background-color: #000 !important;
+}
+html.theme-high-contrast body {
+  background-color: #000 !important;
+}
+html.theme-high-contrast * {
+  background-color: transparent !important;
+  color: #ffff00 !important;
+  border-color: #ffff00 !important;
+  box-shadow: none !important;
+}
+html.theme-high-contrast img,
+html.theme-high-contrast video,
+html.theme-high-contrast svg {
+  filter: grayscale(100%) contrast(120%) !important;
+  background-color: transparent !important;
+}
+html.theme-high-contrast .swiper-slide {
+  background-color: #000 !important;
+}

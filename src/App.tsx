@@ -33,15 +33,24 @@ function App() {
   const verifyUser = useAuthStore((state) => state.verifyUser)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
-  // Sync font size to <html> element (CSS variable approach)
+  // Sync font size and theme to <html> element (CSS variable approach)
   const fontSize = useSiteStore((state) => state.fontSize)
+  const theme = useSiteStore((state) => state.theme)
   useEffect(() => {
     const root = document.documentElement
-    root.classList.remove('font-small', 'font-medium', 'font-large')
+    // Reset classes
+    root.classList.remove('font-small', 'font-medium', 'font-large', 'theme-normal', 'theme-grayscale', 'theme-high-contrast')
+    
+    // Font size
     if (fontSize === 'small') root.classList.add('font-small')
     else if (fontSize === 'large') root.classList.add('font-large')
     else root.classList.add('font-medium')
-  }, [fontSize])
+
+    // Theme
+    if (theme === 'grayscale') root.classList.add('theme-grayscale')
+    else if (theme === 'high-contrast') root.classList.add('theme-high-contrast')
+    else root.classList.add('theme-normal')
+  }, [fontSize, theme])
 
   // 1. รันระบบ GA4 ครั้งแรกครั้งเดียวตอนเปิดเว็บ
   useEffect(() => {

@@ -10,9 +10,17 @@ import Nav from './Nav'
 const MainLayout = () => {
   return (
     <div className='min-h-screen w-full relative flex flex-col'>
+      {/* Skip to Main Content */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:bg-blue-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-md focus:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-300"
+      >
+        ข้ามไปเนื้อหาหลัก
+      </a>
+
       <Nav />
 
-      <main className='flex-grow'>
+      <main id="main-content" className='flex-grow outline-none' tabIndex={-1}>
         <Outlet />
       </main>
       <Footer />

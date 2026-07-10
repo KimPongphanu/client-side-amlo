@@ -198,7 +198,7 @@ export default function Nav() {
                   className={`absolute right-0 top-full mt-3 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden transition-all duration-200 ${isSettingsOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
                 >
                   {/* Font Size */}
-                  <div className='px-5 pt-4 pb-3'>
+                  <div className='px-5 pt-4 pb-3 border-b border-slate-100'>
                     <h4 className='text-xs font-bold text-slate-400 uppercase tracking-wider mb-3'>
                       {t('common.fontSize', 'ขนาดตัวอักษร')}
                     </h4>
@@ -224,6 +224,37 @@ export default function Nav() {
                           </button>
                         )
                       })}
+                    </div>
+                  </div>
+                  
+                  {/* Theme / Contrast */}
+                  <div className='px-5 pt-3 pb-4'>
+                    <h4 className='text-xs font-bold text-slate-400 uppercase tracking-wider mb-3'>
+                      {t('common.theme', 'โหมดสีการแสดงผล')}
+                    </h4>
+                    <div className='flex items-center justify-between gap-3'>
+                      <button
+                        onClick={() => useSiteStore.getState().setTheme('normal')}
+                        className={`relative shrink-0 flex-1 py-2 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer outline-none border-2 ${useSiteStore.getState().theme === 'normal' ? 'border-blue-500 bg-blue-50 text-blue-700 font-bold' : 'border-transparent bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                        title='โหมดปกติ'
+                      >
+                        <span className="text-sm">ปกติ</span>
+                      </button>
+                      <button
+                        onClick={() => useSiteStore.getState().setTheme('grayscale')}
+                        className={`relative shrink-0 flex-1 py-2 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer outline-none border-2 ${useSiteStore.getState().theme === 'grayscale' ? 'border-slate-800 bg-slate-200 text-slate-800 font-bold' : 'border-transparent bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                        title='ขาวดำ'
+                        style={{ filter: 'grayscale(100%)' }}
+                      >
+                        <span className="text-sm">ขาวดำ</span>
+                      </button>
+                      <button
+                        onClick={() => useSiteStore.getState().setTheme('high-contrast')}
+                        className={`relative shrink-0 flex-1 py-2 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer outline-none border-2 ${useSiteStore.getState().theme === 'high-contrast' ? 'border-yellow-400 bg-black text-yellow-400 font-bold' : 'border-transparent bg-black text-yellow-400 hover:opacity-80'}`}
+                        title='สีตัดกัน'
+                      >
+                        <span className="text-sm">สีตัดกัน</span>
+                      </button>
                     </div>
                   </div>
                 </div>

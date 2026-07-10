@@ -17,10 +17,23 @@ interface SliderProps {
 
 export default function Slider({ slides, containerClassName }: SliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [swiperInstance, setSwiperInstance] = useState<any>(null)
+  const [isPlaying, setIsPlaying] = useState(true)
 
   const handleSlideClick = (link?: string) => {
     if (link && link.trim()) {
       window.open(link, '_blank', 'noopener,noreferrer')
+    }
+  }
+
+  const togglePlay = () => {
+    if (!swiperInstance) return
+    if (isPlaying) {
+      swiperInstance.autoplay.stop()
+      setIsPlaying(false)
+    } else {
+      swiperInstance.autoplay.start()
+      setIsPlaying(true)
     }
   }
 
@@ -30,11 +43,13 @@ export default function Slider({ slides, containerClassName }: SliderProps) {
     >
       <div className='w-full h-full overflow-hidden relative shadow-md bg-slate-900'>
         <Swiper
+          onSwiper={setSwiperInstance}
           modules={[Autoplay, Navigation]}
           loop={true}
           autoplay={{
             delay: 5000,
             disableOnInteraction: false,
+            pauseOnMouseEnter: true,
           }}
           onSlideChange={(swiper) => setCurrentIndex(swiper.realIndex)}
           className='w-full h-full z-0'
@@ -69,21 +84,40 @@ export default function Slider({ slides, containerClassName }: SliderProps) {
       </button>
 
       {/* 🌟 2. ปรับระยะห่างและขนาดของหลอด Progress ให้พอดีกับจอมือถือ */}
-      <div className='flex justify-center py-4 md:py-6 gap-1 md:gap-2 absolute bottom-0 left-0 w-full z-10 px-4'>
-        {slides.map((slide, slideIndex) => (
-          <div
-            key={slide.id}
-            // 🌟 3. เปลี่ยน w-60 (กว้างเกินไป) เป็น w-12 ในมือถือ และ w-32 ในจอคอม
-            className='h-1 w-12 md:w-32 bg-gray-300/50 rounded-full overflow-hidden'
-          >
-            {currentIndex === slideIndex && (
-              <div
-                className='h-full bg-blue-600 rounded-full'
-                style={{ animation: 'slide-progress 5s linear forwards' }}
-              ></div>
-            )}
-          </div>
-        ))}
+      <div className='flex justify-center items-center py-4 md:py-6 gap-2 md:gap-4 absolute bottom-0 left-0 w-full z-10 px-4'>
+        {/* Play/Pause Button for Accessibility */}
+        <button
+          onClick={togglePlay}
+          aria-label={isPlaying ? 'หยุดภาพสไลด์' : 'เล่นภาพสไลด์'}
+          className='w-8 h-8 flex items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/70 transition'
+        >
+          {isPlaying ? (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="4" width="4" height="16" />
+              <rect x="14" y="4" width="4" height="16" />
+            </svg>
+          ) : (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+          )}
+        </button>
+
+        <div className='flex gap-1 md:gap-2'>
+          {slides.map((slide, slideIndex) => (
+            <div
+              key={slide.id}
+              className='h-1 w-12 md:w-32 bg-gray-300/50 rounded-full overflow-hidden'
+            >
+              {currentIndex === slideIndex && (
+                <div
+                  className='h-full bg-blue-600 rounded-full'
+                  style={{ animation: isPlaying ? 'slide-progress 5s linear forwards' : 'none', width: isPlaying ? '0%' : '100%' }}
+                ></div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       <style>{`
