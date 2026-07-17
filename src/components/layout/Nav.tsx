@@ -8,7 +8,7 @@ import { useContentStore } from '../../stores/useContentStore'
 import { useSiteStore } from '../../stores/useSiteStore'
 
 export default function Nav() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const navigate = useNavigate()
@@ -439,7 +439,7 @@ export default function Nav() {
                         to={`/department/${dept.id}`}
                         className='hover:text-blue-600 transition-colors'
                       >
-                        {dept.title}
+                        {i18n.language === 'en' && dept.title_en ? dept.title_en : dept.title}
                       </Link>
                     </li>
                   ))}
@@ -539,7 +539,7 @@ export default function Nav() {
                             onClick={handleCloseMobileMenu}
                             className='hover:text-sky-500 transition-colors'
                           >
-                            {dept.title}
+                            {i18n.language === 'en' && dept.title_en ? dept.title_en : dept.title}
                           </Link>
                         </li>
                       ))}

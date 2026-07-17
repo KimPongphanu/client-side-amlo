@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useContentStore } from '../stores/useContentStore'
 
 // 🌟 ดึง DOMParser ออกมาด้านนอก เพื่อไม่ให้สร้างใหม่ทุกรอบใน Loop
@@ -10,6 +11,9 @@ const stripHtmlToText = (html?: string) => {
 }
 
 const DepartmentShowcase = () => {
+  const { t, i18n } = useTranslation()
+  const isEn = i18n.language === 'en'
+
   const [activeIndex, setActiveIndex] = useState(0)
   const imageRefs = useRef<(HTMLDivElement | null)[]>([])
 
@@ -106,15 +110,13 @@ const DepartmentShowcase = () => {
         {/* Header Section */}
         <div className='mb-12 md:mb-20 max-w-2xl'>
           <p className='text-blue-600 font-bold tracking-widest text-xs md:text-sm uppercase mb-3'>
-            โครงสร้างองค์กร
+            {t('home.orgStructure', 'โครงสร้างองค์กร')}
           </p>
           <h2 className='text-3xl md:text-5xl font-bold mb-6 leading-tight text-slate-900'>
-            หน่วยงานภายใน ปปง.
+            {t('home.departments', 'หน่วยงานภายใน ปปง.')}
           </h2>
           <p className='text-slate-500 text-base md:text-lg leading-relaxed'>
-            องค์กรถูกขับเคลื่อนด้วย {departments.length}{' '}
-            กองหลักที่ทำงานประสานกัน
-            เพื่อป้องกันและปราบปรามอาชญากรรมทางการเงินอย่างมีประสิทธิภาพ
+            {isEn ? `The organization is driven by ${departments.length} key departments working together to effectively prevent and suppress financial crimes.` : `องค์กรถูกขับเคลื่อนด้วย ${departments.length} กองหลักที่ทำงานประสานกัน เพื่อป้องกันและปราบปรามอาชญากรรมทางการเงินอย่างมีประสิทธิภาพ`}
           </p>
         </div>
 
@@ -138,14 +140,14 @@ const DepartmentShowcase = () => {
                     }`}
                   >
                     <p className='text-xs font-bold text-blue-600 mb-1 tracking-wider uppercase'>
-                      กอง {code}
+                      {isEn ? 'Div' : 'กอง'} {code}
                     </p>
                     <h3
                       className={`text-2xl font-bold transition-colors duration-500 ${
                         isActive ? 'text-slate-800' : 'text-slate-400'
                       }`}
                     >
-                      {dept.title}
+                      {isEn && dept.title_en ? dept.title_en : dept.title}
                     </h3>
                     <div
                       className={`grid transition-all duration-500 ease-in-out ${
@@ -156,7 +158,7 @@ const DepartmentShowcase = () => {
                     >
                       <div className='overflow-hidden pt-3 pb-2'>
                         <div className='text-slate-500 leading-relaxed text-sm line-clamp-3 break-words'>
-                          {stripHtmlToText(dept.content)}
+                          {stripHtmlToText(isEn && dept.content_en ? dept.content_en : dept.content)}
                         </div>
                       </div>
                     </div>
@@ -191,9 +193,9 @@ const DepartmentShowcase = () => {
                   >
                     <img
                       src={resolveImg(dept.cover_image)}
-                      alt={dept.title}
+                      alt={isEn && dept.title_en ? dept.title_en : dept.title}
                       loading='lazy'
-                      className='w-full h-full object-cover transition-transform duration-1000 hover:scale-105'
+                      className='w-full h-full object-cover transition-transform duration-700 hover:scale-105'
                     />
                     <div className='absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none' />
                   </div>
@@ -237,11 +239,11 @@ const DepartmentShowcase = () => {
                     >
                       <img
                         src={resolveImg(dept.cover_image)}
-                        alt={dept.title}
+                        alt={isEn && dept.title_en ? dept.title_en : dept.title}
                         className='w-full h-full object-cover'
                       />
                       <div className='absolute top-4 right-4 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10'>
-                        กอง {code}
+                        {isEn ? 'Div' : 'กอง'} {code}
                       </div>
                     </div>
                     <div
@@ -252,10 +254,10 @@ const DepartmentShowcase = () => {
                         overflow: 'hidden',
                       }}
                     >
-                      <h3 className='text-base font-bold text-slate-800 mb-2 shrink-0 truncate'>
-                        {dept.title}
+                      <h3 className='text-xl md:text-2xl font-bold text-slate-800 leading-snug'>
+                        {isEn && dept.title_en ? dept.title_en : dept.title}
                       </h3>
-                      <p
+                      <div
                         className='text-slate-500 text-sm leading-relaxed'
                         style={{
                           display: '-webkit-box',
@@ -266,10 +268,10 @@ const DepartmentShowcase = () => {
                           overflowWrap: 'break-word',
                         }}
                       >
-                        {stripHtmlToText(dept.content)}
-                      </p>
+                        {stripHtmlToText(isEn && dept.content_en ? dept.content_en : dept.content)}
+                      </div>
                       <div className='mt-auto pt-3 flex items-center text-blue-600 font-semibold text-sm shrink-0'>
-                        รายละเอียด <span className='ml-1'>➔</span>
+                        {t('common.details', 'รายละเอียด')} <span className='ml-1'>➔</span>
                       </div>
                     </div>
                   </div>

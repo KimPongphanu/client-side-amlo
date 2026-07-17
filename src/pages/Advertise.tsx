@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import SearchFilter from '../components/SearchFilter'
 import { useContentStore } from '../stores/useContentStore'
 
@@ -20,14 +21,22 @@ const THAI_MONTHS = [
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-const formatThaiDate = (isoString: string) => {
+const formatLocalizedDate = (isoString: string, isEn: boolean) => {
   if (!isoString) return ''
   const date = new Date(isoString)
   if (isNaN(date.getTime())) return isoString
-  const day = date.getDate()
-  const month = THAI_MONTHS[date.getMonth()]
-  const year = date.getFullYear() + 543
-  return `${day} ${month} ${year}`
+  
+  if (isEn) {
+    const day = date.getDate()
+    const month = date.toLocaleString('en-US', { month: 'long' })
+    const year = date.getFullYear()
+    return `${day} ${month} ${year}`
+  } else {
+    const day = date.getDate()
+    const month = THAI_MONTHS[date.getMonth()]
+    const year = date.getFullYear() + 543
+    return `${day} ${month} ${year}`
+  }
 }
 
 const HorizontalCardSkeleton = () => (
@@ -47,6 +56,9 @@ const HorizontalCardSkeleton = () => (
 )
 
 const Advertise = () => {
+  const { t, i18n } = useTranslation()
+  const isEn = i18n.language === 'en'
+
   const prList = useContentStore((state) => state.prList)
   const isLoading = useContentStore((state) => state.isLoading)
 
@@ -112,10 +124,10 @@ const Advertise = () => {
       <div className='mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6'>
         <div>
           <h1 className='text-4xl font-bold text-slate-800 border-l-8 border-blue-600 pl-4'>
-            ข่าวประชาสัมพันธ์
+            {t('home.prSection', 'ข่าวประชาสัมพันธ์')}
           </h1>
           <p className='text-gray-500 mt-2 text-lg'>
-            ประกาศสำคัญจากสำนักงาน ปปง.
+            {isEn ? 'Important announcements from AMLO' : 'ประกาศสำคัญจากสำนักงาน ปปง.'}
           </p>
         </div>
 
@@ -136,7 +148,7 @@ const Advertise = () => {
           [1, 2, 3].map((key) => <HorizontalCardSkeleton key={key} />)
         ) : visibleList.length === 0 ? (
           <div className='text-center text-gray-500 py-10 bg-white rounded-2xl shadow-sm'>
-            ไม่มีข้อมูลประชาสัมพันธ์ในขณะนี้
+            {t('common.noData', 'ไม่มีข้อมูลประชาสัมพันธ์ในขณะนี้')}
           </div>
         ) : filteredData.length === 0 ? (
           <div className='text-center py-16 bg-white rounded-2xl shadow-sm flex flex-col items-center'>
@@ -154,10 +166,10 @@ const Advertise = () => {
               />
             </svg>
             <h3 className='text-lg font-bold text-slate-700 mb-1'>
-              ไม่พบประกาศที่คุณค้นหา
+              {t('common.noData', 'ไม่พบประกาศที่คุณค้นหา')}
             </h3>
             <p className='text-slate-500 text-sm'>
-              ลองเปลี่ยนคำค้นหา หรือเลือกเดือนอื่นดูนะครับ
+              {isEn ? 'Try changing the search term or selecting a different month.' : 'ลองเปลี่ยนคำค้นหา หรือเลือกเดือนอื่นดูนะครับ'}
             </p>
             <button
               onClick={() => {
@@ -166,7 +178,7 @@ const Advertise = () => {
               }}
               className='mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors'
             >
-              ล้างการค้นหา
+              {isEn ? 'Clear Search' : 'ล้างการค้นหา'}
             </button>
           </div>
         ) : (
@@ -188,24 +200,24 @@ const Advertise = () => {
                     className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
                   />
                   <div className='absolute top-4 right-4 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10'>
-                    ประชาสัมพันธ์
+                    {isEn ? 'PR' : 'ประชาสัมพันธ์'}
                   </div>
                 </div>
 
                 <div className='p-6 md:p-8 flex flex-col flex-grow justify-between'>
                   <div>
                     <div className='text-sm text-slate-400 mb-2 font-medium'>
-                      {formatThaiDate(item.date)}
+                      {formatLocalizedDate(item.date, isEn)}
                     </div>
                     <h2 className='text-xl md:text-2xl font-bold text-slate-800 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2'>
-                      {item.title}
+                      {isEn && item.title_en ? item.title_en : item.title}
                     </h2>
                     <p className='text-slate-600 leading-relaxed line-clamp-3'>
-                      {item.description}
+                      {isEn && item.description_en ? item.description_en : item.description}
                     </p>
                   </div>
                   <div className='mt-6 flex items-center text-blue-600 font-semibold text-sm'>
-                    อ่านรายละเอียดเพิ่มเติม
+                    {t('common.readMore', 'อ่านรายละเอียดเพิ่มเติม')}
                     <svg
                       className='w-4 h-4 ml-1 group-hover:translate-x-2 transition-transform'
                       fill='none'

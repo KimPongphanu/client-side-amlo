@@ -31,8 +31,12 @@ export interface DepartmentItem {
   id: number
   /** Department name/title (e.g., "กองข่าวกรองทางการเงิน") */
   title: string
+  /** Department name/title in English */
+  title_en?: string
   /** HTML content describing department mission and responsibilities (sanitized) */
   content?: string
+  /** HTML content in English */
+  content_en?: string
   /** Cover image URL path (stored in /uploads/) */
   cover_image: string
   /** Array of gallery items (images and YouTube videos) */

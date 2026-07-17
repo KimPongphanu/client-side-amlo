@@ -18,10 +18,13 @@ export interface NewsItem {
   id: number
   type?: NewsType
   title: string
+  title_en?: string
   date: string
   image_src: string
   description: string
+  description_en?: string
   content?: string
+  content_en?: string
   views?: number
   isShow?: boolean
 }
@@ -33,10 +36,13 @@ export interface NewsFormData {
   id?: string | number
   type?: NewsType
   title: string
+  title_en?: string
   date?: string
   image_src?: string
   description?: string
+  description_en?: string
   content?: string
+  content_en?: string
   views?: number
   isShow?: boolean
 }

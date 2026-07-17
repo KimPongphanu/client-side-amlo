@@ -57,7 +57,9 @@
     "prSection": "ข่าวประชาสัมพันธ์",
     "departmentSection": "หน่วยงานภายใน",
     "sliderSection": "ภาพประชาสัมพันธ์",
-    "videoSection": "วิดีโอแนะนำ"
+    "videoSection": "วิดีโอแนะนำ",
+    "orgStructure": "โครงสร้างองค์กร",
+    "departments": "หน่วยงานภายใน ปปง."
   },
   "login": {
     "title": "เข้าสู่ระบบ",

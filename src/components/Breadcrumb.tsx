@@ -1,11 +1,17 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, ChevronRight, ChevronLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
-// 🌟 1. ดิกชันนารีแปล Path URL (ภาษาอังกฤษ) เป็นชื่อเมนู (ภาษาไทย)
-const PATH_MAP: Record<string, string> = {
+// 🌟 1. ดิกชันนารีแปล Path URL
+const PATH_MAP_TH: Record<string, string> = {
   'advertise': 'ประชาสัมพันธ์',
   'news': 'กิจกรรม',
   'department': 'หน่วยงาน',
+};
+const PATH_MAP_EN: Record<string, string> = {
+  'advertise': 'Press Release',
+  'news': 'News & Events',
+  'department': 'Department',
 };
 
 interface BreadcrumbProps {
@@ -15,6 +21,9 @@ interface BreadcrumbProps {
 export default function Breadcrumb({ title }: BreadcrumbProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const isEn = i18n.language === 'en';
+  const PATH_MAP = isEn ? PATH_MAP_EN : PATH_MAP_TH;
   
   // 🌟 2. แยก URL ออกเป็นส่วนๆ (เช่น "/advertise/1" -> ['advertise', '1'])
   const pathnames = location.pathname.split('/').filter((x) => x);
@@ -27,7 +36,7 @@ export default function Breadcrumb({ title }: BreadcrumbProps) {
         onClick={() => navigate(-1)} 
         className="text-lg font-medium text-slate-500 hover:text-blue-600 mb-6 flex items-center transition-colors"
       >
-        <ChevronLeft size={16} className="mr-1" /> ย้อนกลับ
+        <ChevronLeft size={16} className="mr-1" /> {t('common.back', 'ย้อนกลับ')}
       </button>
 
       {/* 🌟 แถบ Breadcrumb */}
@@ -38,7 +47,7 @@ export default function Breadcrumb({ title }: BreadcrumbProps) {
           <li className="inline-flex items-center">
             <Link to="/" className="hover:text-blue-600 transition-colors flex items-center gap-1">
               <Home size={14} className="mb-[2px]" />
-              หน้าหลัก
+              {t('nav.home', 'หน้าหลัก')}
             </Link>
           </li>
 

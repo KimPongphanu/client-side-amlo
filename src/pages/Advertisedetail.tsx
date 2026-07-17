@@ -1,22 +1,31 @@
 import DOMPurify from 'dompurify'
 import { useEffect } from 'react' // ✨ เพิ่มการนำเข้า useEffect
 import { useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import Breadcrumb from '../components/Breadcrumb'
 import RecommendedSidebar from '../components/ReccommendedSidebar'
 import { useContentStore } from '../stores/useContentStore'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
-// ฟังก์ชันแปลงเวลาเป็น UTC
-const formatToThaiDate = (dateString: string) => {
+// ฟังก์ชันแปลงเวลาเป็น UTC และ Localized
+const formatLocalizedDate = (dateString: string, isEn: boolean) => {
   if (!dateString) return ''
   const date = new Date(dateString)
-  return isNaN(date.getTime()) ? dateString : date.toUTCString()
+  if (isNaN(date.getTime())) return dateString
+  
+  if (isEn) {
+    return date.toUTCString()
+  } else {
+    return date.toUTCString()
+  }
 }
 
 const AdvertiseDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
+  const isEn = i18n.language === 'en'
 
   // เปลี่ยนมาดึงข้อมูล prList, isLoading และ fetchPublicData จาก Zustand Store
   const prList = useContentStore((state) => state.prList)
@@ -47,13 +56,13 @@ const AdvertiseDetail = () => {
     return (
       <div className='min-h-screen flex flex-col justify-center items-center bg-slate-50 p-4 text-center'>
         <h1 className='text-2xl md:text-3xl font-bold text-slate-800 mb-4'>
-          ไม่พบข้อมูลประกาศนี้
+          {t('common.noData', 'ไม่พบข้อมูลประกาศนี้')}
         </h1>
         <button
           onClick={() => navigate(-1)}
           className='px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
         >
-          กลับไปหน้าก่อนหน้า
+          {t('common.back', 'กลับไปหน้าก่อนหน้า')}
         </button>
       </div>
     )
@@ -77,24 +86,25 @@ const AdvertiseDetail = () => {
                   className='w-full h-full object-cover'
                 />
               ) : (
-                <span className='text-slate-400'>ไม่มีรูปภาพประกอบ</span>
+                <span className='text-slate-400'>{t('common.noData', 'ไม่มีรูปภาพประกอบ')}</span>
               )}
             </div>
 
             <div className='p-6 md:p-10'>
-              <Breadcrumb title={advertiseData.title} />
+              <Breadcrumb title={isEn && advertiseData.title_en ? advertiseData.title_en : advertiseData.title} />
               <p className='text-sm text-blue-600 font-bold mb-3'>
-                {formatToThaiDate(advertiseData.date)}
+                {formatLocalizedDate(advertiseData.date, isEn)}
               </p>
               <h1 className='text-2xl md:text-4xl font-bold text-slate-800 mb-6 leading-snug'>
-                {advertiseData.title}
+                {isEn && advertiseData.title_en ? advertiseData.title_en : advertiseData.title}
               </h1>
               <hr className='border-slate-100 mb-8' />
               <div
                 className='prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg ql-rendered'
                 dangerouslySetInnerHTML={{
                   __html: DOMPurify.sanitize(
-                    advertiseData.content || advertiseData.description,
+                    (isEn && advertiseData.content_en ? advertiseData.content_en : advertiseData.content) || 
+                    (isEn && advertiseData.description_en ? advertiseData.description_en : advertiseData.description)
                   ),
                 }}
               />
@@ -106,7 +116,7 @@ const AdvertiseDetail = () => {
               currentId={currentId}
               items={prList}
               basePath='advertise'
-              title='ประกาศอื่นๆ จาก ปปง.'
+              title={isEn ? 'Other PR' : 'ประกาศอื่นๆ จาก ปปง.'}
             />
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { API_URL } from '../../config/constants'
 import type { NewsItem } from '../../type'
 
@@ -9,6 +10,9 @@ const ArticleCard = ({
   item: NewsItem
   basePath: string
 }) => {
+  const { t, i18n } = useTranslation()
+  const isEn = i18n.language === 'en'
+
   return (
     <Link
       to={`/${basePath}/${item.id}`}
@@ -35,17 +39,17 @@ const ArticleCard = ({
             {item.date?.includes('T') ? item.date.split('T')[0] : item.date}
           </p>
           <h3 className='text-base md:text-lg font-bold text-gray-800 line-clamp-2 mb-2'>
-            {item.title}
+            {isEn && item.title_en ? item.title_en : item.title}
           </h3>
           <p className='text-xs md:text-sm text-gray-500 line-clamp-3 mb-4'>
-            {item.description}
+            {isEn && item.description_en ? item.description_en : item.description}
           </p>
 
           {/* ส่วนปุ่ม "อ่านเพิ่มเติม" และลูกศรยืดหดตามรูปภาพ */}
           <div className='mt-auto flex items-center justify-start pt-2'>
             {/* ปรับช่องไฟตรง gap-1 เป็น gap-2 เพื่อเพิ่มระยะห่าง */}
             <div className='flex items-center gap-2 text-sm md:text-base text-blue-500 font-medium group-hover:text-blue-700 transition-colors duration-300'>
-              <span>อ่านเพิ่มเติม</span>
+              <span>{t('common.readMore', 'อ่านเพิ่มเติม')}</span>
 
               <svg
                 className='w-3 h-3 overflow-visible'

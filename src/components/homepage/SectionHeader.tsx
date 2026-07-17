@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 interface SectionHeaderProps {
   title: string
@@ -9,8 +10,11 @@ interface SectionHeaderProps {
 const SectionHeader = ({
   title,
   viewAllLink,
-  viewAllText = 'ดูทั้งหมด',
+  viewAllText,
 }: SectionHeaderProps) => {
+  const { t } = useTranslation()
+  const text = viewAllText || t('home.viewAll', 'ดูทั้งหมด')
+
   return (
     <div className='flex justify-between items-end mb-6 md:mb-8'>
       <h1 className='text-3xl md:text-4xl font-bold text-slate-800'>{title}</h1>
@@ -18,7 +22,7 @@ const SectionHeader = ({
         to={viewAllLink}
         className='text-sm md:text-base font-medium text-blue-600 hover:text-blue-800 flex items-center transition-colors'
       >
-        {viewAllText} <span className='ml-1 text-lg leading-none'>›</span>
+        {text} <span className='ml-1 text-lg leading-none'>›</span>
       </Link>
     </div>
   )

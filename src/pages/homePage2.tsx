@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   FaArrowUp,
   FaClipboard,
@@ -21,6 +22,7 @@ import type { BannerImage } from '../type'
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 const HomePage2 = () => {
+  const { t } = useTranslation()
   const { prList, newsList, commentList, isLoading, fetchPublicData } =
     useContentStore()
 
@@ -214,7 +216,7 @@ const HomePage2 = () => {
 
             {/* Advertisement Section */}
             <NewsSection
-              title='ข่าวประชาสัมพันธ์'
+              title={t('home.prSection', 'ข่าวประชาสัมพันธ์')}
               items={prList}
               basePath='advertise'
               viewAllLink='/advertise'
@@ -223,7 +225,7 @@ const HomePage2 = () => {
             {/* News Section */}
             <div className='mt-12 md:mt-16'>
               <NewsSection
-                title='กิจกรรมและประกาศ'
+                title={t('home.newsSection', 'กิจกรรมและประกาศ')}
                 items={newsList}
                 basePath='news'
                 viewAllLink='/news'

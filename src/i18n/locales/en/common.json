@@ -57,7 +57,9 @@
     "prSection": "Press Release",
     "departmentSection": "Departments",
     "sliderSection": "Banners",
-    "videoSection": "Introduction Video"
+    "videoSection": "Introduction Video",
+    "orgStructure": "Organizational Structure",
+    "departments": "Departments within AMLO"
   },
   "login": {
     "title": "Login",
