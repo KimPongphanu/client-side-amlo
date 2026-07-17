@@ -29,3 +29,6 @@ et --hard ORIG_HEAD
 .env
 .vercel
 .env*.local
+
+# Dev env
+.env.development
