@@ -1,7 +1,7 @@
 import DOMPurify from 'dompurify'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useParams } from 'react-router-dom'
 import Breadcrumb from '../components/Breadcrumb'
 import { useContentStore } from '../stores/useContentStore'
 
@@ -336,8 +336,8 @@ const YouTubeSlide = ({
 // ════════════════════════════════════════════════════════════
 const DepartmentDetailPage = () => {
   const { id } = useParams()
-  
-  const { t, i18n } = useTranslation()
+
+  const { i18n } = useTranslation()
   const isEn = i18n.language === 'en'
 
   const departmentList = useContentStore((state) => state.departmentList)
@@ -463,11 +463,19 @@ const DepartmentDetailPage = () => {
         {/* ส่วนเนื้อหา */}
         <div className='p-6 md:p-12'>
           {/* Breadcrumb ไว้บนสุดของเนื้อหา */}
-          <Breadcrumb title={isEn && department.title_en ? department.title_en : department.title} />
+          <Breadcrumb
+            title={
+              isEn && department.title_en
+                ? department.title_en
+                : department.title
+            }
+          />
 
           {/* ชื่อหน่วยงาน */}
           <h1 className='text-2xl md:text-4xl font-bold text-slate-800 mb-6 leading-snug'>
-            {isEn && department.title_en ? department.title_en : department.title}
+            {isEn && department.title_en
+              ? department.title_en
+              : department.title}
           </h1>
 
           {/* เส้นคั่น */}
@@ -478,12 +486,20 @@ const DepartmentDetailPage = () => {
             <div
               className='prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg ql-rendered'
               dangerouslySetInnerHTML={{
-                __html: isEn && department.content_en ? department.content_en : DOMPurify.sanitize(department.content || ''),
+                __html:
+                  isEn && department.content_en
+                    ? department.content_en
+                    : DOMPurify.sanitize(department.content || ''),
               }}
             />
           ) : (
             <div className='text-lg text-gray-700 leading-relaxed whitespace-pre-line'>
-              ยินดีต้อนรับเข้าสู่ <strong>{isEn && department.title_en ? department.title_en : department.title}</strong>
+              ยินดีต้อนรับเข้าสู่{' '}
+              <strong>
+                {isEn && department.title_en
+                  ? department.title_en
+                  : department.title}
+              </strong>
               <br />
               <br />
               ไม่มีข้อมูลโครงสร้างและหน้าที่รับผิดชอบในขณะนี้
