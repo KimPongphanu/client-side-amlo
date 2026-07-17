@@ -32,3 +32,4 @@ et --hard ORIG_HEAD
 
 # Dev env
 .env.development
+.env.production
