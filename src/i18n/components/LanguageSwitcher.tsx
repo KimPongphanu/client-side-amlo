@@ -17,12 +17,12 @@ export default function LanguageSwitcher() {
     // ตั้งค่า Cookie สำหรับ Google Translate
     if (code === 'th') {
       // ถ้าเลือกภาษาไทย ให้ลบ Cookie ออก (กลับเป็นต้นฉบับ)
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=' + location.hostname + '; path=/;';
+      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax;';
+      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=' + location.hostname + '; path=/; SameSite=Lax;';
     } else {
       // ถ้าเลือกภาษาอื่น ให้กำหนด Cookie (สมมติว่ามีแค่ th กับ en)
-      document.cookie = `googtrans=/th/${code}; path=/`;
-      document.cookie = `googtrans=/th/${code}; domain=${location.hostname}; path=/`;
+      document.cookie = `googtrans=/th/${code}; path=/; SameSite=Lax`;
+      document.cookie = `googtrans=/th/${code}; domain=${location.hostname}; path=/; SameSite=Lax`;
     }
     
     setOpen(false)

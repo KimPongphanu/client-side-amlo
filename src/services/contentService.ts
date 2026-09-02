@@ -55,7 +55,8 @@ export const contentService = {
    * Fetch all comments from database
    */
   getComments: async (all = false): Promise<CommentItem[]> => {
-    const url = all ? '/comments?all=true' : '/comments'
+    // 🌟 all = เฉพาะ Admin/Supervisor — backend ตรวจสิทธิ์ที่ /comments/all
+    const url = all ? '/comments/all' : '/comments'
     // 🌟 ปรับใส่ Generic Type ป้องกัน Error แบบเดียวกัน
     const res = await api<{ data?: CommentItem[] }>(url, { method: 'GET' })
     return res?.data || []
@@ -145,7 +146,8 @@ export const contentService = {
    * Fetch banners (public: only isShow=true, admin: use ?all=true)
    */
   getBanners: async (all = false): Promise<BannerImage[]> => {
-    const url = all ? '/banners?all=true' : '/banners'
+    // 🌟 all = เฉพาะ Admin/Supervisor — backend ตรวจสิทธิ์ที่ /banners/all
+    const url = all ? '/banners/all' : '/banners'
     const res = await api<{ success: boolean; data: BannerImage[] }>(url, {
       method: 'GET',
     })
