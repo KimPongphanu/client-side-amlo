@@ -486,10 +486,11 @@ const DepartmentDetailPage = () => {
             <div
               className='prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg ql-rendered'
               dangerouslySetInnerHTML={{
-                __html:
-                  isEn && department.content_en
+                __html: DOMPurify.sanitize(
+                  (isEn && department.content_en
                     ? department.content_en
-                    : DOMPurify.sanitize(department.content || ''),
+                    : department.content) || '',
+                ),
               }}
             />
           ) : (

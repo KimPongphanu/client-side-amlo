@@ -1,5 +1,5 @@
 import type { ApiResponseBase, LoginResponse } from '../type'
-import { api } from '../utils/api'
+import { api, clearCsrfToken, storeCsrfToken } from '../utils/api'
 
 // กำหนด Interface สำหรับ Response ของ getUsers ให้ตรงกับหลังบ้าน
 export interface UserItem {
@@ -46,20 +46,28 @@ export const authService = {
    * Returns login response which may include requires2FA flag
    */
   login: async (body: Record<string, unknown>): Promise<LoginResponse> => {
-    return await api<LoginResponse>('/auth/login', {
+    const data = await api<LoginResponse>('/auth/login', {
       method: 'POST',
       body,
     })
+    // 🌟 เก็บ CSRF token ไว้แนบ header ใน mutation ถัดไป (fallback cross-origin)
+    storeCsrfToken(data.csrfToken)
+    return data
   },
 
   /**
    * Terminate backend session and cookies
    */
   logout: async (): Promise<void> => {
-    await api('/auth/logout', { method: 'POST' }).catch((err: unknown) => {
+    try {
+      await api('/auth/logout', { method: 'POST' })
+    } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error'
       console.warn('[Logout Service] Backend session clear skipped:', msg)
-    })
+    } finally {
+      // 🌟 เคลียร์ CSRF token ทิ้งเสมอ — ไม่ว่า logout ฝั่ง server จะสำเร็จหรือไม่
+      clearCsrfToken()
+    }
   },
 
   /**
@@ -72,6 +80,7 @@ export const authService = {
   clearLocalSession: (): void => {
     sessionStorage.removeItem('activeDashboardMenu')
     // ไม่ต้องลบ token จาก sessionStorage แล้ว เพราะใช้ HTTP-Only Cookie
+    clearCsrfToken()
   },
 
   /**

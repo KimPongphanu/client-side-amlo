@@ -1,5 +1,5 @@
 // src/services/twoFactorService.ts
-import { api } from '../utils/api'
+import { api, storeCsrfToken } from '../utils/api'
 
 export interface TwoFactorSetupResponse {
   success: boolean
@@ -101,14 +101,24 @@ export const twoFactorService = {
 
   verify2FALogin: async (
     otpToken: string,
-  ): Promise<{ success: boolean; message: string; user?: unknown }> => {
-    return await api<{ success: boolean; message: string; user?: unknown }>(
-      '/2fa/verify-login',
-      {
-        method: 'POST',
-        body: { otpToken },
-      },
-    )
+  ): Promise<{
+    success: boolean
+    message: string
+    csrfToken?: string
+    user?: unknown
+  }> => {
+    const data = await api<{
+      success: boolean
+      message: string
+      csrfToken?: string
+      user?: unknown
+    }>('/2fa/verify-login', {
+      method: 'POST',
+      body: { otpToken },
+    })
+    // 🌟 backend rotate CSRF token ใหม่หลังยืนยัน 2FA — เก็บค่าใหม่ทันที
+    storeCsrfToken(data.csrfToken)
+    return data
   },
 
   useRecoveryKey: async (

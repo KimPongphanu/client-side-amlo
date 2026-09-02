@@ -10,6 +10,31 @@ interface FetchOptions extends Omit<RequestInit, 'body'> {
   body?: BodyInit | Record<string, unknown> | null
 }
 
+// 🌟 CSRF double-submit token — อ่านจาก cookie csrf_token ก่อน (same-origin เช่น Docker/Nginx)
+// ถ้าอ่านไม่ได้ (cross-origin เช่น Vercel + API คนละโดเมน) ใช้ค่าจาก sessionStorage ที่เก็บตอน login
+const CSRF_COOKIE = 'csrf_token'
+const CSRF_HEADER = 'X-CSRF-Token'
+
+const getCsrfToken = (): string => {
+  const match = document.cookie.match(
+    new RegExp(`(?:^|;\\s*)${CSRF_COOKIE}=([^;]*)`),
+  )
+  if (match) return decodeURIComponent(match[1])
+  return sessionStorage.getItem(CSRF_COOKIE) || ''
+}
+
+/** เก็บ csrfToken จาก response ของ login / verify-login (fallback สำหรับ cross-origin) */
+export const storeCsrfToken = (token: unknown): void => {
+  if (typeof token === 'string' && token.length > 0) {
+    sessionStorage.setItem(CSRF_COOKIE, token)
+  }
+}
+
+/** เคลียร์ csrf token ตอน logout / จบ session */
+export const clearCsrfToken = (): void => {
+  sessionStorage.removeItem(CSRF_COOKIE)
+}
+
 /**
  * ฟังก์ชันยิง API ส่วนกลาง รองรับระบบ Generic Type <T> ปลอดภัยจาก any 100%
  */
@@ -28,6 +53,12 @@ export const api = async <T = unknown>(
   // Automatically set Content-Type if the body is not FormData
   if (options.body && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json')
+  }
+
+  // 🌟 CSRF double-submit — แนบ header คู่กับ cookie ในทุก request ที่เปลี่ยนข้อมูล
+  const method: string = (options.method || 'GET').toUpperCase()
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    headers.set(CSRF_HEADER, getCsrfToken())
   }
 
   const config: RequestInit = {
