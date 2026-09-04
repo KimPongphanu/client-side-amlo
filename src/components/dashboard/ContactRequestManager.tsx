@@ -37,6 +37,9 @@ interface GroupedContacts {
 export default function ContactRequestManager() {
   const contacts = useDashboardStore((state) => state.contacts)
   const fetchAllContacts = useDashboardStore((state) => state.contacts.fetchAll)
+  const updateContactStatus = useDashboardStore(
+    (state) => state.contacts.updateStatus,
+  )
   useEffect(() => {
     fetchAllContacts()
   }, [fetchAllContacts])
@@ -92,35 +95,6 @@ export default function ContactRequestManager() {
       else next.add(id)
       return next
     })
-  }
-
-  const handleReplyToggle = async (
-    id: string,
-    currentStatus: string,
-  ): Promise<void> => {
-    const { swal } = await import('../../utils/swalConfig')
-    const newStatus =
-      currentStatus === 'ตอบกลับแล้ว' ? 'ยังไม่ตอบกลับ' : 'ตอบกลับแล้ว'
-    const confirm = await swal.fire({
-      title: `เปลี่ยนสถานะเป็น "${newStatus}"?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'ยืนยัน',
-      cancelButtonText: 'ยกเลิก',
-    })
-    if (!confirm.isConfirmed) return
-    try {
-      const { api } = await import('../../utils/api')
-      const res = await api<{ success: boolean }>(`/contact/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: newStatus }),
-      })
-      if (res?.success) {
-        await fetchAllContacts()
-      }
-    } catch {
-      /* silent */
-    }
   }
 
   const renderDetailView = (item: ContactRequest) => {
@@ -240,7 +214,7 @@ export default function ContactRequestManager() {
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  handleReplyToggle(item.id, item.status)
+                  updateContactStatus(item.id, item.status)
                 }}
                 className={`text-xs font-bold px-4 py-2 rounded-lg border transition-colors inline-flex items-center gap-1.5 ${
                   item.status === 'ตอบกลับแล้ว'

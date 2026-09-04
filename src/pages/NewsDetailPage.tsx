@@ -106,7 +106,11 @@ const NewsDetailPage = () => {
               <div
                 className='prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg ql-rendered'
                 dangerouslySetInnerHTML={{
-                  __html: isEn && newsData.content_en ? newsData.content_en : DOMPurify.sanitize(newsData.content || newsData.description || ''),
+                  __html: DOMPurify.sanitize(
+                    (isEn && newsData.content_en
+                      ? newsData.content_en
+                      : newsData.content || newsData.description) || '',
+                  ),
                 }}
               />
             </div>

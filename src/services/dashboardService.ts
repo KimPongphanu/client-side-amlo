@@ -38,7 +38,7 @@ export const dashboardService = {
     type: 'NEWS' | 'PR',
   ): Promise<ApiResponseBase<NewsItem[]>> => {
     return api<ApiResponseBase<NewsItem[]>>(
-      `/news?type=${type}&limit=50&all=true`,
+      `/news/all?type=${type}&limit=50`,
       {
         method: 'GET',
       },
@@ -121,7 +121,8 @@ export const dashboardService = {
   },
 
   getComments: async (): Promise<ApiResponseBase<CommentItem[]>> => {
-    return api<ApiResponseBase<CommentItem[]>>('/comments?all=true', {
+    // 🌟 /comments/all = Admin/Supervisor only (รวมคอมเมนต์ที่ถูกซ่อน)
+    return api<ApiResponseBase<CommentItem[]>>('/comments/all', {
       method: 'GET',
     })
   },

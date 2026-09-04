@@ -275,7 +275,6 @@ const DashboardPage = () => {
 
   const handleLogout = async () => {
     sessionStorage.removeItem('activeDashboardMenu')
-    sessionStorage.removeItem('token')
     await logoutUser()
     window.location.href = '/login'
   }

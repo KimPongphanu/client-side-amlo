@@ -101,25 +101,45 @@ export default function TwoFactorSetup() {
 
   const handlePrintKeys = () => {
     const printWindow = window.open('', '_blank')
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head><title>AMLO Recovery Keys</title></head>
-          <body>
-            <h1>AMLO Recovery Keys — กุญแจสำรองสำหรับบัญชีของคุณ</h1>
-            <p>เก็บรหัสเหล่านี้ในที่ปลอดภัย แต่ละรหัสใช้ได้ครั้งเดียวเท่านั้น</p>
-            <ul>
-              ${recoveryKeys.map((key) => `<li><strong>${key}</strong></li>`).join('')}
-            </ul>
-            <p>สร้างเมื่อ: ${new Date().toLocaleString('th-TH')}</p>
-            <hr>
-            <p><small>สำนักงานป้องกันและปราบปรามการฟอกเงิน (ปปง.)</small></p>
-          </body>
-        </html>
-      `)
-      printWindow.print()
-      printWindow.close()
+    if (!printWindow) return
+
+    // 🌟 สร้าง DOM ด้วย createElement + textContent — ไม่มีทาง inject HTML ผ่านค่า key
+    const doc = printWindow.document
+
+    const title = doc.createElement('title')
+    title.textContent = 'AMLO Recovery Keys'
+    doc.head.appendChild(title)
+
+    const heading = doc.createElement('h1')
+    heading.textContent = 'AMLO Recovery Keys — กุญแจสำรองสำหรับบัญชีของคุณ'
+    doc.body.appendChild(heading)
+
+    const note = doc.createElement('p')
+    note.textContent = 'เก็บรหัสเหล่านี้ในที่ปลอดภัย แต่ละรหัสใช้ได้ครั้งเดียวเท่านั้น'
+    doc.body.appendChild(note)
+
+    const list = doc.createElement('ul')
+    for (const key of recoveryKeys) {
+      const item = doc.createElement('li')
+      const strong = doc.createElement('strong')
+      strong.textContent = key
+      item.appendChild(strong)
+      list.appendChild(item)
     }
+    doc.body.appendChild(list)
+
+    const createdAt = doc.createElement('p')
+    createdAt.textContent = `สร้างเมื่อ: ${new Date().toLocaleString('th-TH')}`
+    doc.body.appendChild(createdAt)
+
+    doc.body.appendChild(doc.createElement('hr'))
+
+    const org = doc.createElement('small')
+    org.textContent = 'สำนักงานป้องกันและปราบปรามการฟอกเงิน (ปปง.)'
+    doc.body.appendChild(org)
+
+    printWindow.print()
+    printWindow.close()
   }
 
   if (user?.role !== 'SUPERVISOR') {

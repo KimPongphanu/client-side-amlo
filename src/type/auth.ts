@@ -51,6 +51,8 @@ export interface LoginResponse extends ApiResponseBase {
   user?: UserProfile
   requires2FA?: boolean
   twoFactorMethod?: TwoFactorMethod
+  /** CSRF double-submit token — แนบกลับเป็น header X-CSRF-Token ใน mutation ถัดไป */
+  csrfToken?: string
 }
 
 /**

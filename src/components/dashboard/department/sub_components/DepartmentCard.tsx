@@ -1,5 +1,6 @@
 // src/components/dashboard/department/sub_components/DepartmentCard.tsx
 import { Edit2, FileText, Trash2 } from 'lucide-react'
+import DOMPurify from 'dompurify'
 import React from 'react'
 import { API_URL } from '../../../../config/constants'
 import type { DepartmentItem } from '../../../../type'
@@ -40,9 +41,10 @@ const DepartmentCard: React.FC<DepartmentCardProps> = React.memo(
               <div
                 className='text-xs leading-relaxed line-clamp-3 text-slate-500 font-medium whitespace-pre-wrap html-container'
                 dangerouslySetInnerHTML={{
-                  __html:
+                  __html: DOMPurify.sanitize(
                     department.content ||
-                    '<span class="italic text-slate-300">ไม่ได้ระบุคำอธิบาย</span>',
+                      '<span class="italic text-slate-300">ไม่ได้ระบุคำอธิบาย</span>',
+                  ),
                 }}
               />
             </div>
