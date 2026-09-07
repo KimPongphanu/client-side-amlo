@@ -29,6 +29,7 @@ const HomePage = () => {
       {sliderImages.length > 0 && (
         <div className='pt-16 lg:pt-0 pb-10 bg-slate-50'>
           <Slider
+            containerClassName='h-[175px] md:h-[315px] lg:h-[calc(70vh-67px)] xl:h-[70vh]'
             slides={sliderImages.map((slide) => ({
               id: slide.id,
               image: slide.image_url.startsWith('http')
