@@ -219,7 +219,6 @@ export const useContentStore = create<ContentState>((set, get) => ({
           text: 'ขอบคุณที่ติดต่อเรา เจ้าหน้าที่จะติดต่อกลับโดยเร็วที่สุด',
         })
         resetForm()
-        await get().fetchContacts()
       } else {
         toast.fire({
           icon: 'error',
