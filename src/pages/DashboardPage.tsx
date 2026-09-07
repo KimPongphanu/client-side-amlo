@@ -119,8 +119,8 @@ const SideBar = ({
 }: SideBarProps) => {
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {}
-    categories.forEach((cat) => {
-      initial[cat.title] = true
+    categories.forEach((cat, index) => {
+      initial[cat.title] = index === 0 // only expand first category
     })
     return initial
   })
