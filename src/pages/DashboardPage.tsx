@@ -156,7 +156,7 @@ const SideBar = ({
 
               {/* Items */}
               <div
-                className={`overflow-hidden transition-all duration-200 ${isExpanded ? 'max-h-96 opacity-100 mt-0.5' : 'max-h-0 opacity-0'}`}
+                className={`overflow-hidden transition-all duration-200 ${isExpanded ? 'max-h-[800px] opacity-100 mt-0.5' : 'max-h-0 opacity-0'}`}
               >
                 <div className='flex flex-col gap-y-0.5 pl-2'>
                   {cat.items.map((item) => {
