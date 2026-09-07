@@ -7,7 +7,7 @@ import { useAuthStore } from './stores/useAuthStore'
 import { useSiteStore } from './stores/useSiteStore'
 import { initGA, logPageView } from './utils/analytics'
 
-const Home = lazy(() => import('./pages/homePage2'))
+const Home = lazy(() => import('./pages/homePage'))
 const MainLayout = lazy(() => import('./components/layout/MainLayout'))
 const AboutHistoryPage = lazy(() => import('./pages/AboutHistoryPage'))
 const NewsDetailPage = lazy(() => import('./pages/NewsDetailPage'))
