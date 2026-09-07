@@ -131,7 +131,7 @@ const SideBar = ({
 
   return (
     <aside
-      className={`bg-white border-r border-slate-200 w-64 min-h-[calc(100vh-5rem)] absolute md:static top-0 left-0 z-10 transition-transform duration-300 ease-in-out ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+      className={`bg-white border-r border-slate-200 w-64 fixed md:sticky top-20 h-[calc(100vh-5rem)] left-0 z-30 md:z-auto transition-transform duration-300 ease-in-out overflow-y-auto shrink-0 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
     >
       <nav className='p-3 flex flex-col gap-y-3'>
         {categories.map((cat) => {

@@ -17,7 +17,7 @@ import Slider from '../components/homepage/Slider'
 import SplashPopup from '../components/homepage/SplashPopup'
 import { contentService } from '../services/contentService'
 import { useContentStore } from '../stores/useContentStore'
-import type { BannerImage } from '../type'
+import type { SliderImage } from '../type'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
@@ -26,14 +26,14 @@ const HomePage2 = () => {
   const { prList, newsList, commentList, isLoading, fetchPublicData } =
     useContentStore()
 
-  const [bannerImages, setBannerImages] = useState<BannerImage[]>([])
+  const [sliderImages, setSliderImages] = useState<SliderImage[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [showShareMenu, setShowShareMenu] = useState(false)
 
   useEffect(() => {
     fetchPublicData()
-    contentService.getBanners().then((data) => setBannerImages(data))
+    contentService.getSlider().then((data) => setSliderImages(data))
   }, [fetchPublicData])
 
   // Scroll to top button visibility
@@ -171,16 +171,15 @@ const HomePage2 = () => {
 
       {/* Main Banner Slider (มาตรฐาน 4.1) */}
       <div id='main-content'>
-        {bannerImages.length > 0 && (
+        {sliderImages.length > 0 && (
           <div className='pb-6 bg-slate-50'>
             <Slider
               containerClassName='h-[125px] md:h-[225px] lg:h-[calc(50vh-48px)] xl:h-[50vh]'
-              slides={bannerImages.map((banner) => ({
-                id: banner.id,
-                image: banner.image_url.startsWith('http')
-                  ? banner.image_url
-                  : `${API_URL}${banner.image_url}`,
-                link: banner.link_url || undefined,
+              slides={sliderImages.map((slide) => ({
+                id: slide.id,
+                image: slide.image_url.startsWith('http')
+                  ? slide.image_url
+                  : `${API_URL}${slide.image_url}`,
               }))}
             />
           </div>
