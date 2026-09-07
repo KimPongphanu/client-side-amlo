@@ -26,6 +26,22 @@ export default function Nav() {
   const { isLoggedIn, logoutUser } = useAuthStore()
   const departmentList = useContentStore((state) => state.departmentList)
 
+  // ── Check if about_history has content (disable link if empty) ──
+  const [historyDisabled, setHistoryDisabled] = useState(true)
+  const historyCheckedRef = useRef(false)
+
+  useEffect(() => {
+    if (historyCheckedRef.current) return
+    historyCheckedRef.current = true
+    import('../../services/contentService').then(({ contentService }) => {
+      contentService.getSiteSettings().then((settings) => {
+        if (settings.about_history && settings.about_history.trim()) {
+          setHistoryDisabled(false)
+        }
+      }).catch(() => {})
+    })
+  }, [])
+
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
@@ -389,18 +405,12 @@ export default function Nav() {
                 <ul className='space-y-3 text-sm text-slate-700 font-medium'>
                   <li>
                     <Link
-                      to='#'
-                      className='hover:text-blue-600 transition-colors'
+                      to={historyDisabled ? '#' : '/about/history'}
+                      className={`hover:text-blue-600 transition-colors ${historyDisabled ? 'pointer-events-none opacity-40 cursor-not-allowed' : ''}`}
+                      aria-disabled={historyDisabled}
+                      onClick={historyDisabled ? (e) => e.preventDefault() : undefined}
                     >
                       {t('nav.aboutHistoryDetail', 'ประวัติ')}
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to='#'
-                      className='hover:text-blue-600 transition-colors'
-                    >
-                      {t('nav.aboutDuty', 'หน้าที่และอำนาจ')}
                     </Link>
                   </li>
                 </ul>
@@ -484,20 +494,12 @@ export default function Nav() {
                     <ul className='space-y-3 text-sm font-medium text-slate-600'>
                       <li>
                         <Link
-                          to='#'
-                          onClick={handleCloseMobileMenu}
-                          className='hover:text-sky-500 transition-colors'
+                          to={historyDisabled ? '#' : '/about/history'}
+                          onClick={historyDisabled ? (e) => e.preventDefault() : handleCloseMobileMenu}
+                          className={`hover:text-sky-500 transition-colors ${historyDisabled ? 'pointer-events-none opacity-40 cursor-not-allowed' : ''}`}
+                          aria-disabled={historyDisabled}
                         >
                           {t('nav.aboutHistoryDetail', 'ประวัติ')}
-                        </Link>
-                      </li>
-                      <li>
-                        <Link
-                          to='#'
-                          onClick={handleCloseMobileMenu}
-                          className='hover:text-sky-500 transition-colors'
-                        >
-                          {t('nav.aboutDuty', 'หน้าที่และอำนาจ')}
                         </Link>
                       </li>
                     </ul>

@@ -7,9 +7,9 @@ import { useAuthStore } from './stores/useAuthStore'
 import { useSiteStore } from './stores/useSiteStore'
 import { initGA, logPageView } from './utils/analytics'
 
-const Home = lazy(() => import('./pages/homePage'))
-const HomeV2 = lazy(() => import('./pages/homePage2'))
+const Home = lazy(() => import('./pages/homePage2'))
 const MainLayout = lazy(() => import('./components/layout/MainLayout'))
+const AboutHistoryPage = lazy(() => import('./pages/AboutHistoryPage'))
 const NewsDetailPage = lazy(() => import('./pages/NewsDetailPage'))
 const DepartmentDetailPage = lazy(() => import('./pages/DepartDetailPage'))
 const Advertise = lazy(() => import('./pages/Advertise'))
@@ -103,7 +103,7 @@ function App() {
         <Routes>
           <Route element={<MainLayout />}>
             <Route path='/' element={<Home />} />
-            <Route path='/v2' element={<HomeV2 />} />
+            <Route path='/about/history' element={<AboutHistoryPage />} />
             <Route path='/news' element={<News />} />
             <Route path='/news/:id' element={<NewsDetailPage />} />
             <Route path='/department/:id' element={<DepartmentDetailPage />} />

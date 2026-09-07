@@ -15,6 +15,7 @@ import ProfileDashboard from '../components/dashboard/ProfileDashboard'
 import ReviewManager from '../components/dashboard/ReviewManager'
 import SplashPopupManager from '../components/dashboard/SplashPopupManager'
 import UserManagerDashboard from '../components/dashboard/userManager/UserManagerDashboard'
+import AboutHistoryManager from '../components/dashboard/AboutHistoryManager'
 import { useAuthStore } from '../stores/useAuthStore'
 import SupervisorRequests from './SupervisorRequests'
 
@@ -22,7 +23,6 @@ type MenuId =
   | 'overview'
   | 'profile'
   | 'data-clean'
-  | 'settings'
   | 'reviews'
   | 'contacts'
   | 'advertises'
@@ -32,6 +32,7 @@ type MenuId =
   | 'slider'
   | 'footer-settings'
   | 'splash-popup'
+  | 'about-history'
   | 'requests'
   | 'audit-logs'
   | 'backup'
@@ -82,6 +83,7 @@ const allCategories: MenuCategory[] = [
       },
       { id: 'reviews', label: 'รีวิว/ความคิดเห็น', icon: 'fa-star' },
       { id: 'contacts', label: 'การติดต่อ', icon: 'fa-envelope' },
+      { id: 'about-history', label: 'ประวัติ', icon: 'fa-history' },
     ],
   },
   {
@@ -93,7 +95,6 @@ const allCategories: MenuCategory[] = [
       { id: 'requests', label: 'คำร้อง', icon: 'fa-file-alt' },
       { id: 'audit-logs', label: 'Audit Logs', icon: 'fa-history' },
       { id: 'backup', label: 'Backup', icon: 'fa-database' },
-      { id: 'settings', label: 'ตั้งค่าระบบ', icon: 'fa-cog' },
     ],
   },
 ]
@@ -202,7 +203,16 @@ const DashboardPage = () => {
 
   const [activeMenu, setActiveMenu] = useState<MenuId>(() => {
     const savedMenu = sessionStorage.getItem('activeDashboardMenu')
-    return (savedMenu as MenuId) || 'overview'
+    // Guard against stale menu IDs (e.g. after settings was removed)
+    const validMenuIds: MenuId[] = [
+      'overview', 'profile', 'data-clean', 'reviews', 'contacts',
+      'advertises', 'user-manage', 'news', 'departments', 'slider',
+      'footer-settings', 'splash-popup', 'about-history', 'requests', 'audit-logs', 'backup',
+    ]
+    if (savedMenu && validMenuIds.includes(savedMenu as MenuId)) {
+      return savedMenu as MenuId
+    }
+    return 'overview'
   })
 
   const user = useAuthStore((state) => state.user)
@@ -243,7 +253,6 @@ const DashboardPage = () => {
     (menuId: MenuId): boolean => {
       if (isSupervisor()) return true
       const supervisorOnlyMenuIds: MenuId[] = [
-        'settings',
         'user-manage',
         'requests',
         'audit-logs',
@@ -351,18 +360,6 @@ const DashboardPage = () => {
         return <ProfileDashboard />
       case 'data-clean':
         return <DataCleansingComponent />
-      case 'settings':
-        if (!canAccessSupervisorFeatures())
-          return (
-            <div className='p-6 text-center text-red-600'>
-              ไม่มีสิทธิ์เข้าถึง
-            </div>
-          )
-        return (
-          <div className='bg-slate-50 border border-slate-200 p-6'>
-            <h2 className='text-xl font-bold mb-4'>ตั้งค่าระบบ (Settings)</h2>
-          </div>
-        )
       case 'user-manage':
         return user?.role === 'SUPERVISOR' ? (
           <UserManagerDashboard />
@@ -385,6 +382,8 @@ const DashboardPage = () => {
         return <FooterManagerDashboard />
       case 'splash-popup':
         return <SplashPopupManager />
+      case 'about-history':
+        return <AboutHistoryManager />
       case 'requests':
         return <SupervisorRequests />
       case 'audit-logs':
@@ -431,7 +430,7 @@ const DashboardPage = () => {
           categories={filteredCategories}
           pendingCount={pendingCount}
         />
-        <main className='flex-1 p-4 md:p-8 overflow-auto h-[calc(100vh-5rem)]'>
+        <main className='flex-1 p-4 md:p-8'>
           <div className='max-w-7xl mx-auto'>{renderMainContent()}</div>
         </main>
         {isMobileOpen && (

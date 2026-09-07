@@ -6,6 +6,7 @@ export default function SplashPopup() {
   const [popup, setPopup] = useState<{
     image_url: string
     title: string
+    bg_color?: string
   } | null>(null)
   const [dismissed, setDismissed] = useState(false)
 
@@ -26,7 +27,7 @@ export default function SplashPopup() {
         if (!data || !data.image_url) {
           setDismissed(true)
         } else {
-          setPopup(data)
+          setPopup(data as typeof popup)
         }
       })
       .catch(() => {
@@ -48,34 +49,37 @@ export default function SplashPopup() {
 
   return (
     <div className='fixed inset-0 z-[999999] flex items-center justify-center'>
-      {/* Backdrop: blur + dark overlay - no pointer events so it won't intercept clicks */}
-      <div className='absolute inset-0 bg-black/60 backdrop-blur-sm' />
+      {/* Backdrop: blur + dark overlay */}
+      <div className='absolute inset-0 bg-black/50 backdrop-blur-sm' />
 
-      {/* Content card - centered */}
-      <div className='relative z-10 flex flex-col items-center max-w-2xl w-full mx-6'>
-        {/* Image */}
-        <div className='w-full rounded-2xl overflow-hidden shadow-2xl'>
-          <img
-            src={imgSrc}
-            alt={popup.title || 'Splash'}
-            className='w-full h-auto object-cover'
-          />
+      {/* Content card - smoke bg */}
+      <div className='relative z-10 flex flex-col items-center max-w-lg w-full mx-6'>
+        <div className='w-full bg-slate-100 rounded-3xl shadow-2xl overflow-hidden'>
+          {/* Image */}
+          <div className='w-full'>
+            <img
+              src={imgSrc}
+              alt={popup.title || 'Splash'}
+              className='w-full h-auto object-cover'
+            />
+          </div>
+
+          {/* Title + Button */}
+          <div className='px-6 py-6 flex flex-col items-center gap-5'>
+            {popup.title && (
+              <h2 className='text-xl md:text-2xl font-bold text-slate-800 text-center'>
+                {popup.title}
+              </h2>
+            )}
+
+            <button
+              onClick={handleEnter}
+              className='px-10 py-3 rounded-xl bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 active:scale-[0.97] transition-all shadow-md focus:outline-none focus:ring-4 focus:ring-blue-300'
+            >
+              เข้าสู่เว็บไซต์
+            </button>
+          </div>
         </div>
-
-        {/* Title */}
-        {popup.title && (
-          <h2 className='text-white text-xl md:text-2xl font-bold mt-6 text-center'>
-            {popup.title}
-          </h2>
-        )}
-
-        {/* Enter button */}
-        <button
-          onClick={handleEnter}
-          className='mt-8 px-10 py-3.5 rounded-xl bg-white text-slate-900 font-bold text-lg hover:bg-slate-100 active:scale-[0.97] transition-all shadow-xl'
-        >
-          เข้าสู่เว็บไซต์
-        </button>
       </div>
     </div>
   )
