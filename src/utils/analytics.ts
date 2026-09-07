@@ -15,9 +15,9 @@ export const initGA = (): void => {
 }
 
 export const logPageView = (path: string): void => {
-  if (import.meta.env.PROD) {
+  if (import.meta.env.PROD && typeof ReactGA.gtag === 'function') {
     ReactGA.send({ hitType: 'pageview', page: path })
   } else {
-    // Development fallback
+    // Development fallback หรือ GA ยังไม่ถูก initialize
   }
 }
