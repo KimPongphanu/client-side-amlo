@@ -221,9 +221,6 @@ const DashboardPage = () => {
   const initIdleTimeout = useAuthStore((state) => state.initIdleTimeout)
   const startHeartbeat = useAuthStore((state) => state.startHeartbeat)
   const isSupervisor = useAuthStore((state) => state.isSupervisor)
-  const canAccessSupervisorFeatures = useAuthStore(
-    (state) => state.canAccessSupervisorFeatures,
-  )
 
   const [isVerifyingAuth, setIsVerifyingAuth] = useState<boolean>(true)
   const [pendingCount, setPendingCount] = useState(0)
