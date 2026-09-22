@@ -1,4 +1,4 @@
-import DOMPurify from 'dompurify'
+import { sanitizeHtml } from '../utils/sanitizeHtml'
 import { useEffect } from 'react' // ✨ เพิ่มการนำเข้า useEffect
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -102,7 +102,7 @@ const AdvertiseDetail = () => {
               <div
                 className='prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg ql-rendered'
                 dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(
+                  __html: sanitizeHtml(
                     (isEn && advertiseData.content_en ? advertiseData.content_en : advertiseData.content) || 
                     (isEn && advertiseData.description_en ? advertiseData.description_en : advertiseData.description)
                   ),

@@ -1,4 +1,4 @@
-import DOMPurify from 'dompurify'
+import { sanitizeHtml } from '../utils/sanitizeHtml'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
@@ -486,7 +486,7 @@ const DepartmentDetailPage = () => {
             <div
               className='prose prose-lg max-w-none text-slate-600 leading-relaxed text-base md:text-lg ql-rendered'
               dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(
+                __html: sanitizeHtml(
                   (isEn && department.content_en
                     ? department.content_en
                     : department.content) || '',

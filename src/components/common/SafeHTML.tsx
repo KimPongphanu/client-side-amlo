@@ -1,5 +1,5 @@
 // src/components/common/SafeHTML.tsx
-import DOMPurify from 'dompurify'
+import { sanitizeHtml } from '../../utils/sanitizeHtml'
 
 export const SafeHTML = ({
   content,
@@ -10,6 +10,6 @@ export const SafeHTML = ({
 }) => (
   <div
     className={className}
-    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
+    dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
   />
 )

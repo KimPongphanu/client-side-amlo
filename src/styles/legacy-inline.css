@@ -1,0 +1,170 @@
+/* ============================================================
+ * legacy-inline.css
+ * ย้ายจาก <style> ใน JSX (เดิมถูก inject ตอน runtime = ต้องใช้ CSP style-src 'unsafe-inline')
+ * ย้ายมาเป็นไฟล์ CSS ที่ build ไปกับแอป เพื่อให้ใช้ CSP style-src 'self' ได้
+ * ⚠️ ไฟล์นี้เป็นสำเนาเนื้อหาเดิมทุกตัวอักษร — ถ้าจะแก้สไตล์ ให้แก้ที่ไฟล์นี้
+ * ============================================================ */
+
+/* ── จาก components/CommentForm.tsx ── */
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+/* ── จาก components/ContactForm.tsx ── */
+@keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+/* ── จาก components/dashboard/AboutHistoryManager.tsx ── */
+.ql-toolbar.ql-snow { border: none !important; border-bottom: 1px solid #e2e8f0 !important; padding: 12px 16px !important; background-color: #f8fafc; }
+        .ql-container.ql-snow { border: none !important; font-size: 16px !important; font-family: inherit !important; }
+        .ql-editor { min-height: 400px; padding: 24px !important; color: #334155; }
+
+/* ── จาก components/dashboard/BackupDashboard.tsx ── */
+@keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+/* ── จาก components/dashboard/BannerManagerDashboard.tsx ── */
+@keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+/* ── จาก components/dashboard/ContactRequestManager.tsx ── */
+@keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+/* ── จาก components/dashboard/department/DepartmentManagerDashboard.tsx ── */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  .animate-fade-in { animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+  @keyframes modalFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+/* ── จาก components/dashboard/NewsManagerDashboard.tsx ── */
+.custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .animate-fade-in { animation: modalFadeIn 0.2s ease-out; }
+        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+/* ── จาก components/dashboard/OverviewDashboard.tsx ── */
+@keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+/* ── จาก components/dashboard/PRManagerDashboard.tsx ── */
+.custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .animate-fade-in { animation: modalFadeIn 0.2s ease-out; }
+        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+/* ── จาก components/dashboard/ProfileDashboard.tsx ── */
+@keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+/* ── จาก components/dashboard/ReviewManager.tsx ── */
+@keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+/* ── จาก components/dashboard/SliderManagerDashboard.tsx ── */
+@keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+/* ── จาก components/dashboard/SplashPopupManager.tsx ── */
+@keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+/* ── จาก components/dashboard/userManager/UserManagerDashboard.tsx ── */
+@keyframes scaleIn {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+
+/* ── จาก components/homepage/Slider.tsx ── */
+@keyframes slide-progress {
+          0% { width: 0%; }
+          100% { width: 100%; }
+        }
+
+/* ── จาก pages/AboutHistoryPage.tsx ── */
+.ql-rendered h1 { font-size: 2em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
+        .ql-rendered h2 { font-size: 1.75em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
+        .ql-rendered h3 { font-size: 1.5em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
+        .ql-rendered h4 { font-size: 1.2em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
+        .ql-rendered img { max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; border: 1px solid #e2e8f0; }
+        .ql-rendered ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 8px; }
+        .ql-rendered ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 8px; }
+        .ql-rendered li { margin-bottom: 4px; }
+        .ql-rendered blockquote { border-left: 4px solid #3b82f6; padding-left: 1rem; color: #64748b; margin: 1rem 0; font-style: italic; }
+        .ql-rendered a { color: #2563eb; text-decoration: underline; }
+
+/* ── จาก pages/BookGuidePage.tsx ── */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #6b7280; }
+
+        .ql-toolbar.ql-snow { border: none !important; border-bottom: 1px solid #e2e8f0 !important; padding: 12px 16px !important; background-color: #f8fafc; }
+        .ql-container.ql-snow { border: none !important; font-size: 16px !important; font-family: inherit !important; }
+        .ql-editor { min-height: 350px; padding: 24px !important; color: #334155; }
+        
+        /* สไตล์สำหรับพรีวิว */
+        .ql-editor h1 { font-size: 2em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
+        .ql-editor h2 { font-size: 1.75em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
+        .ql-editor h3 { font-size: 1.5em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
+        .ql-editor h4 { font-size: 1.2em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
+        
+        /* ควบคุมรูปภาพที่แทรกเข้ามาให้อยู่ในกรอบและสวยงาม */
+        .ql-editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; border: 1px solid #e2e8f0; }
+        .html-preview-content img { max-width: 100%; height: auto; border-radius: 4px; margin: 8px 0; }
+        .html-preview-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 8px; }
+        .html-preview-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 8px; }
+        .html-preview-content li { margin-bottom: 4px; }
+
+/* ── จาก pages/NotFoundPage.tsx ── */
+@keyframes notfound-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }

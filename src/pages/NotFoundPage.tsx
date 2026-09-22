@@ -17,12 +17,6 @@ export default function NotFoundPage() {
             'radial-gradient(600px 300px at 50% 0%, #eff6ff, transparent 70%)',
         }}
       />
-      <style>{`
-        @keyframes notfound-float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-      `}</style>
 
       <div className='relative flex flex-col items-center max-w-md'>
         <div className='w-full max-w-[340px]'>

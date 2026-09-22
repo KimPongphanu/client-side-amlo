@@ -571,12 +571,7 @@ const UserProfileManagerDashboard: React.FC = () => {
         </div>
       )}
 
-      <style>{`
-        @keyframes scaleIn {
-          from { opacity: 0; transform: scale(0.9); }
-          to { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
+
 
       <CreateAdminModal
         isOpen={isCreateAdminModalOpen}

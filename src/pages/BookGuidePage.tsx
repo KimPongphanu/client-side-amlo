@@ -2,7 +2,7 @@ import { useState } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { Copy, Check, Trash2, ShieldCheck } from 'lucide-react';
-import DOMPurify from 'dompurify';
+import { sanitizeHtml } from '../utils/sanitizeHtml'
 
 export default function HtmlGuidePage() {
   const [content, setContent] = useState('');
@@ -130,7 +130,7 @@ export default function HtmlGuidePage() {
               </p>
               <div 
                 className="prose prose-sm max-w-none text-slate-600 line-clamp-2 html-preview-content"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} 
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }} 
               />
             </div>
           </div>
@@ -139,29 +139,7 @@ export default function HtmlGuidePage() {
       </div>
 
       {/* 🌟 อัปเดต CSS เพิ่มส่วนของรูปภาพและการแสดงผล */}
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
-        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #6b7280; }
 
-        .ql-toolbar.ql-snow { border: none !important; border-bottom: 1px solid #e2e8f0 !important; padding: 12px 16px !important; background-color: #f8fafc; }
-        .ql-container.ql-snow { border: none !important; font-size: 16px !important; font-family: inherit !important; }
-        .ql-editor { min-height: 350px; padding: 24px !important; color: #334155; }
-        
-        /* สไตล์สำหรับพรีวิว */
-        .ql-editor h1 { font-size: 2em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
-        .ql-editor h2 { font-size: 1.75em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
-        .ql-editor h3 { font-size: 1.5em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
-        .ql-editor h4 { font-size: 1.2em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
-        
-        /* ควบคุมรูปภาพที่แทรกเข้ามาให้อยู่ในกรอบและสวยงาม */
-        .ql-editor img { max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; border: 1px solid #e2e8f0; }
-        .html-preview-content img { max-width: 100%; height: auto; border-radius: 4px; margin: 8px 0; }
-        .html-preview-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 8px; }
-        .html-preview-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 8px; }
-        .html-preview-content li { margin-bottom: 4px; }
-      `}</style>
     </div>
   );
 }

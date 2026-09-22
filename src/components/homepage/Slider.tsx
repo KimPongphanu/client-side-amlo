@@ -120,12 +120,7 @@ export default function Slider({ slides, containerClassName }: SliderProps) {
         </div>
       </div>
 
-      <style>{`
-        @keyframes slide-progress {
-          0% { width: 0%; }
-          100% { width: 100%; }
-        }
-      `}</style>
+
     </div>
   )
 }

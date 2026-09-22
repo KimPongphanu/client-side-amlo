@@ -150,11 +150,7 @@ export default function AboutHistoryManager() {
         </button>
       </div>
 
-      <style>{`
-        .ql-toolbar.ql-snow { border: none !important; border-bottom: 1px solid #e2e8f0 !important; padding: 12px 16px !important; background-color: #f8fafc; }
-        .ql-container.ql-snow { border: none !important; font-size: 16px !important; font-family: inherit !important; }
-        .ql-editor { min-height: 400px; padding: 24px !important; color: #334155; }
-      `}</style>
+
     </div>
   )
 }

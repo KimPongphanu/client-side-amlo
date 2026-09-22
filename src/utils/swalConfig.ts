@@ -1,5 +1,8 @@
 // src/utils/swalConfig.ts
-import Swal from 'sweetalert2'
+// 🌟 ใช้ dist/sweetalert2.js (ไม่ inject <style> ตอน runtime) + import CSS เป็นไฟล์
+//    เพราะตัวหลัก (sweetalert2.all) inject style → ถูก CSP style-src 'self' บล็อก
+import Swal from 'sweetalert2/dist/sweetalert2.js'
+import 'sweetalert2/dist/sweetalert2.min.css'
 
 /**
  * Premium SweetAlert2 Modal — สำหรับ actions ที่ต้องตัดสินใจ

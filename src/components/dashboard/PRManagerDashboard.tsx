@@ -13,7 +13,7 @@ import { dashboardService } from '../../services/dashboardService'
 import { useDashboardStore } from '../../stores/useDashboardStore'
 import type { NewsItem } from '../../type'
 import { swal, toast } from '../../utils/swalConfig'
-import DOMPurify from 'dompurify'
+import { sanitizeHtml } from '../../utils/sanitizeHtml'
 
 type StatusFilter = 'all' | 'shown' | 'hidden'
 type SortOrder = 'newest' | 'oldest'
@@ -59,7 +59,7 @@ const MiniAdvertisePreview = ({ data }: { data: NewsItem | null }) => {
         <div
           className='text-slate-600 text-sm leading-relaxed ql-rendered'
           dangerouslySetInnerHTML={{
-            __html: DOMPurify.sanitize(data.content || data.description || 'พิมพ์เนื้อหาประกาศ...'),
+            __html: sanitizeHtml(data.content || data.description || 'พิมพ์เนื้อหาประกาศ...'),
           }}
         />
       </div>
@@ -934,18 +934,7 @@ export default function PRManagerDashboard() {
         </div>
       )}
 
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .animate-fade-in { animation: modalFadeIn 0.2s ease-out; }
-        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes scaleIn {
-          from { opacity: 0; transform: scale(0.9); }
-          to { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
+
     </div>
   )
 }
