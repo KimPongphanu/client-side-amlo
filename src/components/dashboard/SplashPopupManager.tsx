@@ -17,7 +17,9 @@ import {
 } from 'react-icons/fa'
 import { API_URL } from '../../config/constants'
 import { contentService } from '../../services/contentService'
+import { CROP_OUTPUT_HEIGHT, CROP_OUTPUT_WIDTH } from '../../utils/imageCrop'
 import { swal, toast } from '../../utils/swalConfig'
+import ImageCropper from './ImageCropper'
 
 interface SplashPopupItem {
   id: number
@@ -41,6 +43,9 @@ export default function SplashPopupManager() {
   // Add form
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
+  const [source, setSource] = useState<File | null>(null)
+  const [showCropper, setShowCropper] = useState(false)
+  const [cropped, setCropped] = useState(false)
   const [title, setTitle] = useState('')
   const [adding, setAdding] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -88,13 +93,56 @@ export default function SplashPopupManager() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     if (!f || !f.type.startsWith('image/')) return
-    setFile(f)
-    setPreview(URL.createObjectURL(f))
+    setSource(f)
+    setFile(null)
+    setPreview(null)
+    setCropped(false)
+    setShowCropper(true)
+  }
+
+  const clearImageInput = () => {
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleCropApply = (croppedFile: File, previewUrl: string) => {
+    setFile(croppedFile)
+    setPreview(previewUrl)
+    setCropped(true)
+    setShowCropper(false)
+  }
+
+  const handleCropCancel = () => {
+    setSource(null)
+    setFile(null)
+    setPreview(null)
+    setCropped(false)
+    setShowCropper(false)
+    clearImageInput()
+  }
+
+  const handleUseOriginal = () => {
+    if (!source) return
+    setFile(source)
+    setPreview(URL.createObjectURL(source))
+    setCropped(false)
+    setShowCropper(false)
+  }
+
+  const handleRemoveImage = () => {
+    setSource(null)
+    setFile(null)
+    setPreview(null)
+    setCropped(false)
+    setShowCropper(false)
+    clearImageInput()
   }
 
   const resetForm = () => {
     setFile(null)
     setPreview(null)
+    setSource(null)
+    setShowCropper(false)
+    setCropped(false)
     setTitle('')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
@@ -401,7 +449,7 @@ export default function SplashPopupManager() {
           }}
         >
           <div
-            className='bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden'
+            className='bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[calc(100dvh-2rem)] overflow-y-auto'
             onClick={(e) => e.stopPropagation()}
           >
             <div className='flex items-center justify-between px-6 py-4 border-b border-gray-200'>
@@ -419,35 +467,67 @@ export default function SplashPopupManager() {
               </button>
             </div>
             <div className='px-6 py-5 space-y-4'>
-              {preview ? (
-                <div
-                  className='relative rounded-xl overflow-hidden border bg-gray-50 flex items-center justify-center'
-                  style={{ minHeight: 200 }}
-                >
-                  <img
-                    src={preview}
-                    alt='Preview'
-                    className='max-w-full max-h-[300px] object-contain'
-                  />
-                  <button
-                    onClick={() => {
-                      setFile(null)
-                      setPreview(null)
-                      if (fileInputRef.current) fileInputRef.current.value = ''
-                    }}
-                    className='absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600'
-                  >
-                    <FaTimes />
-                  </button>
-                </div>
+              {showCropper && source ? (
+                <ImageCropper
+                  file={source}
+                  onApply={handleCropApply}
+                  onUseOriginal={handleUseOriginal}
+                  onCancel={handleCropCancel}
+                />
               ) : (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className='w-full h-40 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-all'
-                >
-                  <FaUpload className='w-8 h-8' />
-                  <span className='text-sm font-medium'>เลือกรูปภาพ</span>
-                </button>
+                <>
+                  {preview ? (
+                    <div
+                      className='relative rounded-xl overflow-hidden border bg-gray-50 flex items-center justify-center'
+                      style={{ minHeight: 200 }}
+                    >
+                      <img
+                        src={preview}
+                        alt='ตัวอย่างรูป Popup'
+                        className='max-w-full max-h-[300px] object-contain'
+                      />
+                      <span
+                        className={`absolute top-2 left-2 px-2 py-1 rounded-full text-[10px] font-bold text-white ${
+                          cropped ? 'bg-blue-600' : 'bg-amber-500'
+                        }`}
+                      >
+                        {cropped ? 'ตัดเป็น 4:5 แล้ว' : 'ใช้รูปเต็ม (ไม่ตัด)'}
+                      </span>
+                      <button
+                        onClick={handleRemoveImage}
+                        aria-label='ลบรูปที่เลือก'
+                        className='absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600'
+                      >
+                        <FaTimes />
+                      </button>
+                      {source && (
+                        <button
+                          onClick={() => setShowCropper(true)}
+                          className='absolute bottom-2 right-2 px-3 py-1.5 rounded-lg bg-white/90 text-xs font-semibold text-blue-600 shadow hover:bg-white'
+                        >
+                          {cropped ? 'ตัดใหม่' : 'ตัดเป็น 4:5'}
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className='w-full h-40 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-all'
+                    >
+                      <FaUpload className='w-8 h-8' />
+                      <span className='text-sm font-medium'>เลือกรูปภาพ</span>
+                    </button>
+                  )}
+
+                  <div className='flex gap-2 rounded-lg bg-blue-50 px-3 py-2'>
+                    <FaLightbulb className='mt-0.5 shrink-0 text-blue-500' />
+                    <p className='text-xs leading-relaxed text-slate-600'>
+                      แนะนำอัตราส่วน 4:5 (เช่น {CROP_OUTPUT_WIDTH} ×{' '}
+                      {CROP_OUTPUT_HEIGHT} px) ระบบมีเครื่องมือตัดรูปให้ก่อนบันทึก
+                      เพื่อให้แสดงผลพอดีกับทุกขนาดหน้าจอ
+                    </p>
+                  </div>
+                </>
               )}
               <input
                 ref={fileInputRef}
@@ -459,9 +539,13 @@ export default function SplashPopupManager() {
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder='หัวข้อ (ถ้ามี)'
+                placeholder='หัวข้อสำหรับติดตามในระบบ'
                 className='w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300'
               />
+              <p className='text-xs leading-relaxed text-slate-500'>
+                หัวข้อนี้ใช้สำหรับค้นหาและติดตามในระบบเท่านั้น
+                ไม่แสดงให้ผู้เข้าชมเห็นบน Popup
+              </p>
             </div>
             <div className='px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3'>
               <button
@@ -571,9 +655,13 @@ export default function SplashPopupManager() {
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder='หัวข้อ'
+                placeholder='หัวข้อสำหรับติดตามในระบบ'
                 className='w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300'
               />
+              <p className='text-xs leading-relaxed text-slate-500'>
+                หัวข้อนี้ใช้สำหรับค้นหาและติดตามในระบบเท่านั้น
+                ไม่แสดงให้ผู้เข้าชมเห็นบน Popup
+              </p>
               {editTarget.isActive ? (
                 <div className='flex items-center gap-2 text-xs text-green-700 bg-green-50 px-3 py-2 rounded-lg'>
                   <FaCircle className='text-[8px] text-green-500' /> กำลังแสดง —
@@ -650,6 +738,19 @@ export default function SplashPopupManager() {
                   <p className='text-sm text-[#5f6368] leading-relaxed'>
                     คลิก "เพิ่ม Popup" เพื่ออัปโหลดรูปภาพและตั้งชื่อ — Popup
                     จะแสดงเมื่อผู้ใช้เข้าหน้าแรกวันละ 1 ครั้ง
+                  </p>
+                </div>
+              </div>
+              <div className='flex gap-3'>
+                <FaImage className='text-lg shrink-0 mt-0.5 text-amber-500' />
+                <div>
+                  <p className='text-sm font-medium text-[#202124]'>
+                    ขนาดรูปที่แนะนำ
+                  </p>
+                  <p className='text-sm text-[#5f6368] leading-relaxed'>
+                    ใช้อัตราส่วน 4:5 (เช่น {CROP_OUTPUT_WIDTH} ×{' '}
+                    {CROP_OUTPUT_HEIGHT} px) ระบบมีเครื่องมือตัดรูปให้ก่อนบันทึก
+                    เพื่อให้ Popup แสดงผลพอดีกับทุกขนาดหน้าจอและมีขนาดสม่ำเสมอกัน
                   </p>
                 </div>
               </div>

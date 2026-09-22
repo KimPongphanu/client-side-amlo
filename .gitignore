@@ -33,3 +33,9 @@ et --hard ORIG_HEAD
 # Dev env
 .env.development
 .env.production
+
+# Tests (local only — ไม่ commit ขึ้น repo)
+e2e/
+test-results/
+playwright-report/
+*.spec.ts

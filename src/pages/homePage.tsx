@@ -5,6 +5,7 @@ import CommentSlider from '../components/homepage/CommentSlider'
 import LoadingSkeleton from '../components/homepage/LoadingSkeleton'
 import NewsSection from '../components/homepage/NewsSection'
 import Slider from '../components/homepage/Slider'
+import SplashPopup from '../components/homepage/SplashPopup'
 import { contentService } from '../services/contentService'
 import { useContentStore } from '../stores/useContentStore'
 import type { SliderImage } from '../type'
@@ -25,6 +26,8 @@ const HomePage = () => {
 
   return (
     <div className='bg-slate-50 min-h-screen pt-0 w-full'>
+      <SplashPopup />
+
       {/* Main Slider */}
       {sliderImages.length > 0 && (
         <div className='pt-16 lg:pt-0 pb-10 bg-slate-50'>

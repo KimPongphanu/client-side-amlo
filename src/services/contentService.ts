@@ -206,6 +206,7 @@ export const contentService = {
   getActiveSplashPopup: async (): Promise<{
     image_url: string
     title: string
+    bg_color?: string | null
   } | null> => {
     const res = await api<{
       success: boolean
@@ -213,6 +214,7 @@ export const contentService = {
         id: number
         image_url: string
         title: string
+        bg_color?: string | null
         isActive: boolean
       } | null
     }>('/splash-popups/active', { method: 'GET' })
