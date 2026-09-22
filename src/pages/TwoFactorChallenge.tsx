@@ -97,7 +97,7 @@ const TwoFactorChallenge = () => {
         {/* Logo */}
         <div className='mb-8'>
           <img
-            src='/Logo.png'
+            src='/Logo.webp'
             alt='โลโก้ ปปง.'
             className='w-24 h-24 object-contain'
           />

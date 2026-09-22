@@ -103,7 +103,7 @@ const RecoveryLogin = () => {
       <div className='w-[420px] px-12 py-10 bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.08)] rounded-2xl'>
         <div className='flex flex-col items-center text-center mb-6'>
           <img
-            src='/Logo.png'
+            src='/Logo.webp'
             alt='โลโก้ ปปง.'
             className='w-20 h-20 object-contain mb-4'
           />

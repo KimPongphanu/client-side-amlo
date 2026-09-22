@@ -118,7 +118,7 @@ const LoginPage = () => {
         className={`absolute flex items-center justify-center pointer-events-none z-10 transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${isZoomedOut ? 'scale-100 opacity-15' : 'scale-[5] opacity-100'}`}
       >
         <img
-          src='/Logo.png'
+          src='/Logo.webp'
           alt={t('app.logoAlt')}
           className='w-[260px] h-[260px] object-contain'
         />
@@ -132,7 +132,7 @@ const LoginPage = () => {
       >
         <div className='flex flex-col items-center text-center mb-8'>
           <img
-            src='/Logo.png'
+            src='/Logo.webp'
             alt={t('app.logoAlt')}
             className='w-20 h-20 object-contain mb-4 mx-auto'
           />

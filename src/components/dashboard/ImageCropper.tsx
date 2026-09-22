@@ -2,8 +2,9 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { FaSpinner, FaUndo } from 'react-icons/fa'
 import {
   MIN_RECOMMENDED_CROP_WIDTH,
+  canEncodeWebp,
   clampTransform,
-  cropFileToJpeg,
+  cropFileToImage,
   frameSize,
   identityTransform,
   outputSizeFor,
@@ -41,6 +42,7 @@ export default function ImageCropper({
   const [rawTransform, setRawTransform] =
     useState<CropTransform>(identityTransform)
   const [busy, setBusy] = useState(false)
+  const [outputLabel, setOutputLabel] = useState<'WebP' | 'JPEG'>('WebP')
 
   const zoomId = useId()
   const boxRef = useRef<HTMLDivElement>(null)
@@ -79,6 +81,18 @@ export default function ImageCropper({
       URL.revokeObjectURL(url)
     }
   }, [file])
+
+  useEffect(() => {
+    let cancelled = false
+
+    canEncodeWebp().then((supported) => {
+      if (!cancelled) setOutputLabel(supported ? 'WebP' : 'JPEG')
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     const element = boxRef.current
@@ -259,7 +273,7 @@ export default function ImageCropper({
         frame,
         transform,
       })
-      const cropped = await cropFileToJpeg(file, rect, outputSizeFor(rect))
+      const cropped = await cropFileToImage(file, rect, outputSizeFor(rect))
       onApply(cropped, URL.createObjectURL(cropped))
     } catch (error) {
       toast.fire({
@@ -422,7 +436,7 @@ export default function ImageCropper({
           className={`text-xs ${isLowResolution ? 'font-medium text-amber-600' : 'text-gray-500'}`}
         >
           {output
-            ? `ไฟล์ที่ได้: ${output.width} × ${output.height} px (JPEG)${
+            ? `ไฟล์ที่ได้: ${output.width} × ${output.height} px (${outputLabel})${
                 isLowResolution
                   ? ' — ความละเอียดต่ำ แนะนำให้ซูมออกหรือใช้รูปที่ใหญ่ขึ้น'
                   : ''

@@ -46,7 +46,7 @@ const Footer = () => {
           <div className='flex flex-col gap-4'>
             <div className='flex items-center gap-3'>
               <img
-                src='/Logo.png'
+                src='/Logo.webp'
                 alt={t('app.logoAlt', 'ตราสัญลักษณ์สำนักงาน ปปง.')}
                 className='w-[80px] h-[80px] object-contain'
               />

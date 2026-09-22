@@ -111,7 +111,7 @@ export default function Nav() {
               aria-label={t('nav.backToHome', 'กลับหน้าหลัก')}
             >
               <img
-                src='/Logo.png'
+                src='/Logo.webp'
                 alt={t('app.logoAlt', 'โลโก้ ปปง.')}
                 className='w-auto h-full group-hover:scale-105 transition-transform duration-300'
               />

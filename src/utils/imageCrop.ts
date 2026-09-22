@@ -4,6 +4,7 @@ export const CROP_OUTPUT_WIDTH = 1200
 export const CROP_OUTPUT_HEIGHT =
   (CROP_OUTPUT_WIDTH * CROP_ASPECT_HEIGHT) / CROP_ASPECT_WIDTH
 export const CROP_JPEG_QUALITY = 0.92
+export const CROP_WEBP_QUALITY = 0.85
 export const MIN_RECOMMENDED_CROP_WIDTH = 800
 
 export interface Size {
@@ -128,15 +129,51 @@ export const outputSizeFor = (
   }
 }
 
-export const cropFileToJpeg = async (
+export type CropOutputType = 'image/webp' | 'image/jpeg'
+
+let webpCapability: Promise<boolean> | null = null
+
+/**
+ * ตรวจว่าเบราว์เซอร์ encode WebP ได้จริงไหม (Safari บางเวอร์ชัน encode ไม่ได้)
+ * ผลลัพธ์ถูก cache ไว้ต่อการโหลดหน้า 1 ครั้ง
+ */
+export const canEncodeWebp = (): Promise<boolean> => {
+  if (webpCapability) return webpCapability
+
+  webpCapability = (async () => {
+    try {
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob(resolve, 'image/webp', 0.8)
+      })
+      return blob?.type === 'image/webp'
+    } catch {
+      return false
+    }
+  })()
+
+  return webpCapability
+}
+
+/**
+ * ตัดรูปตาม rect แล้วคืนไฟล์ WebP (ถ้าเบราว์เซอร์ทำได้) ไม่เช่นนั้นถอยไปใช้ JPEG
+ */
+export const cropFileToImage = async (
   file: File,
   rect: CropRect,
   output: Size = {
     width: CROP_OUTPUT_WIDTH,
     height: CROP_OUTPUT_HEIGHT,
   },
-  quality = CROP_JPEG_QUALITY,
+  preferredType: CropOutputType = 'image/webp',
 ): Promise<File> => {
+  const useWebp =
+    preferredType === 'image/webp' && (await canEncodeWebp())
+  const type: CropOutputType = useWebp ? 'image/webp' : 'image/jpeg'
+  const quality = useWebp ? CROP_WEBP_QUALITY : CROP_JPEG_QUALITY
+
   const bitmap = await createImageBitmap(file, {
     imageOrientation: 'from-image',
   })
@@ -168,15 +205,17 @@ export const cropFileToJpeg = async (
     )
 
     const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(resolve, 'image/jpeg', quality)
+      canvas.toBlob(resolve, type, quality)
     })
 
     if (!blob) {
       throw new Error('สร้างไฟล์รูปที่ตัดแล้วไม่สำเร็จ')
     }
 
-    return new File([blob], `popup-4x5-${Date.now()}.jpg`, {
-      type: 'image/jpeg',
+    const extension = useWebp ? 'webp' : 'jpg'
+
+    return new File([blob], `popup-4x5-${Date.now()}.${extension}`, {
+      type,
     })
   } finally {
     bitmap.close()

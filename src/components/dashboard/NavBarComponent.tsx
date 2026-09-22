@@ -300,7 +300,7 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
         </button>
         <Link to='/'>
           <img
-            src='/Logo.png'
+            src='/Logo.webp'
             alt='AMLO Logo'
             className='h-12 w-auto object-contain'
           />

@@ -169,7 +169,7 @@ const ForcePasswordResetPage = () => {
       <div className='relative z-30 w-[460px] px-12 py-10 bg-white border border-slate-200 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.08),0_10px_10px_-5px_rgba(0,0,0,0.03)] rounded-2xl'>
         <div className='flex flex-col items-center text-center mb-6'>
           <img
-            src='/Logo.png'
+            src='/Logo.webp'
             alt='โลโก้ ปปง.'
             className='w-20 h-20 object-contain mb-4 mx-auto'
           />
