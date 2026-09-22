@@ -23,7 +23,7 @@ const DepartmentShowcase = () => {
   const departmentList = useContentStore((state) => state.departmentList)
   const departments = useMemo(() => departmentList || [], [departmentList])
 
-  const API_URL = import.meta.env.VITE_API_URL
+  const API_URL = import.meta.env.VITE_API_URL || ''
   const resolveImg = (url: string) =>
     url?.startsWith('/') ? `${API_URL}${url}` : url
 

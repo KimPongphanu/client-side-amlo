@@ -28,6 +28,10 @@
     "prActivities": "PR / Activities",
     "departmentStructure": "Departments"
   },
+  "notfound": {
+    "wrongLink": "The link you followed may be incorrect",
+    "backHome": "Back to home"
+  },
   "footer": {
     "contactInfo": "Contact Information",
     "address": "422 Phayathai Road, Wangmai, Pathumwan, Bangkok 10330",

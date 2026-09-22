@@ -9,13 +9,8 @@
     />
     <meta name="robots" content="index, follow" />
 
-    <!-- Google Fonts: Sarabun + Noto Sans Thai (มาตรฐานเว็บไซต์ภาครัฐ) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Fonts: Sarabun + Noto Sans Thai ถูก self-host ผ่าน @fontsource (bundled โดย Vite ที่ /assets)
+         ดู import ใน src/main.tsx — ปิดช่องโหว่ ZAP: Sub Resource Integrity Attribute Missing -->
 
     <!-- YouTube IFrame API — สำหรับเล่นวิดีโอในหน้า DepartDetailPage.tsx -->
     <!-- (gtag.js ของ GA4 จะถูก injected โดย react-ga4 อัตโนมัติใน PROD mode) -->

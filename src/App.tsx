@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
-import { Link, Route, Routes, useLocation } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import ScrollToTop from './pages/ScrollToTop'
 import ProtectedRoute from './routes/ProtectedRoute'
 import PublicRoute from './routes/PublicRoute'
@@ -27,6 +27,7 @@ const SupervisorRequests = lazy(() => import('./pages/SupervisorRequests'))
 const ForcePasswordResetPage = lazy(
   () => import('./pages/ForcePasswordResetPage'),
 )
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
 function App() {
   const location = useLocation()
@@ -159,19 +160,7 @@ function App() {
             }
           />
 
-          <Route
-            path='*'
-            element={
-              <div className='flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-black to-white-500 text-white'>
-                <h1 className='text-4xl font-bold'>404 - ไม่พบหน้านี้</h1>
-                <Link to='/' className='cursor-pointer mt-6'>
-                  <div className='bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors'>
-                    <h2>หน้าหลัก</h2>
-                  </div>
-                </Link>
-              </div>
-            }
-          />
+          <Route path='*' element={<NotFoundPage />} />
         </Routes>
       </Suspense>
     </>

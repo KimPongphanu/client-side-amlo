@@ -2,6 +2,17 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom' // นำเข้า BrowserRouter
 import App from './App.tsx'
+// 🌟 Self-hosted fonts (@fontsource) — แทน Google Fonts CDN เพื่อใช้ SRI-safe same-origin assets
+import '@fontsource/sarabun/300.css'
+import '@fontsource/sarabun/400.css'
+import '@fontsource/sarabun/500.css'
+import '@fontsource/sarabun/600.css'
+import '@fontsource/sarabun/700.css'
+import '@fontsource/noto-sans-thai/300.css'
+import '@fontsource/noto-sans-thai/400.css'
+import '@fontsource/noto-sans-thai/500.css'
+import '@fontsource/noto-sans-thai/600.css'
+import '@fontsource/noto-sans-thai/700.css'
 import './i18n/index' // 🌟 i18n initialization
 import './index.css'
 
