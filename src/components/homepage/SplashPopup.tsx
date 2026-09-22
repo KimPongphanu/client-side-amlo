@@ -1,13 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { API_URL } from '../../config/constants'
 import { contentService } from '../../services/contentService'
-import {
-  clearSplashSeen,
-  hasSeenSplashToday,
-  markSplashSeen,
-  parseSplashOverride,
-  type SplashOverride,
-} from '../../utils/splashPopup'
+import { hasSeenSplashToday, markSplashSeen } from '../../utils/splashPopup'
 
 const MIN_MEDIA_WIDTH = 200
 const MAX_CARD_WIDTH = 512
@@ -20,11 +14,8 @@ export default function SplashPopup() {
     title: string
     bg_color?: string | null
   } | null>(null)
-  const [override] = useState<SplashOverride | null>(() =>
-    parseSplashOverride(window.location.search, import.meta.env.DEV),
-  )
-  const [dismissed, setDismissed] = useState(
-    () => !override && hasSeenSplashToday(localStorage),
+  const [dismissed, setDismissed] = useState(() =>
+    hasSeenSplashToday(localStorage),
   )
   const [entered, setEntered] = useState(false)
   const [loadedImage, setLoadedImage] = useState<{
@@ -37,10 +28,6 @@ export default function SplashPopup() {
   const buttonRef = useRef<HTMLButtonElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
-
-  useEffect(() => {
-    if (override === 'reset') clearSplashSeen(localStorage)
-  }, [override])
 
   useEffect(() => {
     if (dismissed) return
@@ -87,9 +74,9 @@ export default function SplashPopup() {
   }, [isOpen])
 
   const handleDismiss = useCallback(() => {
-    if (override !== 'force') markSplashSeen(localStorage)
+    markSplashSeen(localStorage)
     setDismissed(true)
-  }, [override])
+  }, [])
 
   useEffect(() => {
     if (!isOpen) return
