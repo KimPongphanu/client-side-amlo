@@ -124,7 +124,9 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
 
   const [contacts, setContacts] = useState<ContactRequest[]>([])
   const [comments, setComments] = useState<CommentItem[]>([])
-  const [pendingRequests, setPendingRequests] = useState<unknown[]>([])
+  const [pendingRequests, setPendingRequests] = useState<
+    { id: number; createdAt: string }[]
+  >([])
   const [seen, setSeen] = useState<SeenData>(loadSeen)
 
   // ── Persist seen to localStorage ──
@@ -178,8 +180,18 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
         requestsRes &&
         'data' in (requestsRes as object) &&
         (requestsRes as { data?: unknown[] }).data
-      )
-        setPendingRequests((requestsRes as { data: unknown[] }).data)
+      ) {
+        const rows = (requestsRes as { data: unknown[] }).data
+        setPendingRequests(
+          rows.map((r) => {
+            const row = r as { id?: number; createdAt?: string }
+            return {
+              id: Number(row.id ?? 0),
+              createdAt: String(row.createdAt ?? ''),
+            }
+          }),
+        )
+      }
     } catch {
       /* silent */
     }
@@ -207,7 +219,7 @@ const NavBar: React.FC<NavBarProps> = ({ toggleMobileMenu, onLogout }) => {
   const todayRequests = useMemo(
     () =>
       pendingRequests.filter(
-        (r: any) => new Date(r.createdAt || 0).getTime() >= startOfToday,
+        (r) => new Date(r.createdAt || 0).getTime() >= startOfToday,
       ),
     [pendingRequests, startOfToday],
   )

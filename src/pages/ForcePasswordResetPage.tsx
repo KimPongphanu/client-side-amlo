@@ -1,122 +1,31 @@
 // src/pages/ForcePasswordResetPage.tsx
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import OtpInput from '../components/common/OtpInput'
 import { useAuthStore } from '../stores/useAuthStore'
 import { api } from '../utils/api'
 import { toast } from '../utils/swalConfig'
 
-const OTP_EXPIRE_SECONDS = 5 * 60 // 5 minutes
-
 const ForcePasswordResetPage = () => {
   const navigate = useNavigate()
-  const logoutUser = useAuthStore((state) => state.logoutUser)
   const user = useAuthStore((state) => state.user)
+  const verifyUser = useAuthStore((state) => state.verifyUser)
 
-  const [otp, setOtp] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [isSendingOtp, setIsSendingOtp] = useState(true)
   const [error, setError] = useState('')
-  const [otpTimer, setOtpTimer] = useState(OTP_EXPIRE_SECONDS)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Redirect if not logged in or no forcePasswordReset
+  // Redirect if not logged in
   useEffect(() => {
     if (!user) {
       navigate('/login', { replace: true })
-      return
     }
   }, [user, navigate])
-
-  // Send OTP on mount
-  useEffect(() => {
-    sendOtpOnMount()
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
-  }, [])
-
-  // OTP countdown timer
-  useEffect(() => {
-    if (otpTimer <= 0) {
-      if (timerRef.current) clearInterval(timerRef.current)
-      return
-    }
-    timerRef.current = setInterval(() => {
-      setOtpTimer((prev) => {
-        if (prev <= 1) {
-          if (timerRef.current) clearInterval(timerRef.current!)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
-  }, [otpTimer])
-
-  const sendOtpOnMount = async () => {
-    setIsSendingOtp(true)
-    setError('')
-    try {
-      const res = await api<{ success: boolean; expiresInMinutes: number }>(
-        '/auth/force-reset/send-otp',
-        { method: 'POST' },
-      )
-      if (res.success) {
-        setOtpTimer(res.expiresInMinutes * 60)
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'
-      setError(msg)
-    } finally {
-      setIsSendingOtp(false)
-    }
-  }
-
-  const handleResendOtp = async () => {
-    setOtp('')
-    setError('')
-    setOtpTimer(OTP_EXPIRE_SECONDS)
-    setIsSendingOtp(true)
-    try {
-      const res = await api<{ success: boolean; expiresInMinutes: number }>(
-        '/auth/force-reset/resend-otp',
-        { method: 'POST' },
-      )
-      if (res.success) {
-        setOtpTimer(res.expiresInMinutes * 60)
-        await toast.fire({
-          icon: 'success',
-          title: 'ส่ง OTP ใหม่แล้ว',
-          text: 'กรุณาตรวจสอบอีเมลของคุณ',
-        })
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'
-      setError(msg)
-    } finally {
-      setIsSendingOtp(false)
-    }
-  }
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60)
-    const s = seconds % 60
-    return `${m}:${s.toString().padStart(2, '0')}`
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
-    if (!otp.trim()) {
-      setError('กรุณากรอกรหัส OTP')
-      return
-    }
     if (!newPassword.trim()) {
       setError('กรุณากรอกรหัสผ่านใหม่')
       return
@@ -137,22 +46,25 @@ const ForcePasswordResetPage = () => {
     setIsLoading(true)
 
     try {
+      // 🌟 ไม่ต้องส่ง OTP แล้ว — การยืนยัน 2FA เกิดขึ้นตอน login และถูกบังคับที่ backend gate
       const res = await api<{ success: boolean; message: string }>(
         '/auth/force-reset/verify',
         {
           method: 'POST',
-          body: { otp, newPassword },
+          body: { newPassword },
         },
       )
 
       if (res.success) {
+        await verifyUser()
+
         await toast.fire({
           icon: 'success',
           title: 'ตั้งรหัสผ่านใหม่สำเร็จ',
-          text: 'กรุณาเข้าสู่ระบบอีกครั้งด้วยรหัสผ่านใหม่',
+          text: 'กำลังนำคุณไปยังหน้า Dashboard',
         })
-        // Logout to force re-login with new password
-        await logoutUser()
+
+        navigate('/dashboard', { replace: true })
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'
@@ -181,50 +93,15 @@ const ForcePasswordResetPage = () => {
           </p>
         </div>
 
-        {/* Warning Banner */}
-        <div className='bg-amber-50 border border-amber-200 rounded-md p-3 mb-4'>
-          <p className='text-sm text-amber-700 text-center'>
-            ระบบได้ส่งรหัส OTP ไปยังอีเมล <strong>{user.email}</strong> แล้ว
-            กรุณาตรวจสอบอีเมลและกรอกรหัส OTP เพื่อตั้งรหัสผ่านใหม่
+        {/* Verified Banner */}
+        <div className='bg-emerald-50 border border-emerald-200 rounded-md p-3 mb-4'>
+          <p className='text-sm text-emerald-700 text-center'>
+            ยืนยันตัวตนด้วย 2FA เรียบร้อยแล้ว
+            กรุณาตั้งรหัสผ่านใหม่เพื่อเข้าใช้งานระบบ
           </p>
         </div>
 
-        {/* OTP Timer */}
-        <div className='text-center mb-4'>
-          {otpTimer > 0 ? (
-            <span className='text-sm font-medium text-slate-600'>
-              รหัส OTP หมดอายุใน{' '}
-              <span className='text-red-500 font-bold'>
-                {formatTime(otpTimer)}
-              </span>
-            </span>
-          ) : (
-            <span className='text-sm font-medium text-red-500'>
-              รหัส OTP หมดอายุแล้ว กรุณาขอใหม่
-            </span>
-          )}
-        </div>
-
         <form onSubmit={handleSubmit} className='flex flex-col w-full'>
-          {/* OTP Field */}
-          <div className='mb-4'>
-            <label
-              htmlFor='otp'
-              className='block text-xs font-bold tracking-[0.07em] uppercase text-slate-500 mb-2'
-            >
-              รหัส OTP
-            </label>
-            <OtpInput
-              value={otp}
-              onChange={(val) => {
-                setOtp(val)
-                setError('')
-              }}
-              disabled={isLoading || isSendingOtp}
-              error={error}
-            />
-          </div>
-
           {/* New Password Field */}
           <div className='mb-4'>
             <label
@@ -271,6 +148,11 @@ const ForcePasswordResetPage = () => {
             />
           </div>
 
+          <p className='text-xs text-slate-400 mb-4'>
+            รหัสผ่านต้องมีอย่างน้อย 8 ตัว ประกอบด้วยตัวพิมพ์ใหญ่ ตัวพิมพ์เล็ก
+            ตัวเลข
+          </p>
+
           {error && (
             <p className='text-[13px] text-red-500 font-bold text-center -mt-2 mb-3'>
               {error}
@@ -279,32 +161,16 @@ const ForcePasswordResetPage = () => {
 
           <button
             type='submit'
-            disabled={isLoading || isSendingOtp || otpTimer <= 0}
+            disabled={isLoading}
             className={`w-full py-3.5 rounded-xl text-white text-lg font-bold transition-colors ${
-              isLoading || isSendingOtp || otpTimer <= 0
+              isLoading
                 ? 'bg-blue-600/50 cursor-not-allowed'
                 : 'bg-[#185FA5] hover:bg-[#134b82] cursor-pointer'
             }`}
           >
-            {isLoading
-              ? 'กำลังเปลี่ยนรหัสผ่าน...'
-              : isSendingOtp
-                ? 'กำลังส่ง OTP...'
-                : 'เปลี่ยนรหัสผ่าน'}
+            {isLoading ? 'กำลังเปลี่ยนรหัสผ่าน...' : 'เปลี่ยนรหัสผ่าน'}
           </button>
         </form>
-
-        {/* Resend OTP Button */}
-        <div className='mt-4 text-center'>
-          <button
-            type='button'
-            onClick={handleResendOtp}
-            disabled={isSendingOtp}
-            className='text-sm text-[#185FA5] hover:text-[#134b82] hover:underline font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
-          >
-            {isSendingOtp ? 'กำลังส่ง OTP...' : 'ขอรหัส OTP ใหม่'}
-          </button>
-        </div>
 
         <p className='mt-6 text-center text-xs text-slate-400 font-medium'>
           สำนักงานป้องกันและปราบปรามการฟอกเงิน

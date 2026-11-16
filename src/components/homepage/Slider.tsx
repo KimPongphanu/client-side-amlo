@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { Swiper as SwiperType } from 'swiper'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import { Autoplay, Navigation } from 'swiper/modules'
@@ -17,7 +18,7 @@ interface SliderProps {
 
 export default function Slider({ slides, containerClassName }: SliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [swiperInstance, setSwiperInstance] = useState<any>(null)
+  const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null)
   const [isPlaying, setIsPlaying] = useState(true)
 
   const handleSlideClick = (link?: string) => {

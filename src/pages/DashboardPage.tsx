@@ -294,7 +294,7 @@ const DashboardPage = () => {
       if (typeof cleanupIdleTimer === 'function') cleanupIdleTimer()
       cleanupHeartbeat()
     }
-  }, [])
+  }, [initIdleTimeout, startHeartbeat])
 
   useEffect(() => {
     sessionStorage.setItem('activeDashboardMenu', activeMenu)
@@ -398,19 +398,21 @@ const DashboardPage = () => {
 
   return (
     <div className='bg-slate-100 min-h-screen text-slate-800 font-sans'>
-      {user.role === 'SUPERVISOR' && !user.twoFactorEnabled && (
-        <div className='bg-red-500 text-white px-6 py-3 flex items-center justify-between'>
-          <span className='font-medium'>
-            ⚠️ คุณต้องตั้งค่า Two-Factor Authentication (2FA) ก่อนเข้าใช้งานระบบ
-          </span>
-          <button
-            onClick={() => (window.location.href = '/2fa-setup')}
-            className='bg-white text-red-600 px-4 py-1.5 rounded-lg font-bold text-sm hover:bg-red-50 cursor-pointer'
-          >
-            ตั้งค่า 2FA ทันที
-          </button>
-        </div>
-      )}
+      {(user.role === 'SUPERVISOR' || user.role === 'ADMIN') &&
+        !user.twoFactorEnabled && (
+          <div className='bg-red-500 text-white px-6 py-3 flex items-center justify-between'>
+            <span className='font-medium'>
+              ⚠️ คุณต้องตั้งค่า Two-Factor Authentication (2FA)
+              ก่อนเข้าใช้งานระบบ
+            </span>
+            <button
+              onClick={() => (window.location.href = '/2fa-setup')}
+              className='bg-white text-red-600 px-4 py-1.5 rounded-lg font-bold text-sm hover:bg-red-50 cursor-pointer'
+            >
+              ตั้งค่า 2FA ทันที
+            </button>
+          </div>
+        )}
       <NavBar
         toggleMobileMenu={() => setIsMobileOpen(!isMobileOpen)}
         onLogout={handleLogout}

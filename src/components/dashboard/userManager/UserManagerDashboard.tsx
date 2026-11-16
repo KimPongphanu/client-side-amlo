@@ -23,8 +23,8 @@ import UserAuditLog from './sub_components/UserAuditLog'
 import UserDetailModal from './sub_components/UserDetailModal'
 import UserTable from './sub_components/UserTable'
 
-// Role filter options - Added SUPERVISOR for filtering
-export type RoleFilter = 'ALL' | 'ADMIN' | 'USER' | 'SUPERVISOR'
+// Role filter options — เฉพาะบทบาทที่ยังดูแลในระบบ (USER ถูกยกเลิกแล้ว)
+export type RoleFilter = 'ALL' | 'ADMIN' | 'SUPERVISOR'
 
 const UserProfileManagerDashboard: React.FC = () => {
   const currentUser = useAuthStore((state) => state.user)
@@ -360,7 +360,6 @@ const UserProfileManagerDashboard: React.FC = () => {
                 >
                   <option value='ALL'>เลือกประเภทสิทธิ์ทั้งหมด</option>
                   <option value='ADMIN'>แอดมิน (Admin)</option>
-                  <option value='USER'>ผู้ใช้งานทั่วไป (User)</option>
                   <option value='SUPERVISOR'>
                     ผู้ดูแลระบบสูงสุด (Supervisor)
                   </option>

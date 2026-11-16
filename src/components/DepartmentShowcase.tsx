@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { useContentStore } from '../stores/useContentStore'
 
 // 🌟 ดึง DOMParser ออกมาด้านนอก เพื่อไม่ให้สร้างใหม่ทุกรอบใน Loop
@@ -160,6 +161,14 @@ const DepartmentShowcase = () => {
                         <div className='text-slate-500 leading-relaxed text-sm line-clamp-3 break-words'>
                           {stripHtmlToText(isEn && dept.content_en ? dept.content_en : dept.content)}
                         </div>
+                        <Link
+                          to={`/department/${dept.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className='mt-3 inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700'
+                        >
+                          {t('common.details', 'รายละเอียด')}
+                          <span aria-hidden='true'>➔</span>
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -270,9 +279,13 @@ const DepartmentShowcase = () => {
                       >
                         {stripHtmlToText(isEn && dept.content_en ? dept.content_en : dept.content)}
                       </div>
-                      <div className='mt-auto pt-3 flex items-center text-blue-600 font-semibold text-sm shrink-0'>
-                        {t('common.details', 'รายละเอียด')} <span className='ml-1'>➔</span>
-                      </div>
+                      <Link
+                        to={`/department/${dept.id}`}
+                        className='mt-auto pt-3 flex items-center text-blue-600 font-semibold text-sm shrink-0 hover:text-blue-700'
+                      >
+                        {t('common.details', 'รายละเอียด')}
+                        <span className='ml-1' aria-hidden='true'>➔</span>
+                      </Link>
                     </div>
                   </div>
                 </div>

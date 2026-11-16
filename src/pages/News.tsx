@@ -121,7 +121,7 @@ const News = () => {
       .sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
       )
-  }, [prList, searchTerm, selectedMonth])
+  }, [prList, searchTerm, selectedMonth, isEn])
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage)
   const currentItems = filteredData.slice(

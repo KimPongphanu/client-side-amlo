@@ -22,18 +22,26 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to='/login' replace />
   }
 
-  // If user is forced to reset password, redirect to force-password-reset
-  // unless they are already on that page
-  if (
-    user.forcePasswordReset &&
-    location.pathname !== '/force-password-reset'
-  ) {
-    return <Navigate to='/force-password-reset' replace />
+  // 🌟 Bootstrap ของบัญชี admin — บังคับตามลำดับเดียวกับที่ backend gate บังคับ
+  //    ขั้นที่ 1: ยังไม่มี 2FA  → ต้อง enroll ก่อน (ห้ามเปลี่ยนรหัสผ่านก่อน enroll)
+  //    ขั้นที่ 2: มี 2FA แล้ว   → จึงเปลี่ยนรหัสผ่านชั่วคราว
+  if (user.forcePasswordReset && !user.twoFactorEnabled) {
+    if (location.pathname !== '/2fa-setup') {
+      return <Navigate to='/2fa-setup' replace />
+    }
+    return <>{children}</>
   }
 
-  // 🌟 NEW: Force SUPERVISOR to enable 2FA before accessing any protected page
+  if (user.forcePasswordReset && user.twoFactorEnabled) {
+    if (location.pathname !== '/force-password-reset') {
+      return <Navigate to='/force-password-reset' replace />
+    }
+    return <>{children}</>
+  }
+
+  // 🌟 Force ADMIN and SUPERVISOR to enable 2FA before accessing any protected page
   if (
-    user.role === 'SUPERVISOR' &&
+    (user.role === 'SUPERVISOR' || user.role === 'ADMIN') &&
     !user.twoFactorEnabled &&
     location.pathname !== '/2fa-setup'
   ) {

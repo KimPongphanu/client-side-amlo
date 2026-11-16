@@ -137,7 +137,7 @@ export const useContentStore = create<ContentState>((set, get) => ({
     let isValid = true
 
     // ปรับปรุง Regex ขยายขอบเขตภาษาไทยให้ครอบคลุมสระ/วรรณยุกต์พิเศษทั้งหมด
-    const isThaiOnly = (v: string) => /^[ก-๙\sหนึ่-์]+$/.test(v)
+    const isThaiOnly = (v: string) => /^[ก-๙\s]+$/.test(v)
     const isEngOnly = (v: string) => /^[a-zA-Z\s\-.]+$/.test(v)
 
     if (!formData.firstName.trim()) {
@@ -207,7 +207,9 @@ export const useContentStore = create<ContentState>((set, get) => ({
       didOpen: () => swal.showLoading(),
     })
 
-    const { botField: _, ...actualData } = formData
+    // ตัด honeypot ออกก่อนส่ง — ใช้ destructuring แทน delete (type-safe)
+    const { botField: _botField, ...actualData } = formData
+    void _botField
 
     try {
       const response = await contentService.createContact(actualData)

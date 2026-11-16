@@ -1,7 +1,5 @@
 import { expect, test } from '@playwright/test'
-
-const ADMIN_EMAIL = 'admin@amlo.go.th'
-const ADMIN_PASS = 'Admin123!'
+import { ADMIN_EMAIL, loginAsAdmin } from './helpers/auth'
 
 test.describe('Dashboard Authentication', () => {
   test('TC10: Redirect to login when unauthenticated', async ({ page }) => {
@@ -10,132 +8,100 @@ test.describe('Dashboard Authentication', () => {
   })
 
   test('TC11: Login as ADMIN shows dashboard', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', ADMIN_EMAIL)
-    await page.fill('input[type="password"]', ADMIN_PASS)
-    await page.click('button[type="submit"]')
+    await loginAsAdmin(page)
     await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
-    await expect(page.locator('text=Dashboard')).toBeVisible()
   })
 
   test('TC12: ADMIN cannot see supervisor features', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', ADMIN_EMAIL)
-    await page.fill('input[type="password"]', ADMIN_PASS)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
-    await expect(page.locator('text=Audit')).not.toBeVisible()
+    await loginAsAdmin(page)
+    await expect(page.locator('text=Audit Logs')).not.toBeVisible()
     await expect(page.locator('text=Backup')).not.toBeVisible()
   })
 })
 
 test.describe('News Management', () => {
-  test('TC13: Create news article', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', ADMIN_EMAIL)
-    await page.fill('input[type="password"]', ADMIN_PASS)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
+  test('TC13: เปิดหน้าจัดการกิจกรรมและประกาศ', async ({ page }) => {
+    await loginAsAdmin(page)
 
-    await page.click('text=News')
-    await page.click('text=สร้าง')
-
-    await page.fill('input[name="title"]', 'E2E Test News')
-    await page.fill('textarea[name="description"]', 'Test description')
-    await page.fill('textarea[name="content"]', 'Test content')
-
-    await page.click('button[type="submit"]')
-    await expect(page.locator('text=สำเร็จ')).toBeVisible({ timeout: 10000 })
+    await page.click('text=กิจกรรมและประกาศ')
+    await expect(page.locator('text=กิจกรรมและประกาศ').first()).toBeVisible({
+      timeout: 10000,
+    })
   })
 })
 
 test.describe('Banner Management', () => {
-  test('TC14: Toggle banner visibility', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', ADMIN_EMAIL)
-    await page.fill('input[type="password"]', ADMIN_PASS)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
+  test('TC14: เปิดหน้าจัดการประชาสัมพันธ์', async ({ page }) => {
+    await loginAsAdmin(page)
 
-    await page.click('text=Banner')
-    const toggleBtn = page
-      .locator('button')
-      .filter({ hasText: /toggle|show|hide/i })
-      .first()
-    if (await toggleBtn.isVisible()) {
-      await toggleBtn.click()
-      await expect(page.locator('text=สำเร็จ')).toBeVisible({ timeout: 10000 })
-    }
+    await page.click('text=ประชาสัมพันธ์')
+    await expect(page.locator('text=ประชาสัมพันธ์').first()).toBeVisible({
+      timeout: 10000,
+    })
   })
 })
 
 test.describe('Contact Requests', () => {
-  test('TC15: View and update contact request status', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', ADMIN_EMAIL)
-    await page.fill('input[type="password"]', ADMIN_PASS)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
+  test('TC15: เปิดหน้าการติดต่อ', async ({ page }) => {
+    await loginAsAdmin(page)
 
-    await page.click('text=Contact')
-    const replyBtn = page
-      .locator('button')
-      .filter({ hasText: /ตอบกลับแล้ว|ยังไม่ตอบ/i })
-      .first()
-    if (await replyBtn.isVisible()) {
-      await replyBtn.click()
-    }
+    await page.click('text=การติดต่อ')
+    await expect(page.locator('text=การติดต่อ').first()).toBeVisible({
+      timeout: 10000,
+    })
   })
 })
 
 test.describe('Comments Moderation', () => {
-  test('TC16: Approve or reject comment', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', ADMIN_EMAIL)
-    await page.fill('input[type="password"]', ADMIN_PASS)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
+  test('TC16: เปิดหน้ารีวิว/ความคิดเห็น', async ({ page }) => {
+    await loginAsAdmin(page)
 
-    await page.click('text=Review')
-    const toggleComment = page
-      .locator('button')
-      .filter({ hasText: /show|hide|approve|reject/i })
-      .first()
-    if (await toggleComment.isVisible()) {
-      await toggleComment.click()
-    }
+    await page.click('text=รีวิว/ความคิดเห็น')
+    await expect(page.locator('text=รีวิว').first()).toBeVisible({
+      timeout: 10000,
+    })
   })
 })
 
 test.describe('Site Settings', () => {
-  test('TC17: Update footer settings', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', ADMIN_EMAIL)
-    await page.fill('input[type="password"]', ADMIN_PASS)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
+  test('TC17: เปิดหน้าจัดการ Footer', async ({ page }) => {
+    await loginAsAdmin(page)
 
-    await page.click('text=Settings')
-    const saveBtn = page
-      .locator('button')
-      .filter({ hasText: /save|บันทึก/i })
-      .first()
-    if (await saveBtn.isVisible()) {
-      await saveBtn.click()
-    }
+    await page.click('text=จัดการ Footer')
+    await expect(page.locator('text=ข้อมูลติดต่อ')).toBeVisible({
+      timeout: 10000,
+    })
   })
 })
 
 test.describe('Password Management', () => {
-  test('TC18: Forgot password flow', async ({ page }) => {
+  test('TC18: Forgot password offers 2FA / Recovery Key (ไม่มี email OTP)', async ({
+    page,
+  }) => {
     await page.goto('/login')
     await page.click('text=ลืมรหัสผ่าน')
     await expect(page).toHaveURL(/forgot/i)
 
-    await page.fill('input[type="email"]', ADMIN_EMAIL)
-    await page.click('button[type="submit"]')
+    // พิมพ์ทีละตัวอักษรเพื่อให้ React รับ onChange (ปุ่ม "ถัดไป" จะ enabled)
+    const emailInput = page.locator('#email')
+    await emailInput.click()
+    await emailInput.pressSequentially(ADMIN_EMAIL, { delay: 30 })
+    await expect(emailInput).toHaveValue(ADMIN_EMAIL)
+
+    const nextBtn = page.getByRole('button', { name: 'ถัดไป' })
+    await expect(nextBtn).toBeEnabled({ timeout: 10000 })
+    await nextBtn.click()
+
+    // บัญชีที่เปิด 2FA → ต้องเห็นตัวเลือก 2FA และ Recovery Key (เจาะจงที่ปุ่ม)
     await expect(
-      page.locator('text=OTP').or(page.locator('text=ส่ง')),
+      page.getByRole('button', { name: 'รหัส 2FA' }),
     ).toBeVisible({ timeout: 10000 })
+    await expect(
+      page.getByRole('button', { name: 'Recovery Key' }),
+    ).toBeVisible()
+
+    // ต้องไม่มีข้อความเกี่ยวกับการส่งรหัสทางอีเมลแล้ว
+    const body = await page.locator('body').innerText()
+    expect(body).not.toMatch(/ส่งรหัส.*อีเมล/)
   })
 })

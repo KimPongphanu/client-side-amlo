@@ -38,6 +38,7 @@ export interface CheckEmailResponse {
   success?: boolean
   found: boolean
   role?: 'ADMIN' | 'SUPERVISOR' | 'USER'
+  requires2FA?: boolean
   message?: string
 }
 
@@ -74,28 +75,6 @@ export const twoFactorService = {
   regenerateRecoveryKeys: async (): Promise<RegenerateKeysResponse> => {
     return await api<RegenerateKeysResponse>('/2fa/recovery-keys/regenerate', {
       method: 'POST',
-    })
-  },
-
-  requestEmailOTP: async (
-    email: string,
-  ): Promise<{ success: boolean; message: string }> => {
-    return await api<{ success: boolean; message: string }>(
-      '/2fa/otp/request',
-      {
-        method: 'POST',
-        body: { email },
-      },
-    )
-  },
-
-  verifyEmailOTP: async (
-    email: string,
-    otp: string,
-  ): Promise<{ success: boolean; message: string }> => {
-    return await api<{ success: boolean; message: string }>('/2fa/otp/verify', {
-      method: 'POST',
-      body: { email, otp },
     })
   },
 

@@ -19,6 +19,7 @@ export default function AboutHistoryManager() {
   const [content, setContent] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
   const [hasContent, setHasContent] = useState(false)
 
   useEffect(() => {
@@ -72,29 +73,43 @@ export default function AboutHistoryManager() {
     }
   }, [content])
 
-  const handleClear = useCallback(() => {
-    swal
-      .fire({
-        title: 'ยืนยันการล้างเนื้อหา',
-        text: 'เนื้อหาที่พิมพ์ไว้จะหายไป และผู้ใช้จะไม่สามารถดูประวัติหน่วยงานได้จนกว่าจะมีเนื้อหาใหม่',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'ยืนยัน ล้างเนื้อหา',
-        cancelButtonText: 'ยกเลิก',
-        confirmButtonColor: '#dc2626',
+  const handleClear = useCallback(async () => {
+    const result = await swal.fire({
+      title: 'ยืนยันการล้างเนื้อหา',
+      text: 'เนื้อหาที่พิมพ์ไว้จะหายไป และผู้ใช้จะไม่สามารถดูประวัติหน่วยงานได้จนกว่าจะมีเนื้อหาใหม่',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยัน ล้างเนื้อหา',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#dc2626',
+    })
+
+    if (!result.isConfirmed) return
+
+    setIsClearing(true)
+    try {
+      await contentService.updateSiteSettings([
+        { key: 'about_history', value: '' },
+      ])
+      setContent('')
+      setHasContent(false)
+      toast.fire({
+        icon: 'success',
+        title: 'ล้างเนื้อหาเรียบร้อย',
+        timer: 1200,
+        showConfirmButton: false,
       })
-      .then((result) => {
-        if (result.isConfirmed) {
-          setContent('')
-          setHasContent(false)
-          toast.fire({
-            icon: 'info',
-            title: 'ล้างเนื้อหาเรียบร้อย',
-            timer: 1000,
-            showConfirmButton: false,
-          })
-        }
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : 'ไม่สามารถล้างเนื้อหาได้'
+      toast.fire({
+        icon: 'error',
+        title: 'ล้างเนื้อหาไม่สำเร็จ',
+        text: msg,
       })
+    } finally {
+      setIsClearing(false)
+    }
   }, [])
 
   if (isLoading) {
@@ -119,9 +134,10 @@ export default function AboutHistoryManager() {
         {hasContent && (
           <button
             onClick={handleClear}
-            className='px-4 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors'
+            disabled={isClearing || isSaving}
+            className='px-4 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
           >
-            ล้างเนื้อหา
+            {isClearing ? 'กำลังล้าง...' : 'ล้างเนื้อหา'}
           </button>
         )}
       </div>
@@ -143,7 +159,7 @@ export default function AboutHistoryManager() {
       <div className='flex justify-end gap-3'>
         <button
           onClick={handleSave}
-          disabled={isSaving}
+          disabled={isSaving || isClearing}
           className='px-8 py-3 rounded-xl bg-blue-600 text-white font-bold text-base hover:bg-blue-700 active:scale-[0.97] transition-all shadow-md focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed'
         >
           {isSaving ? 'กำลังบันทึก...' : 'บันทึกประวัติ'}

@@ -16,7 +16,7 @@ export type UserRole = 'USER' | 'ADMIN' | 'SUPERVISOR'
 /**
  * Two-factor authentication methods
  */
-export type TwoFactorMethod = 'NONE' | 'AUTHENTICATOR' | 'EMAIL_OTP'
+export type TwoFactorMethod = 'NONE' | 'AUTHENTICATOR'
 
 /**
  * Current authenticated user profile

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   FaEnvelope,
   FaEye,
+  FaEyeSlash,
   FaFacebook,
   FaFax,
   FaGlobeAmericas,
@@ -34,8 +35,15 @@ const FIELDS = [
   { key: 'fax', label: 'โทรสาร', type: 'text' as const },
   { key: 'email', label: 'อีเมล', type: 'text' as const },
   { key: 'copyright', label: 'ข้อความลิขสิทธิ์', type: 'text' as const },
-  { key: 'visitor_count', label: 'จำนวนผู้เข้าชม', type: 'text' as const },
 ]
+
+// 🌟 สลับการซ่อน/แสดงบรรทัด "ผู้เข้าชม: N คน" บน Footer สาธารณะ
+//    เก็บใน site_settings เหมือน key อื่น — ค่าเริ่มต้น (ยังไม่มีใน DB) = แสดง
+const VISITOR_VISIBLE_KEY = 'visitor_visible'
+
+/** ค่าเริ่มต้น = แสดง (เฉพาะเมื่อตั้งเป็น 'false' อย่างชัดเจนจึงซ่อน) */
+const isVisitorVisible = (map: Record<string, string>): boolean =>
+  (map[VISITOR_VISIBLE_KEY] ?? '').trim().toLowerCase() !== 'false'
 
 const POLICY_FIELDS = [
   { key: 'policy_website', label: 'นโยบายเว็บไซต์' },
@@ -52,8 +60,15 @@ const SOCIAL_FIELDS = [
   { key: 'twitter', label: 'Twitter/X URL' },
 ]
 
+const LINK_FIELDS = [
+  { key: 'bookguide_url', label: 'ลิงก์คู่มือสำหรับประชาชน' },
+  { key: 'open_data_url', label: 'ลิงก์ข้อมูลเปิดภาครัฐ (Open Data)' },
+  { key: 'rss_url', label: 'ลิงก์ RSS Feed' },
+]
+
 export default function FooterManagerDashboard() {
   const [settings, setSettings] = useState<Record<string, string>>({})
+  const [savedSettings, setSavedSettings] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
@@ -64,6 +79,7 @@ export default function FooterManagerDashboard() {
     try {
       const data = await contentService.getSiteSettings()
       setSettings(data)
+      setSavedSettings(data)
     } catch {
       toast.fire({
         icon: 'error',
@@ -84,25 +100,63 @@ export default function FooterManagerDashboard() {
     setSettings((prev) => ({ ...prev, [key]: value }))
   }
 
+  const handleToggleVisitorVisible = () => {
+    const next = !isVisitorVisible(settings)
+    setSettings((prev) => ({
+      ...prev,
+      [VISITOR_VISIBLE_KEY]: next ? 'true' : 'false',
+    }))
+    // 🌟 แจ้งทันทีว่าสลับแล้ว — แต่ยังไม่บันทึกจนกว่าจะกดปุ่มบันทึก
+    toast.fire({
+      icon: 'info',
+      title: next
+        ? 'จะแสดงบรรทัดผู้เข้าชม — กด "บันทึก" เพื่อยืนยัน'
+        : 'จะซ่อนบรรทัดผู้เข้าชม — กด "บันทึก" เพื่อยืนยัน',
+      timer: 3000,
+    })
+  }
+
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      const allFields = [...FIELDS, ...POLICY_FIELDS, ...SOCIAL_FIELDS]
-      // ส่งเฉพาะ field ที่มีค่า (ไม่ส่ง "" ไปทับ DB)
+      const allFields = [
+        ...FIELDS,
+        ...POLICY_FIELDS,
+        ...SOCIAL_FIELDS,
+        ...LINK_FIELDS,
+        { key: 'visitor_count', label: 'จำนวนผู้เข้าชม' },
+      ]
+      // ส่งเฉพาะ field ที่เปลี่ยน — ถ้าผู้ใช้ลบค่า ให้ส่ง "" ไปล้างค่าใน DB ด้วย
       const payload = allFields
         .map((f) => ({
           key: f.key,
-          value: settings[f.key] || '',
+          value: settings[f.key] ?? '',
         }))
-        .filter((item) => item.value !== '')
+        .filter((item) => (savedSettings[item.key] ?? '') !== item.value)
 
-      // ถ้าทุก field ว่าง → ไม่ส่งอะไรเลย
+      // 🌟 สถานะซ่อน/แสดง ต้องส่งเสมอเมื่อเปลี่ยน (เก็บเป็น 'true'/'false')
+      const visitorVisible = isVisitorVisible(settings)
+      const savedVisible = isVisitorVisible(savedSettings)
+      if (visitorVisible !== savedVisible) {
+        payload.push({
+          key: VISITOR_VISIBLE_KEY,
+          value: visitorVisible ? 'true' : 'false',
+        })
+      }
+
       if (payload.length === 0) {
         toast.fire({ icon: 'info', title: 'ไม่มีข้อมูลที่เปลี่ยนแปลง' })
         return
       }
 
       await contentService.updateSiteSettings(payload)
+      setSavedSettings((prev) => {
+        const next = { ...prev }
+        payload.forEach((item) => {
+          next[item.key] = item.value
+        })
+        return next
+      })
       toast.fire({
         icon: 'success',
         title: 'บันทึกสำเร็จ!',
@@ -148,12 +202,29 @@ export default function FooterManagerDashboard() {
             แก้ไขข้อมูล Footer, นโยบาย และ Social Media
           </p>
         </div>
-        <button
-          onClick={scrollToPreview}
-          className='px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-lg hover:bg-blue-100 transition-colors inline-flex items-center gap-1.5'
-        >
-          <FaEye /> ดูตัวอย่าง
-        </button>
+        <div className='flex items-center gap-2 shrink-0'>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className='px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-blue-600 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-1.5 shadow-sm disabled:bg-slate-300 disabled:border-slate-300 disabled:cursor-not-allowed'
+          >
+            {isSaving ? (
+              <>
+                <FaSpinner className='w-3.5 h-3.5 animate-spin' /> กำลังบันทึก...
+              </>
+            ) : (
+              <>
+                <FaSave /> บันทึก
+              </>
+            )}
+          </button>
+          <button
+            onClick={scrollToPreview}
+            className='px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300 rounded-lg hover:bg-blue-100 transition-colors inline-flex items-center gap-1.5'
+          >
+            <FaEye /> ดูตัวอย่าง
+          </button>
+        </div>
       </div>
 
       {/* ── Contact Info ── */}
@@ -190,6 +261,49 @@ export default function FooterManagerDashboard() {
               )}
             </div>
           ))}
+
+          {/* ── จำนวนผู้เข้าชม + ปุ่มซ่อน/แสดง ── */}
+          <div>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>
+              จำนวนผู้เข้าชม
+            </label>
+            <div className='flex items-center gap-2'>
+              <input
+                value={s('visitor_count')}
+                onChange={(e) => handleChange('visitor_count', e.target.value)}
+                placeholder={DEFAULTS.visitor_count || ''}
+                inputMode='numeric'
+                className='w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-300'
+              />
+              <button
+                type='button'
+                onClick={handleToggleVisitorVisible}
+                aria-pressed={isVisitorVisible(settings)}
+                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                  isVisitorVisible(settings)
+                    ? 'bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100'
+                    : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
+                }`}
+              >
+                {isVisitorVisible(settings) ? <FaEye /> : <FaEyeSlash />}
+                {isVisitorVisible(settings) ? 'แสดงอยู่' : 'ซ่อนอยู่'}
+              </button>
+              {isVisitorVisible(settings) !== isVisitorVisible(savedSettings) && (
+                <span className='text-xs font-medium text-amber-600'>
+                  • ยังไม่บันทึก
+                </span>
+              )}
+            </div>
+            <p className='text-[10px] text-gray-400 mt-1'>
+              {isVisitorVisible(settings)
+                ? 'บรรทัด "ผู้เข้าชม" จะแสดงบน Footer'
+                : 'บรรทัด "ผู้เข้าชม" จะถูกซ่อนจาก Footer'}
+              {' · '}
+              {DEFAULTS.visitor_count && !s('visitor_count')
+                ? `ค่าเริ่มต้น: ${DEFAULTS.visitor_count}`
+                : 'ถ้าตั้งค่า GA แล้ว ระบบจะแสดงตัวเลขจริงจาก GA แทนค่านี้'}
+            </p>
+          </div>
         </div>
       </section>
 
@@ -210,6 +324,35 @@ export default function FooterManagerDashboard() {
                   value={s(field.key)}
                   onChange={(e) => handleChange(field.key, e.target.value)}
                   placeholder='https://example.com/policy'
+                  className='w-full py-2 text-sm focus:outline-none bg-transparent'
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Extra Links ── */}
+      <section className='bg-white rounded-xl border border-gray-200 p-6'>
+        <h3 className='text-lg font-semibold text-gray-800 mb-1'>
+          ลิงก์เพิ่มเติม
+        </h3>
+        <p className='text-xs text-gray-500 mb-4'>
+          ใส่ URL ปลายทาง — ถ้ายังว่าง ลิงก์จะแสดงแบบปิดใช้งาน (สีจาง
+          กดไม่ได้) และจะซ่อนจากหน้า Sitemap
+        </p>
+        <div className='space-y-4'>
+          {LINK_FIELDS.map((field) => (
+            <div key={field.key}>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>
+                {field.label}
+              </label>
+              <div className='flex items-center gap-2 border border-gray-300 rounded-lg px-3 focus-within:ring-2 focus-within:ring-blue-300'>
+                <FaLink className='w-3.5 h-3.5 text-gray-400 shrink-0' />
+                <input
+                  value={s(field.key)}
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                  placeholder='https://...'
                   className='w-full py-2 text-sm focus:outline-none bg-transparent'
                 />
               </div>
@@ -336,12 +479,54 @@ export default function FooterManagerDashboard() {
               ))}
             </div>
 
+            {/* Extra Links */}
+            {(s('bookguide_url') || s('open_data_url') || s('rss_url')) && (
+              <div className='border-t border-slate-800 pt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs'>
+                {s('bookguide_url') && (
+                  <a
+                    href={s('bookguide_url')}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='text-blue-400 hover:text-blue-300 inline-flex items-center gap-1'
+                  >
+                    <FaGlobeAmericas className='w-3 h-3' /> คู่มือสำหรับประชาชน
+                  </a>
+                )}
+                {s('open_data_url') && (
+                  <a
+                    href={s('open_data_url')}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='text-blue-400 hover:text-blue-300 inline-flex items-center gap-1'
+                  >
+                    <FaGlobeAmericas className='w-3 h-3' /> Open Data
+                  </a>
+                )}
+                {s('rss_url') && (
+                  <a
+                    href={s('rss_url')}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='text-blue-400 hover:text-blue-300 inline-flex items-center gap-1'
+                  >
+                    <FaGlobeAmericas className='w-3 h-3' /> RSS Feed
+                  </a>
+                )}
+              </div>
+            )}
+
             {/* Copyright */}
             <div className='border-t border-slate-800 pt-3 text-xs text-slate-500 flex justify-between'>
               <span>
                 &copy; {new Date().getFullYear()} {display('copyright')}
               </span>
-              <span>ผู้เข้าชม: {display('visitor_count')} คน</span>
+              {isVisitorVisible(settings) ? (
+                <span>ผู้เข้าชม: {display('visitor_count')} คน</span>
+              ) : (
+                <span className='text-slate-600 italic'>
+                  (ซ่อนบรรทัดผู้เข้าชม)
+                </span>
+              )}
             </div>
           </div>
         </div>

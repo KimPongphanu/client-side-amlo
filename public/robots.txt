@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Canonical sitemap URL — เปลี่ยนโดเมนตรงนี้ถ้า production ไม่ใช่ www.amlo.go.th
+Sitemap: https://www.amlo.go.th/sitemap.xml

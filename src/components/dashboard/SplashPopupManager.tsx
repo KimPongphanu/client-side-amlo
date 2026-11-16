@@ -226,10 +226,10 @@ export default function SplashPopupManager() {
     if (!editTarget) return
     setAdding(true)
     try {
-      await contentService.updateSplashPopup(editTarget.id, {
-        title: title.trim() || editTarget.title,
-        ...(file ? { isActive: editTarget.isActive } : {}),
-      })
+      const fd = new FormData()
+      fd.append('title', title.trim())
+      if (file) fd.append('image', file)
+      await contentService.updateSplashPopup(editTarget.id, fd)
       toast.fire({
         icon: 'success',
         title: 'อัปเดตสำเร็จ',
@@ -239,8 +239,12 @@ export default function SplashPopupManager() {
       setEditTarget(null)
       resetForm()
       fetchPopups()
-    } catch {
-      toast.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด' })
+    } catch (err) {
+      toast.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาด',
+        text: err instanceof Error ? err.message : undefined,
+      })
     } finally {
       setAdding(false)
     }
@@ -251,6 +255,9 @@ export default function SplashPopupManager() {
     setTitle(popup.title)
     setFile(null)
     setPreview(null)
+    setSource(null)
+    setShowCropper(false)
+    setCropped(false)
   }
 
   if (isLoading) {
@@ -605,7 +612,14 @@ export default function SplashPopupManager() {
             </div>
             <div className='px-6 py-5 space-y-4'>
               {/* Current image + new preview */}
-              {preview ? (
+              {showCropper && source ? (
+                <ImageCropper
+                  file={source}
+                  onApply={handleCropApply}
+                  onUseOriginal={handleUseOriginal}
+                  onCancel={handleCropCancel}
+                />
+              ) : preview ? (
                 <div
                   className='relative rounded-xl overflow-hidden border bg-gray-50 flex items-center justify-center'
                   style={{ minHeight: 200 }}
@@ -621,10 +635,19 @@ export default function SplashPopupManager() {
                       setPreview(null)
                       if (fileInputRef.current) fileInputRef.current.value = ''
                     }}
+                    aria-label='ลบรูปที่เลือก'
                     className='absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600'
                   >
                     <FaTimes />
                   </button>
+                  {source && (
+                    <button
+                      onClick={() => setShowCropper(true)}
+                      className='absolute bottom-2 right-2 px-3 py-1.5 rounded-lg bg-white/90 text-xs font-semibold text-blue-600 shadow hover:bg-white'
+                    >
+                      {cropped ? 'ตัดใหม่' : 'ตัดเป็น 4:5'}
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div
@@ -686,8 +709,8 @@ export default function SplashPopupManager() {
               </button>
               <button
                 onClick={handleEdit}
-                disabled={adding}
-                className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${adding ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                disabled={adding || showCropper}
+                className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${adding || showCropper ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
               >
                 {adding ? (
                   <>

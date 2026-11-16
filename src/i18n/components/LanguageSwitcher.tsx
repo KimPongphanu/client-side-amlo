@@ -3,6 +3,23 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SUPPORTED_LANGUAGES } from '../index'
 
+// ตั้งค่า Cookie สำหรับ Google Translate (แยกออกนอก component — ไม่ใช่การแก้ค่าตอน render)
+const applyGoogleTranslateCookie = (code: string) => {
+  if (code === 'th') {
+    // ถ้าเลือกภาษาไทย ให้ลบ Cookie ออก (กลับเป็นต้นฉบับ)
+    globalThis.document.cookie =
+      'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax;'
+    globalThis.document.cookie =
+      'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=' +
+      globalThis.location.hostname +
+      '; path=/; SameSite=Lax;'
+  } else {
+    // ถ้าเลือกภาษาอื่น ให้กำหนด Cookie (สมมติว่ามีแค่ th กับ en)
+    globalThis.document.cookie = `googtrans=/th/${code}; path=/; SameSite=Lax`
+    globalThis.document.cookie = `googtrans=/th/${code}; domain=${globalThis.location.hostname}; path=/; SameSite=Lax`
+  }
+}
+
 export default function LanguageSwitcher() {
   const { i18n } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -13,22 +30,12 @@ export default function LanguageSwitcher() {
 
   const handleSelect = (code: string) => {
     i18n.changeLanguage(code)
-    
-    // ตั้งค่า Cookie สำหรับ Google Translate
-    if (code === 'th') {
-      // ถ้าเลือกภาษาไทย ให้ลบ Cookie ออก (กลับเป็นต้นฉบับ)
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax;';
-      document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=' + location.hostname + '; path=/; SameSite=Lax;';
-    } else {
-      // ถ้าเลือกภาษาอื่น ให้กำหนด Cookie (สมมติว่ามีแค่ th กับ en)
-      document.cookie = `googtrans=/th/${code}; path=/; SameSite=Lax`;
-      document.cookie = `googtrans=/th/${code}; domain=${location.hostname}; path=/; SameSite=Lax`;
-    }
-    
+    applyGoogleTranslateCookie(code)
+
     setOpen(false)
-    
+
     // Reload เพื่อให้ Google Translate และ i18next โหลดภาษาใหม่ พร้อมล้าง DOM
-    window.location.reload()
+    globalThis.location.reload()
   }
 
   return (

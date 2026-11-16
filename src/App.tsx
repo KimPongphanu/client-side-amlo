@@ -15,7 +15,7 @@ const DepartmentDetailPage = lazy(() => import('./pages/DepartDetailPage'))
 const Advertise = lazy(() => import('./pages/Advertise'))
 const AdvertiseDetail = lazy(() => import('./pages/Advertisedetail'))
 const News = lazy(() => import('./pages/News'))
-const BookGuidePage = lazy(() => import('./pages/BookGuidePage'))
+const SitemapPage = lazy(() => import('./pages/SitemapPage'))
 const Login = lazy(() => import('./pages/LoginPage'))
 const CommentForm = lazy(() => import('./components/CommentForm'))
 const ContactForm = lazy(() => import('./components/ContactForm'))
@@ -108,9 +108,9 @@ function App() {
             <Route path='/news' element={<News />} />
             <Route path='/news/:id' element={<NewsDetailPage />} />
             <Route path='/department/:id' element={<DepartmentDetailPage />} />
+            <Route path='/sitemap' element={<SitemapPage />} />
             <Route path='/advertise' element={<Advertise />} />
             <Route path='/advertise/:id' element={<AdvertiseDetail />} />
-            <Route path='/bookguide' element={<BookGuidePage />} />
             <Route path='/commentform' element={<CommentForm />} />
             <Route path='/contactform' element={<ContactForm />} />
 
@@ -137,7 +137,7 @@ function App() {
           <Route
             path='/2fa-setup'
             element={
-              <ProtectedRoute allowedRoles={['SUPERVISOR']}>
+              <ProtectedRoute allowedRoles={['ADMIN', 'SUPERVISOR']}>
                 <TwoFactorSetup />
               </ProtectedRoute>
             }

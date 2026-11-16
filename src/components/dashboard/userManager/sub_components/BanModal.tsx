@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { api } from '../../../../utils/api'
 import BaseModal from './BaseModal'
 export interface DashboardUser {
@@ -66,16 +66,6 @@ const BanModal: React.FC<BanModalProps> = ({
     }
   }, [isOpen])
 
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>
-    if (step === 3 && countdown > 0 && !isExecuting) {
-      timer = setTimeout(() => setCountdown(countdown - 1), 1000)
-    } else if (step === 3 && countdown === 0 && !isExecuting) {
-      handleExecute()
-    }
-    return () => clearTimeout(timer)
-  }, [step, countdown, isExecuting])
-
   const handleStep1Continue = () => {
     setStep(2)
   }
@@ -94,7 +84,7 @@ const BanModal: React.FC<BanModalProps> = ({
     setCountdown(5)
   }
 
-  const handleExecute = async () => {
+  const handleExecute = useCallback(async () => {
     if (!selectedUser) return
     setIsExecuting(true)
 
@@ -119,7 +109,18 @@ const BanModal: React.FC<BanModalProps> = ({
     } finally {
       setIsExecuting(false)
     }
-  }
+  }, [selectedUser, actionType, reason, action.endpoint, onSuccess, onClose])
+
+  // นับถอยหลัง 5 วินาทีก่อนดำเนินการ (ต้องอยู่หลัง handleExecute)
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
+    if (step === 3 && countdown > 0 && !isExecuting) {
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000)
+    } else if (step === 3 && countdown === 0 && !isExecuting) {
+      handleExecute()
+    }
+    return () => clearTimeout(timer)
+  }, [step, countdown, isExecuting, handleExecute])
 
   const handleCancel = () => {
     onClose()

@@ -103,7 +103,7 @@ export default function OtpInput({
     } else {
       inputRefs.current[0]?.focus()
     }
-  }, [])
+  }, [getDigits])
 
   const digits = getDigits()
   const hasError = !!error

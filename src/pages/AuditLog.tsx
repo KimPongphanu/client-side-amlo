@@ -1,5 +1,5 @@
 // src/pages/AuditLog.tsx
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { auditService, type AuditLogEntry } from '../services/auditService'
 import { useAuthStore } from '../stores/useAuthStore'
 
@@ -57,25 +57,12 @@ const actionColors: Record<string, string> = {
 export default function AuditLog() {
   const { user } = useAuthStore()
   const [logs, setLogs] = useState<AuditLogEntry[]>([])
-  const [filteredLogs, setFilteredLogs] = useState<AuditLogEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [actionFilter, setActionFilter] = useState<ActionFilter>('all')
   const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    if (user?.role !== 'SUPERVISOR') {
-      setIsLoading(false)
-      return
-    }
-    fetchLogs()
-  }, [user])
-
-  useEffect(() => {
-    filterLogs()
-  }, [logs, actionFilter, searchTerm])
-
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setIsLoading(true)
     try {
       const data = await auditService.getAuditLogs(200)
@@ -86,9 +73,18 @@ export default function AuditLog() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
-  const filterLogs = () => {
+  useEffect(() => {
+    if (user?.role !== 'SUPERVISOR') {
+      setIsLoading(false)
+      return
+    }
+    fetchLogs()
+  }, [user, fetchLogs])
+
+  // กรองได้โดยตรงจาก state — ไม่ต้องเก็บผลลัพธ์ซ้ำในอีก state
+  const filteredLogs = useMemo(() => {
     let result = [...logs]
 
     if (actionFilter !== 'all') {
@@ -106,8 +102,8 @@ export default function AuditLog() {
       )
     }
 
-    setFilteredLogs(result)
-  }
+    return result
+  }, [logs, actionFilter, searchTerm])
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString)

@@ -59,6 +59,18 @@ export interface CommentItem {
 }
 
 /**
+ * Splash popup shown on the public homepage (managed from the dashboard)
+ */
+export interface SplashPopupItem {
+  id: number
+  image_url: string
+  title: string
+  bg_color?: string | null
+  isActive: boolean
+  createdAt: string
+}
+
+/**
  * Form data for submitting a comment
  */
 export interface CommentFormData {

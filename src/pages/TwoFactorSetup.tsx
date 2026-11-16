@@ -8,13 +8,15 @@ import {
   X,
 } from 'lucide-react'
 import QRCode from 'qrcode'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { FaQuestionCircle } from 'react-icons/fa'
+import { useNavigate } from 'react-router-dom'
 import OtpInput from '../components/common/OtpInput'
 import { twoFactorService } from '../services/twoFactorService'
 import { useAuthStore } from '../stores/useAuthStore'
 
 export default function TwoFactorSetup() {
+  const navigate = useNavigate()
   const { user } = useAuthStore()
   const [step, setStep] = useState<'setup' | 'verify' | 'complete'>('setup')
   const [secret, setSecret] = useState('')
@@ -28,19 +30,7 @@ export default function TwoFactorSetup() {
 
   const didInit = useRef(false)
 
-  useEffect(() => {
-    // Strict Mode guard: run setup only once per true mount
-    if (didInit.current || !user) return
-    didInit.current = true
-
-    if (user.twoFactorEnabled) {
-      setStep('complete')
-    } else {
-      loadSetup()
-    }
-  }, [user])
-
-  const loadSetup = async () => {
+  const loadSetup = useCallback(async () => {
     setIsLoading(true)
     try {
       const response = await twoFactorService.setup2FA()
@@ -57,7 +47,19 @@ export default function TwoFactorSetup() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    // Strict Mode guard: run setup only once per true mount
+    if (didInit.current || !user) return
+    didInit.current = true
+
+    if (user.twoFactorEnabled) {
+      setStep('complete')
+    } else {
+      loadSetup()
+    }
+  }, [user, loadSetup])
 
   const handleVerify = async () => {
     if (!otpToken || otpToken.length !== 6) {
@@ -142,13 +144,13 @@ export default function TwoFactorSetup() {
     printWindow.close()
   }
 
-  if (user?.role !== 'SUPERVISOR') {
+  if (user?.role !== 'SUPERVISOR' && user?.role !== 'ADMIN') {
     return (
       <div className='flex items-center justify-center min-h-screen bg-gray-50'>
         <div className='p-8 text-center bg-white rounded-lg shadow-md'>
           <h2 className='text-xl font-bold text-red-600'>ไม่มีสิทธิ์เข้าถึง</h2>
           <p className='mt-2 text-gray-600'>
-            การตั้งค่า 2FA ใช้ได้เฉพาะบัญชี Supervisor เท่านั้น
+            การตั้งค่า 2FA ใช้ได้เฉพาะบัญชี Admin และ Supervisor เท่านั้น
           </p>
         </div>
       </div>
@@ -235,12 +237,20 @@ export default function TwoFactorSetup() {
             <div className='mt-6 flex justify-end'>
               <button
                 onClick={() => {
-                  // Logout แล้ว redirect ไปหน้า login เพื่อให้ login ใหม่ด้วย 2FA
-                  useAuthStore.getState().logoutUser()
+                  // 🌟 enroll แล้วไปขั้นถัดไปของ bootstrap — ถ้ายังต้องเปลี่ยนรหัสผ่านให้ไปต่อเลย
+                  //    (ไม่ต้อง logout/login ใหม่ เพราะ 2FA ผ่านแล้วและ session ยังใช้ได้)
+                  navigate(
+                    useAuthStore.getState().user?.forcePasswordReset
+                      ? '/force-password-reset'
+                      : '/dashboard',
+                    { replace: true },
+                  )
                 }}
                 className='px-6 py-2.5 text-sm font-bold text-white bg-green-600 rounded-xl hover:bg-green-700 cursor-pointer transition-colors'
               >
-                เสร็จสิ้น → ไปยังหน้าเข้าสู่ระบบ
+                {user?.forcePasswordReset
+                  ? 'เสร็จสิ้น → ตั้งรหัสผ่านใหม่'
+                  : 'เสร็จสิ้น → ไปยัง Dashboard'}
               </button>
             </div>
           </div>
@@ -266,8 +276,8 @@ export default function TwoFactorSetup() {
           </button>
         </div>
         <p className='mt-2 text-gray-600'>
-          เพิ่มความปลอดภัยให้บัญชี Supervisor ของคุณด้วย Google Authenticator
-          หรือ Microsoft Authenticator
+          เพิ่มความปลอดภัยให้บัญชีของคุณด้วย Google Authenticator หรือ Microsoft
+          Authenticator
         </p>
 
         {/* Tips Modal */}

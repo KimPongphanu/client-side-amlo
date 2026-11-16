@@ -6,6 +6,7 @@ import type {
   DepartmentItem,
   NewsItem,
   SliderImage,
+  SplashPopupItem,
 } from '../type'
 import { api } from '../utils/api'
 
@@ -224,17 +225,22 @@ export const contentService = {
   /**
    * Fetch all splash popups (admin)
    */
-  getAllSplashPopups: async (): Promise<any[]> => {
-    const res = await api<{ success: boolean; data: any[] }>('/splash-popups', {
-      method: 'GET',
-    })
+  getAllSplashPopups: async (): Promise<SplashPopupItem[]> => {
+    const res = await api<{ success: boolean; data: SplashPopupItem[] }>(
+      '/splash-popups',
+      {
+        method: 'GET',
+      },
+    )
     return res?.data || []
   },
 
   /**
    * Create splash popup (admin)
    */
-  createSplashPopup: async (formData: FormData): Promise<any> => {
+  createSplashPopup: async (
+    formData: FormData,
+  ): Promise<ApiResponseBase> => {
     return await api('/splash-popups', { method: 'POST', body: formData })
   },
 
@@ -243,15 +249,15 @@ export const contentService = {
    */
   updateSplashPopup: async (
     id: number,
-    data: { title?: string; isActive?: boolean },
-  ): Promise<any> => {
+    data: FormData | Record<string, unknown>,
+  ): Promise<ApiResponseBase> => {
     return await api(`/splash-popups/${id}`, { method: 'PUT', body: data })
   },
 
   /**
    * Delete splash popup (admin)
    */
-  deleteSplashPopup: async (id: number): Promise<any> => {
+  deleteSplashPopup: async (id: number): Promise<ApiResponseBase> => {
     return await api(`/splash-popups/${id}`, { method: 'DELETE' })
   },
 

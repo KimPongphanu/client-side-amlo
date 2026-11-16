@@ -1,5 +1,5 @@
 // src/components/CommentForm.tsx
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   FaCommentDots,
@@ -71,18 +71,21 @@ const CommentForm = () => {
     }
   }
 
-  const handleDragMove = (e: MouseEvent | TouchEvent) => {
-    if (!isDragging) return
-    e.preventDefault()
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-    setPosition({
-      x: dragRef.current.iconX + (clientX - dragRef.current.startX),
-      y: dragRef.current.iconY + (clientY - dragRef.current.startY),
-    })
-  }
+  const handleDragMove = useCallback(
+    (e: MouseEvent | TouchEvent) => {
+      if (!isDragging) return
+      e.preventDefault()
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+      setPosition({
+        x: dragRef.current.iconX + (clientX - dragRef.current.startX),
+        y: dragRef.current.iconY + (clientY - dragRef.current.startY),
+      })
+    },
+    [isDragging],
+  )
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     if (!isDragging) return
     setIsDragging(false)
     const screenWidth = window.innerWidth
@@ -105,7 +108,7 @@ const CommentForm = () => {
       setSnapVertical('bottom')
     }
     setPosition({ x: snapX, y: snapY })
-  }
+  }, [isDragging, position.x, position.y])
 
   useEffect(() => {
     if (isDragging) {
@@ -120,7 +123,7 @@ const CommentForm = () => {
       window.removeEventListener('touchmove', handleDragMove)
       window.removeEventListener('touchend', handleDragEnd)
     }
-  }, [isDragging, position])
+  }, [isDragging, position, handleDragMove, handleDragEnd])
 
   const handleContentChange = (val: string) => {
     setFormData((prev) => ({ ...prev, content: val }))
