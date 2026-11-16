@@ -210,7 +210,7 @@ const YouTubeSlide = ({
       cancelled = true
       clearFallback()
     }
-  }, [isActive, videoId, startFallback])
+  }, [isActive, videoId, startFallback, isOnlySlide])
 
   useEffect(
     () => () => {

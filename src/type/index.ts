@@ -33,6 +33,7 @@ export type {
   NewsItem,
   NewsType,
   SliderImage,
+  SplashPopupItem,
 } from './content'
 
 // Department Types (SINGLE SOURCE - DepartmentItem is HERE only!)

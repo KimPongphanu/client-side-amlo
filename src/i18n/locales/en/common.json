@@ -32,6 +32,12 @@
     "wrongLink": "The link you followed may be incorrect",
     "backHome": "Back to home"
   },
+  "sitemap": {
+    "description": "A directory of all sections on this website for easier navigation.",
+    "pages": "Pages & Content",
+    "about": "About AMLO",
+    "comment": "Feedback"
+  },
   "footer": {
     "contactInfo": "Contact Information",
     "address": "422 Phayathai Road, Wangmai, Pathumwan, Bangkok 10330",
@@ -49,6 +55,7 @@
     "copyright": "All Rights Reserved.",
     "visitor": "Visitors",
     "backToTop": "Back to Top",
+    "notAvailable": "Not available yet",
     "mapTitle": "AMLO Office Map"
   },
   "home": {

@@ -13,15 +13,6 @@ import DepartmentCard from './sub_components/DepartmentCard'
 import DepartmentFormModal from './sub_components/DepartmentFormModal'
 import DepartmentList from './sub_components/DepartmentList'
 
-const SCROLLBAR_STYLES = `
-  .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-  .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
-  .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-  .animate-fade-in { animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
-  @keyframes modalFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-`
-
 export default function DepartmentManagerDashboard() {
   const departmentList = useDashboardStore((state) => state.departmentList)
   const fetchDepartments = useDashboardStore((state) => state.fetchDepartments)

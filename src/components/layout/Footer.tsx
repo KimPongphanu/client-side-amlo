@@ -13,11 +13,15 @@ import {
   FaYoutube,
 } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
+import { analyticsService } from '../../services/analyticsService'
 import { contentService } from '../../services/contentService'
+
+const isExternalUrl = (url: string) => /^https?:\/\//i.test(url)
 
 const Footer = () => {
   const { t } = useTranslation()
   const [settings, setSettings] = useState<Record<string, string>>({})
+  const [gaVisitors, setGaVisitors] = useState<number | null>(null)
 
   useEffect(() => {
     contentService
@@ -26,7 +30,38 @@ const Footer = () => {
       .catch(() => {})
   }, [])
 
+  // 🌟 ดึงตัวเลขผู้เข้าชมจริงจาก GA4 — ถ้ายังไม่ตั้งค่า/ดึงไม่สำเร็จ
+  //    จะคืน null แล้ว fallback ไปใช้ visitor_count ที่แอดมินกรอกเอง
+  useEffect(() => {
+    let cancelled = false
+    analyticsService
+      .getVisitors()
+      .then((stats) => {
+        if (cancelled) return
+        setGaVisitors(
+          stats.configured && typeof stats.totalUsers === 'number'
+            ? stats.totalUsers
+            : null,
+        )
+      })
+      .catch(() => {
+        if (!cancelled) setGaVisitors(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const s = (key: string, fallback = '') => settings[key] || fallback
+  // 🌟 ซ่อน/แสดงบรรทัดผู้เข้าชม — ค่าเริ่มต้นคือแสดง (เฉพาะ 'false' จึงซ่อน)
+  const visitorVisible =
+    (settings.visitor_visible ?? '').trim().toLowerCase() !== 'false'
+  const bookguideUrl = s('bookguide_url').trim()
+  const openDataUrl = s('open_data_url').trim()
+  const rssUrl = s('rss_url').trim()
+
+  const disabledClass = 'text-slate-600 cursor-not-allowed'
+  const disabledHint = t('footer.notAvailable', 'ยังไม่มีข้อมูล')
 
   return (
     <footer
@@ -90,50 +125,56 @@ const Footer = () => {
                 {t('footer.followUs')}
               </span>
               <div className='flex items-center gap-2'>
-                {s('facebook') && (
-                  <a
-                    href={s('facebook')}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='w-8 h-8 rounded-full bg-slate-800 hover:bg-blue-600 flex items-center justify-center transition-colors'
-                    aria-label='Facebook'
-                  >
-                    <FaFacebook className='w-4 h-4' />
-                  </a>
-                )}
-                {s('line') && (
-                  <a
-                    href={s('line')}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='w-8 h-8 rounded-full bg-slate-800 hover:bg-green-600 flex items-center justify-center transition-colors'
-                    aria-label='LINE'
-                  >
-                    <FaLine className='w-4 h-4' />
-                  </a>
-                )}
-                {s('youtube') && (
-                  <a
-                    href={s('youtube')}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='w-8 h-8 rounded-full bg-slate-800 hover:bg-red-600 flex items-center justify-center transition-colors'
-                    aria-label='YouTube'
-                  >
-                    <FaYoutube className='w-4 h-4' />
-                  </a>
-                )}
-                {s('twitter') && (
-                  <a
-                    href={s('twitter')}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='w-8 h-8 rounded-full bg-slate-800 hover:bg-sky-500 flex items-center justify-center transition-colors'
-                    aria-label='Twitter/X'
-                  >
-                    <FaTwitter className='w-4 h-4' />
-                  </a>
-                )}
+                {[
+                  {
+                    key: 'facebook',
+                    label: 'Facebook',
+                    Icon: FaFacebook,
+                    hover: 'hover:bg-blue-600',
+                  },
+                  {
+                    key: 'line',
+                    label: 'LINE',
+                    Icon: FaLine,
+                    hover: 'hover:bg-green-600',
+                  },
+                  {
+                    key: 'youtube',
+                    label: 'YouTube',
+                    Icon: FaYoutube,
+                    hover: 'hover:bg-red-600',
+                  },
+                  {
+                    key: 'twitter',
+                    label: 'Twitter/X',
+                    Icon: FaTwitter,
+                    hover: 'hover:bg-sky-500',
+                  },
+                ].map(({ key, label, Icon, hover }) => {
+                  const url = s(key).trim()
+                  return url ? (
+                    <a
+                      key={key}
+                      href={url}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className={`w-8 h-8 rounded-full bg-slate-800 ${hover} flex items-center justify-center transition-colors`}
+                      aria-label={label}
+                    >
+                      <Icon className='w-4 h-4' />
+                    </a>
+                  ) : (
+                    <span
+                      key={key}
+                      className='w-8 h-8 rounded-full bg-slate-800/40 text-slate-600 flex items-center justify-center cursor-not-allowed'
+                      aria-disabled='true'
+                      aria-label={`${label} (${disabledHint})`}
+                      title={disabledHint}
+                    >
+                      <Icon className='w-4 h-4' />
+                    </span>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -176,14 +217,38 @@ const Footer = () => {
                   {t('nav.pr')}
                 </Link>
               </li>
-              <li>
-                <Link
-                  to='/bookguide'
-                  className='text-slate-400 hover:text-white transition-colors'
-                >
-                  {t('nav.bookguide')}
-                </Link>
-              </li>
+              {bookguideUrl ? (
+                <li>
+                  {isExternalUrl(bookguideUrl) ? (
+                    <a
+                      href={bookguideUrl}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-slate-400 hover:text-white transition-colors inline-flex items-center gap-1'
+                    >
+                      {t('nav.bookguide')}{' '}
+                      <FaExternalLinkAlt className='w-3 h-3' />
+                    </a>
+                  ) : (
+                    <Link
+                      to={bookguideUrl}
+                      className='text-slate-400 hover:text-white transition-colors'
+                    >
+                      {t('nav.bookguide')}
+                    </Link>
+                  )}
+                </li>
+              ) : (
+                <li>
+                  <span
+                    className={disabledClass}
+                    aria-disabled='true'
+                    title={disabledHint}
+                  >
+                    {t('nav.bookguide')}
+                  </span>
+                </li>
+              )}
               <li>
                 <Link
                   to='/contactform'
@@ -215,41 +280,78 @@ const Footer = () => {
                   policy_security: t('footer.policySecurity'),
                   policy_accessibility: t('footer.policyAccessibility'),
                 }
+                const url = s(pk).trim()
+                if (!url) {
+                  return (
+                    <li key={pk}>
+                      <span
+                        className={disabledClass}
+                        aria-disabled='true'
+                        title={disabledHint}
+                      >
+                        {labels[pk]}
+                      </span>
+                    </li>
+                  )
+                }
                 return (
                   <li key={pk}>
-                    {s(pk) ? (
-                      <a
-                        href={s(pk)}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className='text-slate-400 hover:text-white transition-colors inline-flex items-center gap-1'
-                      >
-                        {labels[pk]} <FaExternalLinkAlt className='w-3 h-3' />
-                      </a>
-                    ) : (
-                      <span className='text-slate-500'>{labels[pk]}</span>
-                    )}
+                    <a
+                      href={url}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-slate-400 hover:text-white transition-colors inline-flex items-center gap-1'
+                    >
+                      {labels[pk]} <FaExternalLinkAlt className='w-3 h-3' />
+                    </a>
                   </li>
                 )
               })}
-              <li className='pt-2'>
-                <a
-                  href='/rss.xml'
-                  className='text-slate-400 hover:text-white transition-colors inline-flex items-center gap-1.5'
-                  aria-label='RSS Feed'
-                >
-                  <FaRss className='w-3.5 h-3.5 text-orange-400' />{' '}
-                  {t('nav.rss')}
-                </a>
-              </li>
+              {rssUrl ? (
+                <li className='pt-2'>
+                  <a
+                    href={rssUrl}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='text-slate-400 hover:text-white transition-colors inline-flex items-center gap-1.5'
+                    aria-label='RSS Feed'
+                  >
+                    <FaRss className='w-3.5 h-3.5 text-orange-400' />{' '}
+                    {t('nav.rss')}
+                  </a>
+                </li>
+              ) : (
+                <li className='pt-2'>
+                  <span
+                    className={`${disabledClass} inline-flex items-center gap-1.5`}
+                    aria-disabled='true'
+                    title={disabledHint}
+                  >
+                    <FaRss className='w-3.5 h-3.5' /> {t('nav.rss')}
+                  </span>
+                </li>
+              )}
             </ul>
             <div className='mt-5 pt-4 border-t border-slate-800'>
-              <Link
-                to='/open-data'
-                className='inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium'
-              >
-                {t('nav.openData')} <FaExternalLinkAlt className='w-3 h-3' />
-              </Link>
+              {openDataUrl ? (
+                <a
+                  href={openDataUrl}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium'
+                >
+                  {t('nav.openData')}{' '}
+                  <FaExternalLinkAlt className='w-3 h-3' />
+                </a>
+              ) : (
+                <span
+                  className={`${disabledClass} text-sm inline-flex items-center gap-2 font-medium`}
+                  aria-disabled='true'
+                  title={disabledHint}
+                >
+                  {t('nav.openData')}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -278,11 +380,18 @@ const Footer = () => {
             {s('copyright', t('footer.copyright'))}
           </p>
           <div className='flex items-center gap-4'>
-            <span>
-              {t('footer.visitor')}: {s('visitor_count', '0')}{' '}
-              {t('common.people', 'คน')}
-            </span>
-            <span className='hidden md:inline'>|</span>
+            {visitorVisible && (
+              <>
+                <span>
+                  {t('footer.visitor')}:{' '}
+                  {gaVisitors !== null
+                    ? gaVisitors.toLocaleString('th-TH')
+                    : s('visitor_count', '0')}{' '}
+                  {t('common.people', 'คน')}
+                </span>
+                <span className='hidden md:inline'>|</span>
+              </>
+            )}
             <a
               href='#main-content'
               className='hover:text-white transition-colors'

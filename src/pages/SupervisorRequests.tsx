@@ -1,5 +1,5 @@
 // src/pages/SupervisorRequests.tsx
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import OtpInput from '../components/common/OtpInput'
 import {
@@ -36,15 +36,7 @@ const SupervisorRequests = () => {
   const [otpError, setOtpError] = useState('')
   const [isApproving, setIsApproving] = useState(false)
 
-  useEffect(() => {
-    if (user?.role !== 'SUPERVISOR') {
-      navigate('/dashboard', { replace: true })
-      return
-    }
-    loadData()
-  }, [user, navigate])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true)
     try {
       const [pendingRes, sentRes] = await Promise.all([
@@ -58,7 +50,15 @@ const SupervisorRequests = () => {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (user?.role !== 'SUPERVISOR') {
+      navigate('/dashboard', { replace: true })
+      return
+    }
+    loadData()
+  }, [user, navigate, loadData])
 
   const handleApproveClick = (id: number) => {
     setApproveRequestId(id)

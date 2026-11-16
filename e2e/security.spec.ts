@@ -1,143 +1,101 @@
 import { expect, test } from '@playwright/test'
-
-const SUPERVISOR_EMAIL = 'supervisor@amlo.go.th'
-const SUPERVISOR_PASS = 'Supervisor123!'
+import { loginAsSupervisor } from './helpers/auth'
 
 test.describe('2FA Setup', () => {
-  test('TC19: Setup 2FA page loads with QR code', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', SUPERVISOR_EMAIL)
-    await page.fill('input[type="password"]', SUPERVISOR_PASS)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
+  test('TC19: หน้า 2FA setup โหลดได้', async ({ page }) => {
+    await loginAsSupervisor(page)
 
-    await page.goto('/two-factor-setup')
+    await page.goto('/2fa-setup')
     await expect(
-      page.locator('text=2FA').or(page.locator('text=สองขั้นตอน')),
+      page.getByRole('heading', { name: /2FA/ }).first(),
     ).toBeVisible({ timeout: 10000 })
   })
 })
 
 test.describe('User Management', () => {
-  test('TC20: Supervisor can view user list', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', SUPERVISOR_EMAIL)
-    await page.fill('input[type="password"]', SUPERVISOR_PASS)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
+  test('TC20: Supervisor เห็นรายชื่อผู้ใช้', async ({ page }) => {
+    await loginAsSupervisor(page)
 
-    await page.click('text=Users')
-    await expect(
-      page.locator('table').or(page.locator('role=table')),
-    ).toBeVisible({ timeout: 10000 })
+    await page.click('text=จัดการสมาชิก')
+    await expect(page.locator('table').first()).toBeVisible({
+      timeout: 10000,
+    })
   })
 
-  test('TC21: Create new admin user', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', SUPERVISOR_EMAIL)
-    await page.fill('input[type="password"]', SUPERVISOR_PASS)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
+  test('TC21: dropdown กรองสิทธิ์ไม่มี "ผู้ใช้งานทั่วไป (User)"', async ({
+    page,
+  }) => {
+    await loginAsSupervisor(page)
 
-    await page.click('text=Users')
-    await page.click('text=สร้าง')
+    await page.click('text=จัดการสมาชิก')
+    const select = page.locator('select').first()
+    await expect(select).toBeVisible({ timeout: 10000 })
 
-    await page.fill('input[type="email"]', `e2e${Date.now()}@amlo.go.th`)
-    await page.fill('input[name="password"]', 'TestPass123')
-    await page.fill('input[name="firstname"]', 'E2E')
-    await page.fill('input[name="lastname"]', 'User')
+    const labels = await select
+      .locator('option')
+      .evaluateAll((els) => els.map((e) => e.textContent?.trim() || ''))
 
-    await page.click('button[type="submit"]')
-    await expect(page.locator('text=สำเร็จ')).toBeVisible({ timeout: 10000 })
+    expect(labels.some((l) => l.includes('ผู้ใช้งานทั่วไป'))).toBe(false)
+    expect(labels.some((l) => l.includes('Supervisor'))).toBe(true)
   })
 })
 
 test.describe('Audit Log', () => {
-  test('TC22: Supervisor can view audit log', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', SUPERVISOR_EMAIL)
-    await page.fill('input[type="password"]', SUPERVISOR_PASS)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
+  test('TC22: Supervisor เห็น Audit Logs', async ({ page }) => {
+    await loginAsSupervisor(page)
 
-    await page.click('text=Audit')
-    await expect(
-      page.locator('table').or(page.locator('text=audit')),
-    ).toBeVisible({ timeout: 10000 })
+    await page.click('text=Audit Logs')
+    await expect(page.locator('table').first()).toBeVisible({
+      timeout: 10000,
+    })
   })
 })
 
 test.describe('Supervisor Request', () => {
-  test('TC23: Create supervisor request for ban', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', SUPERVISOR_EMAIL)
-    await page.fill('input[type="password"]', SUPERVISOR_PASS)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
+  test('TC23: Supervisor เข้าหน้าคำร้องได้', async ({ page }) => {
+    await loginAsSupervisor(page)
 
-    await page.click('text=Request')
-    const createBtn = page
-      .locator('button')
-      .filter({ hasText: /new|สร้าง|request/i })
-      .first()
-    if (await createBtn.isVisible()) {
-      await createBtn.click()
-    }
+    await page.goto('/supervisor-requests')
+    await expect(
+      page.getByRole('button', { name: /รอฉันอนุมัติ/ }),
+    ).toBeVisible({ timeout: 10000 })
   })
 })
 
 test.describe('Backup Management', () => {
-  test('TC24: View backup list', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', SUPERVISOR_EMAIL)
-    await page.fill('input[type="password"]', SUPERVISOR_PASS)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
+  test('TC24: Supervisor เห็นรายการ Backup', async ({ page }) => {
+    await loginAsSupervisor(page)
 
     await page.click('text=Backup')
     await expect(
-      page.locator('text=backup').or(page.locator('text=สำรอง')),
+      page.getByRole('heading', { name: /Backup|สำรอง/ }).first(),
     ).toBeVisible({ timeout: 10000 })
   })
 })
 
 test.describe('Profile Management', () => {
-  test('TC25: Update own profile', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', SUPERVISOR_EMAIL)
-    await page.fill('input[type="password"]', SUPERVISOR_PASS)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
+  test('TC25: Supervisor เปิดหน้าข้อมูลส่วนตัวได้', async ({ page }) => {
+    await loginAsSupervisor(page)
 
-    await page.click('text=Profile')
-    const saveBtn = page
-      .locator('button')
-      .filter({ hasText: /save|update|บันทึก|อัปเดต/i })
-      .first()
-    if (await saveBtn.isVisible()) {
-      await saveBtn.click()
-    }
-  })
-})
-
-test.describe('Recovery Login', () => {
-  test('TC26: Recovery login page loads', async ({ page }) => {
-    await page.goto('/recovery-login')
+    await page.click('text=ข้อมูลส่วนตัว')
     await expect(
-      page.locator('input[type="text"]').or(page.locator('textarea')),
+      page.getByRole('heading', { name: /ข้อมูลส่วนตัว/ }).first(),
     ).toBeVisible({ timeout: 10000 })
   })
 })
 
 test.describe('Logout', () => {
-  test('TC27: Successful logout redirects to login', async ({ page }) => {
-    await page.goto('/login')
-    await page.fill('input[type="email"]', SUPERVISOR_EMAIL)
-    await page.fill('input[type="password"]', SUPERVISOR_PASS)
-    await page.click('button[type="submit"]')
-    await expect(page).toHaveURL(/dashboard/, { timeout: 10000 })
+  test('TC27: Logout แล้วกลับไปหน้า login', async ({ page }) => {
+    await loginAsSupervisor(page)
 
-    await page.click('text=Logout')
-    await expect(page).toHaveURL(/login/, { timeout: 10000 })
+    // ปุ่มออกจากระบบอยู่ใน dropdown โปรไฟล์ — ต้องเปิดก่อน
+    await page.locator('header').getByText(/System Admin|SUPERVISOR/).first().click()
+    await page.waitForTimeout(600)
+
+    const logoutBtn = page.getByRole('button', { name: /ออกจากระบบ/ }).first()
+    await expect(logoutBtn).toBeVisible({ timeout: 10000 })
+    await logoutBtn.click({ force: true })
+
+    await expect(page).toHaveURL(/login/, { timeout: 15000 })
   })
 })

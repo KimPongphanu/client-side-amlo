@@ -8,7 +8,7 @@ import { swal, toast } from '../utils/swalConfig'
 
 interface LocationState {
   email: string
-  twoFactorMethod: 'AUTHENTICATOR' | 'EMAIL_OTP'
+  twoFactorMethod: 'AUTHENTICATOR'
   uuid: string
 }
 
@@ -52,14 +52,30 @@ const TwoFactorChallenge = () => {
       const response = await twoFactorService.verify2FALogin(code)
       if (response.success) {
         await verifyUser()
+        const currentUser = useAuthStore.getState().user
+
+        useAuthStore.getState().setLoggedIn(true)
+
+        // 🌟 ผ่าน 2FA แล้วแต่ยังต้องเปลี่ยนรหัสผ่านชั่วคราว — ไปขั้นถัดไปของ bootstrap
+        //    (ลำดับนี้ถูกบังคับซ้ำที่ backend gate อีกชั้น)
+        if (currentUser?.forcePasswordReset) {
+          await toast.fire({
+            icon: 'info',
+            title: 'ยืนยันตัวตนสำเร็จ',
+            text: 'กรุณาตั้งรหัสผ่านใหม่ก่อนเข้าใช้งาน',
+            timer: 800,
+          })
+          navigate('/force-password-reset', { replace: true })
+          return
+        }
 
         await toast.fire({
           icon: 'success',
           title: 'ยืนยันตัวตนสำเร็จ',
           text: 'กำลังนำคุณไปยังหน้า Dashboard',
+          timer: 800,
         })
 
-        useAuthStore.getState().setLoggedIn(true)
         navigate('/dashboard', { replace: true })
       } else {
         throw new Error(response.message || 'รหัส OTP ไม่ถูกต้อง')

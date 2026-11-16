@@ -34,8 +34,10 @@ et --hard ORIG_HEAD
 .env.development
 .env.production
 
-# Tests (local only — ไม่ commit ขึ้น repo)
-e2e/
+# Tests — e2e specs ต้อง commit เพราะ CI รัน (มีไฟล์ถูก track อยู่แล้ว)
+# ไม่ commit เฉพาะผลลัพธ์การรัน และ credential ท้องถิ่น
 test-results/
 playwright-report/
-*.spec.ts
+e2e/.env
+e2e/.env.local
+!.gitkeep

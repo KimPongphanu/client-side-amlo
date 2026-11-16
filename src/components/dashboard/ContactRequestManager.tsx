@@ -294,7 +294,7 @@ export default function ContactRequestManager() {
         </div>
 
         <ExportExcelButton
-          data={contacts.data as any}
+          data={contacts.data.map((c) => ({ ...c }))}
           filename='contact_requests'
         />
       </div>

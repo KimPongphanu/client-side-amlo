@@ -13,6 +13,15 @@ export default defineConfig({
     watch: process.env.VITE_USE_POLLING
       ? { usePolling: true, interval: 500 }
       : undefined,
+    // 🌟 /sitemap.xml ถูกสร้างจาก backend — proxy ไป backend ใน dev
+    //    (ใน Docker dev ตั้ง VITE_SITEMAP_PROXY_TARGET=http://backend:8080)
+    proxy: {
+      '/sitemap.xml': {
+        target:
+          process.env.VITE_SITEMAP_PROXY_TARGET || 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
   },
 
   // 🌟 เพิ่ม optimizeDeps เพื่อแก้ปัญหา Error: Calling 'require' for "react-is"

@@ -16,9 +16,12 @@ This is the frontend application for the AMLO website and administrative dashboa
 
 - **Public Website**: Homepage, news, public announcements, and contact forms.
 - **Admin Dashboard**: Comprehensive dashboard for system administrators and supervisors.
+- **Admin 2FA**: Admins use the same TOTP + recovery-key flow as Supervisors.
 - **Role-Based Access Control**: Secure routing ensuring users only see what they are authorized to see.
 - **Responsive Design**: Fully mobile-responsive interface.
 - **Rich Text Editing**: Integrated `react-quill-new` for managing content.
+- **Configurable Footer Links**: Admin can set citizen guide, Open Data, RSS, and policy URLs from the dashboard.
+- **Sitemap**: Public `/sitemap` page plus a backend-generated `/sitemap.xml`.
 
 ## 🛠️ Getting Started
 
@@ -30,7 +33,7 @@ This is the frontend application for the AMLO website and administrative dashboa
 
 1. Clone the repository and navigate to the project directory:
    ```bash
-   cd AMLO_website/internship-project
+   cd AMLO_website/frontend
    ```
 
 2. Install dependencies:
@@ -40,7 +43,8 @@ This is the frontend application for the AMLO website and administrative dashboa
 
 3. Create a `.env` file in the root directory (based on `.env.example` if available) and configure your environment variables:
    ```env
-   VITE_API_URL=http://localhost:8080/api
+   # Origin only — src/utils/api.ts appends /api automatically
+   VITE_API_URL=http://localhost:8080
    ```
 
 ### Running the Development Server
@@ -50,6 +54,10 @@ Start the Vite development server:
 npm run dev
 ```
 The application will be available at `http://localhost:5173`.
+
+`/sitemap.xml` is proxied to the backend in development. If the backend is not at
+`http://localhost:8080`, set `VITE_SITEMAP_PROXY_TARGET` (Docker dev uses
+`http://backend:8080`).
 
 ### Building for Production
 
@@ -71,4 +79,5 @@ npm run preview
 - `/src/utils/` - Helper functions and utilities
 
 ## 🌐 API Integration
-All API calls are routed through the Axios instance configured in the `utils/api.ts` file, which automatically handles JWT token injection and refresh logic.
+All API calls go through `src/utils/api.ts`, a fetch wrapper that handles cookies,
+CSRF headers, and shared error handling.

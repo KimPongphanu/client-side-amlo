@@ -71,13 +71,17 @@ const LoginPage = () => {
         await verifyUser()
         const currentUser = useAuthStore.getState().user
 
-        if (currentUser?.forcePasswordReset) {
-          await toast.fire({
-            icon: 'warning',
-            title: t('login.forgotPassword'),
-            text: t('login.failed'),
-          })
-          setLoggedIn(true)
+        setLoggedIn(true)
+
+        // 🌟 บัญชีที่ถูก force reset ต้องเดินตามลำดับ bootstrap ก่อนเข้า Dashboard
+        //    ขั้นที่ 1: ยังไม่มี 2FA → enroll ก่อน
+        if (currentUser?.forcePasswordReset && !currentUser.twoFactorEnabled) {
+          navigate('/2fa-setup', { replace: true })
+          return
+        }
+
+        //    ขั้นที่ 2: มี 2FA แล้ว → เปลี่ยนรหัสผ่านชั่วคราว
+        if (currentUser?.forcePasswordReset && currentUser.twoFactorEnabled) {
           navigate('/force-password-reset', { replace: true })
           return
         }
@@ -86,8 +90,8 @@ const LoginPage = () => {
           icon: 'success',
           title: t('login.success'),
           text: t('login.logoutSuccess'),
+          timer: 800,
         })
-        setLoggedIn(true)
         navigate('/dashboard', { replace: true })
       } else {
         const storeError = useAuthStore.getState().error

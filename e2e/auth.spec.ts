@@ -10,10 +10,17 @@ test.describe('Authentication', () => {
 
   test('TC2: Login with invalid credentials shows error', async ({ page }) => {
     await page.goto('/login')
-    await page.fill('input[type="email"]', 'wrong@email.com')
+    // ใช้อีเมลไม่ซ้ำ เพื่อไม่ให้ติด account lockout จากรอบก่อน
+    await page.fill('input[type="email"]', `nobody-${Date.now()}@example.com`)
     await page.fill('input[type="password"]', 'wrongpassword')
     await page.click('button[type="submit"]')
-    await expect(page.locator('text=Invalid')).toBeVisible({ timeout: 10000 })
+
+    // backend ตอบ "Invalid email or password" หรือข้อความล็อกชั่วคราว (429)
+    await expect(
+      page.getByText(
+        /Invalid email or password|อีเมลหรือรหัสผ่านไม่ถูกต้อง|ระงับชั่วคราว/,
+      ),
+    ).toBeVisible({ timeout: 10000 })
   })
 
   test('TC3: Click forgot password link navigates correctly', async ({
@@ -28,9 +35,9 @@ test.describe('Authentication', () => {
 test.describe('Homepage', () => {
   test('TC4: Homepage loads with banner and sections', async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('nav')).toBeVisible()
+    await expect(page.locator('nav').first()).toBeVisible()
     await expect(page.locator('footer')).toBeVisible()
-    await expect(page.locator('h1').or(page.locator('h2'))).toBeVisible()
+    await expect(page.locator('h1').first()).toBeVisible()
   })
 
   test('TC5: Click news article shows detail page', async ({ page }) => {
@@ -114,7 +121,10 @@ test.describe('Comment Form', () => {
 
 test.describe('API Health', () => {
   test('TC9: Backend health endpoint returns ok', async ({ request }) => {
-    const response = await request.get('http://localhost:8080/health')
+    // ใช้ URL จาก env — prod ผูก backend ไว้ที่ 127.0.0.1 เท่านั้น
+    const healthUrl =
+      process.env.E2E_HEALTH_URL || 'http://127.0.0.1:8080/health'
+    const response = await request.get(healthUrl)
     expect(response.ok()).toBeTruthy()
     const body = await response.json()
     expect(body.status).toBe('ok')
