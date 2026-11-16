@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-const BASE = 'http://localhost'
+const BASE = process.env.E2E_PROD_BASE_URL || 'http://localhost'
 
 const PAGES = [
   '/',

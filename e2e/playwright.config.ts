@@ -40,6 +40,10 @@ export default defineConfig({
   workers: 1,
   fullyParallel: false,
   globalSetup: './global-setup.ts',
+  // prod CSP specs ต้องรันกับ production build (nginx) เท่านั้น — ข้ามเมื่อไม่มี E2E_PROD_BASE_URL
+  testIgnore: process.env.E2E_PROD_BASE_URL
+    ? []
+    : ['csp-prod-check.spec.ts'],
   use: {
     // ชี้ไปที่ dev server (ค่าเริ่มต้น) หรือ prod/staging ผ่าน E2E_BASE_URL
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',
