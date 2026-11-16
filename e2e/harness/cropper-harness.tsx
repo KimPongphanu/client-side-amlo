@@ -23,14 +23,16 @@ export function Harness() {
         <ImageCropper
           file={file}
           onApply={(croppedFile) => {
-            mark('applied', 'true')
             mark('appliedName', croppedFile.name)
             mark('appliedType', croppedFile.type)
             mark('appliedBytes', String(croppedFile.size))
-            createImageBitmap(croppedFile).then((bitmap) => {
-              mark('appliedWidth', String(bitmap.width))
-              mark('appliedHeight', String(bitmap.height))
-            })
+            createImageBitmap(croppedFile)
+              .then((bitmap) => {
+                mark('appliedWidth', String(bitmap.width))
+                mark('appliedHeight', String(bitmap.height))
+              })
+              .catch(() => {})
+              .finally(() => mark('applied', 'true'))
           }}
           onUseOriginal={() => mark('original', 'true')}
           onCancel={() => {
